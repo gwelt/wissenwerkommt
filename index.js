@@ -19,6 +19,9 @@ app.use('/api/:r', function (req, res, next) {
     case 'addTeam':
       res.json(db.addTeam({"id":"99","name":"Testteam","weekdays":[4]}));
       break;
+    case 'findTeam':
+      if (db.findTeam('99')) {res.json(db.findTeam('99'))} else {res.json({})};
+      break;
     case 'addEvent':
       if (db.findTeam('99')) {res.json(db.findTeam('99').addEvent({"datetime":"201810011000"}))} else {res.json({})}
       break;
@@ -91,7 +94,7 @@ Group.prototype.save_to_file = function(filename,callback) {
   fs.writeFile(filename, JSON.stringify(this), 'utf8', (err)=>{console.log('File saved. Errors: '+err);callback(this)});
 }
 
-Group.prototype.addTeam = function(json,callback) {
+Group.prototype.addTeam = function(json) {
   return new Team(this,json);
 }
 
@@ -106,7 +109,7 @@ Group.prototype.findEvent = function(id,datetime) {
   } else {return false}
 }
 
-Team.prototype.addEvent = function(json,callback) {
+Team.prototype.addEvent = function(json) {
   return new Event(this,json);
 }
 
