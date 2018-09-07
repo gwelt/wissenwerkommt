@@ -1,0 +1,23 @@
+{
+  "name": "wissenwerkommt",
+  "version": "1.0.0",
+  "description": "Simple attending|not_attending-service for reoccuring team-events with REST-API.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gwelt/wissenwerkommt.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/gwelt/wissenwerkommt/issues"
+  },
+  "homepage": "https://github.com/gwelt/wissenwerkommt#readme",
+  "dependencies": {
+    "express": "^4.16.3",
+    "socketio": "^1.0.0"
+  }
+}
