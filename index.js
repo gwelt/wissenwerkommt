@@ -2,74 +2,117 @@ var express = require('express');
 var app = express();
 var server = require('http').createServer(app);
 var io = require('socket.io')(server);
+var fs = require('fs');
 var path = require('path');
 var config = {};
-try {config=require('./config.json')} catch(err){console.log(err)};
+try {config=require('./config.json')} catch(err){};
 var port = process.env.PORT || config.port || 3000;
+var db=new Group();
 server.listen(port, function () {
   console.log('Server listening at port %d', port);
+  db.load_from_file('data.json',(group)=>{console.log(JSON.stringify(group))});
 });
-
 
 app.use('/api/:r', function (req, res, next) {
   res.setHeader('Access-Control-Allow-Origin','*');
   switch (req.params.r) {
-    case 'add':
-      db.teams.push(new Team('1','2','3','4','5','6'));
-      res.json(get_object_by_id(db.teams,'1'));
+    case 'addTeam':
+      res.json(db.addTeam({"id":"99","name":"Testteam","weekdays":[4]}));
       break;
-    case 'teams':
+    case 'addEvent':
+      if (db.findTeam('99')) {res.json(db.findTeam('99').addEvent({"datetime":"201810011000"}))} else {res.json({})}
+      break;
+    case 'attend':
+      if (db.findEvent('99','201810011000')) {res.json(db.findEvent('99','201810011000').attend('sven'))} else {res.json({})}
+      break;
+    case 'dump':
       res.json(db);
       break;
     case 'load':
-      load_from_file();
-      res.send('load');
+      db.load_from_file('data.json',(group)=>{res.json(group)});
       break;
     case 'save':
-      save_to_file();
-      res.send('save');
+      db.save_to_file('data.json',(group)=>{res.json(group)});
       break;
     default:
-      res.send('Valid API-calls: <a href=/api/teams>/api/teams</a>');
+      res.send('Valid API-calls: <a href=/api/dump>/api/dump</a>');
   }
 })
 app.use(express.static(path.join(__dirname, 'public')));
 
-function Group(id) {
-  this.id=id;
+function Group() {
   this.teams=[];
-  this.events=[];
-}
-var db=new Group(0);
-
-function Team(id,name,weekdays,time,admintoken,teamtoken) {
-  this.id=id;
-  this.name=name;
-  this.weekdays=weekdays;
-  this.time=time;
-  this.admintoken=admintoken;
-  this.teamtoken=teamtoken;
 }
 
-function get_object_by_id (objectlist,id) {
-  return objectlist.filter(o => o.id==id)[0];
+function Team(group,json) {
+  if ((group.hasOwnProperty('teams'))&&(group.teams instanceof Array)&&(json.hasOwnProperty('id'))) {
+    //todo: check if id is unique/valid
+    this.id=json.id;
+    this.name=json.hasOwnProperty('name')?json.name:'';
+    this.weekdays=json.hasOwnProperty('weekdays')?json.weekdays:[];
+    this.time=json.hasOwnProperty('time')?json.time:'';
+    this.admintoken=json.hasOwnProperty('admintoken')?json.admintoken:'';
+    this.teamtoken=json.hasOwnProperty('teamtoken')?json.teamtoken:'';
+    this.events=[];
+    group.teams.push(this);
+  }
 }
 
-var fs = require('fs');
-function load_from_file() {
-	fs.readFile('data.json', 'utf8', function readFileCallback(err, data){
-	  if (err){console.log('Creating new data-file.'); write_to_file()} else {
-	    try {db = JSON.parse(data)} catch (err){console.log(err)};
-	    let teams='No'; if (db.hasOwnProperty('teams')) {teams=db.teams.length};
-	    console.log(teams+' team-datasets imported from data-file.');
-	    let events='No'; if (db.hasOwnProperty('events')) {events=db.events.length};
-	    console.log(events+' event-datasets imported from data-file.');
-	  }
-	});	
+function Event(team,json) {
+  if ((team.hasOwnProperty('events'))&&(team.events instanceof Array)&&(json.hasOwnProperty('datetime'))) {
+    this.datetime=json.datetime;
+    this.attendees=json.hasOwnProperty('attendees')?json.attendees:[];
+    this.refusals=json.hasOwnProperty('refusals')?json.refusals:[];
+    this.cancelled=json.hasOwnProperty('cancelled')?json.cancelled:false;
+    this.cmt=json.hasOwnProperty('comment')?json.comment:'';
+    team.events.push(this);
+  }
 }
 
-function save_to_file() {
-   fs.writeFile('data.json', JSON.stringify(db), 'utf8', (err)=>{console.log('File saved. Errors: '+err)});    
+Group.prototype.load_from_file = function(filename,callback) {
+  this.teams=[];
+  fs.readFile(filename, 'utf8', (err, data)=>{
+    if (err){console.log('No data-file.')} else {
+      try {newdb = JSON.parse(data)} catch (err) {newdb={}};
+      if (newdb.hasOwnProperty('teams')) {
+        newdb.teams.forEach((t)=>{
+          let newteam=new Team(this,t);
+          if (t.hasOwnProperty('events')) {
+            t.events.forEach((e)=>{new Event(newteam,e)});
+          }
+        });
+      }
+    }
+    callback(this);
+  });
+}
+
+Group.prototype.save_to_file = function(filename,callback) {
+  fs.writeFile(filename, JSON.stringify(this), 'utf8', (err)=>{console.log('File saved. Errors: '+err);callback(this)});
+}
+
+Group.prototype.addTeam = function(json,callback) {
+  return new Team(this,json);
+}
+
+Group.prototype.findTeam = function(id) {
+  return this.teams.filter(t => t.id==id)[0]||false;
+}
+
+Group.prototype.findEvent = function(id,datetime) {
+  let team=this.findTeam(id);
+  if (team) {
+    return team.events.filter(e => e.datetime==datetime)[0]||false;
+  } else {return false}
+}
+
+Team.prototype.addEvent = function(json,callback) {
+  return new Event(this,json);
+}
+
+Event.prototype.attend = function(name) {
+  this.attendees.push(name);
+  return this;
 }
 
 /*
