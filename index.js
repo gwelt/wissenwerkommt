@@ -20,13 +20,15 @@ app.use('/api/:r', function (req, res, next) {
       res.json(db.addTeam({"id":"99","name":"Testteam","weekdays":[4]}));
       break;
     case 'findTeam':
-      if (db.findTeam('99')) {res.json(db.findTeam('99'))} else {res.json({})};
+      res.json(db.findTeam('99'));
       break;
     case 'addEvent':
-      if (db.findTeam('99')) {res.json(db.findTeam('99').addEvent({"datetime":"201810011000"}))} else {res.json({})}
+      let team=db.findTeam('99');
+      if (team) {res.json(team.addEvent({"datetime":"201810011000"}))} else {res.json(false)}
       break;
     case 'attend':
-      if (db.findEvent('99','201810011000')) {res.json(db.findEvent('99','201810011000').attend('sven'))} else {res.json({})}
+      let event=db.findEvent('99','201810011000');
+      if (event) {res.json(event.attend('sven'))} else {res.json(false)}
       break;
     case 'dump':
       res.json(db);
@@ -47,42 +49,33 @@ function Group() {
   this.teams=[];
 }
 
-function Team(group,json) {
-  if ((group.hasOwnProperty('teams'))&&(group.teams instanceof Array)&&(json.hasOwnProperty('id'))) {
-    //todo: check if id is unique/valid
-    this.id=json.id;
-    this.name=json.hasOwnProperty('name')?json.name:'';
-    this.weekdays=json.hasOwnProperty('weekdays')?json.weekdays:[];
-    this.time=json.hasOwnProperty('time')?json.time:'';
-    this.admintoken=json.hasOwnProperty('admintoken')?json.admintoken:'';
-    this.teamtoken=json.hasOwnProperty('teamtoken')?json.teamtoken:'';
-    this.events=[];
-    group.teams.push(this);
-  }
+function Team(json) {
+  this.id=json.hasOwnProperty('id')?json.id:undefined;
+  this.name=json.hasOwnProperty('name')?json.name:undefined;
+  this.weekdays=json.hasOwnProperty('weekdays')?json.weekdays:undefined;
+  this.time=json.hasOwnProperty('time')?json.time:undefined;
+  this.admintoken=json.hasOwnProperty('admintoken')?json.admintoken:undefined;
+  this.teamtoken=json.hasOwnProperty('teamtoken')?json.teamtoken:undefined;
+  if (typeof this.id !== 'undefined') {this.events=[]};
 }
 
-function Event(team,json) {
-  if ((team.hasOwnProperty('events'))&&(team.events instanceof Array)&&(json.hasOwnProperty('datetime'))) {
-    this.datetime=json.datetime;
-    this.attendees=json.hasOwnProperty('attendees')?json.attendees:[];
-    this.refusals=json.hasOwnProperty('refusals')?json.refusals:[];
-    this.cancelled=json.hasOwnProperty('cancelled')?json.cancelled:false;
-    this.cmt=json.hasOwnProperty('comment')?json.comment:'';
-    team.events.push(this);
-  }
+function Event(json) {
+  this.datetime=json.hasOwnProperty('datetime')?json.datetime:undefined;
+  this.attendees=json.hasOwnProperty('attendees')?json.attendees:undefined;
+  this.refusals=json.hasOwnProperty('refusals')?json.refusals:undefined;
+  this.cancelled=json.hasOwnProperty('cancelled')?json.cancelled:undefined;
+  this.cmt=json.hasOwnProperty('comment')?json.comment:undefined;
 }
 
 Group.prototype.load_from_file = function(filename,callback) {
   this.teams=[];
   fs.readFile(filename, 'utf8', (err, data)=>{
     if (err){console.log('No data-file.')} else {
-      try {newdb = JSON.parse(data)} catch (err) {newdb={}};
-      if (newdb.hasOwnProperty('teams')) {
-        newdb.teams.forEach((t)=>{
-          let newteam=new Team(this,t);
-          if (t.hasOwnProperty('events')) {
-            t.events.forEach((e)=>{new Event(newteam,e)});
-          }
+      try {g = JSON.parse(data)} catch (err) {g={}};
+      if (g.hasOwnProperty('teams')) {
+        g.teams.forEach((t)=>{
+          let team=this.addTeam(t);
+          t.events.forEach((e)=>{team.addEvent(e)});
         });
       }
     }
@@ -94,81 +87,64 @@ Group.prototype.save_to_file = function(filename,callback) {
   fs.writeFile(filename, JSON.stringify(this), 'utf8', (err)=>{console.log('File saved. Errors: '+err);callback(this)});
 }
 
+Group.prototype.findTeam = function(teamid) {
+  return this.teams.filter(t => t.id==teamid)[0]||false;
+}
+
 Group.prototype.addTeam = function(json) {
-  return new Team(this,json);
+  let team=new Team(json);
+  if ( (this.hasOwnProperty('teams'))
+     &&(this.teams instanceof Array)
+     &&(typeof team.id !== 'undefined')
+     &&(this.findTeam(team.id).id!==team.id)
+     )
+  {
+    this.teams.push(team);
+    return team;
+  } else {
+    return false;//{"error":"team could not be added"};
+  }
 }
 
-Group.prototype.findTeam = function(id) {
-  return this.teams.filter(t => t.id==id)[0]||false;
+Group.prototype.findEvent = function(teamid,datetime) {
+  let team=this.findTeam(teamid);
+  if (team) {return team.findEvent(datetime)} else {return false}
 }
 
-Group.prototype.findEvent = function(id,datetime) {
-  let team=this.findTeam(id);
-  if (team) {
-    return team.events.filter(e => e.datetime==datetime)[0]||false;
-  } else {return false}
+Team.prototype.findEvent = function(datetime) {
+  return this.events.filter(e => e.datetime==datetime)[0]||false;
 }
 
 Team.prototype.addEvent = function(json) {
-  return new Event(this,json);
+  let event=new Event(json);
+  if ( (this.hasOwnProperty('events'))
+     &&(this.events instanceof Array)
+     &&(typeof this.id !== 'undefined')
+     &&(typeof event.datetime !== 'undefined')
+     &&(this.findEvent(event.datetime).datetime!==event.datetime)
+     )
+  {
+    this.events.push(event);
+    return event;
+  } else {
+    return false;//{"error":"event could not be added"};
+  }
 }
 
 Event.prototype.attend = function(name) {
+  if ( !(this.hasOwnProperty('attendees')) || !(this.attendees instanceof Array) ) {this.attendees=[]}
   this.attendees.push(name);
+  //todo: ensure distinction
   return this;
 }
-
-/*
-
-io.on('connection', function (socket) {
-  // socket.emit = reply only to the client who asked
-  // socket.broadcast.emit = reply to all clients except the one who asked
-  // io.sockets.emit = reply to all clients (including the one who asked)
-  //socket.emit('data',{welcomemessage: 'Welcome!'});
-
-
-  socket.on('get', function () {
-    socket.emit('data', JSON.stringify(teamlist));
-  });
-  socket.on('write', function (json) {
-    console.log(json);
-    data = JSON.parse(json.data);
-    // find teamlist-Item
-    var i=0; while (i<teamlist.length && teamlist[i].ID!=data.ID) {i++}
-    if (i<teamlist.length && auth(json.code,teamlist[i].Code)) {
-      // update in object
-      teamlist[i]=new Team(data.ID,data.Name,data.Chef,data.R1,data.R2,data.R3,data.R4,data.R5,data.Standby,crypt(json.code));
-      io.sockets.emit('data', JSON.stringify(teamlist));
-      io.sockets.emit('info', {ID:data.ID,info:'updated',color:'green'});
-    }
-    else {
-      console.log('Could not find/update ID '+data.ID+'.');
-      socket.emit('info', {ID:data.ID,info:'Falscher Code!',color:'red'});
-    }
-  });
-  socket.on('update_all_clients', function () {
-    io.sockets.emit('data', JSON.stringify(teamlist));
-  });
-  socket.on('auth', function (data) {
-    var i=0; while (i<teamlist.length && teamlist[i].ID!=data.id) {i++};
-    if (i<teamlist.length) {
-      socket.emit('authresult', {'id':data.id, 'code':data.code, 'result':auth(data.code,teamlist[i].Code)})
-    } else {
-      socket.emit('authresult', {'id':data.id, 'code':data.code, 'result':false})
-    }
-  });
-
-});
-*/
 
 
 const crypto = require('crypto');
 function crypt(str) {
   return crypto.createHmac('sha256','dontwanttousesalthere').update(str).digest('base64');
 }
-function auth(password,hash) {
-  //console.log('AUTH '+password+' '+crypt(password)+' '+hash)
-  return ( (typeof hash === 'undefined') || (hash === crypt(password)) );
+function auth(word,hash) {
+  return ( (typeof hash === 'undefined') || (hash === crypt(word)) );
 }
 
 process.on('SIGINT', function(){console.log('SIGINT'); process.exit()});
