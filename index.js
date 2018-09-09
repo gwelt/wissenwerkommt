@@ -71,11 +71,13 @@ Group.prototype.load_from_file = function(filename,callback) {
   this.teams=[];
   fs.readFile(filename, 'utf8', (err, data)=>{
     if (err){console.log('No data-file.')} else {
-      try {g = JSON.parse(data)} catch (err) {g={}};
-      if (g.hasOwnProperty('teams')) {
-        g.teams.forEach((t)=>{
+      try {group = JSON.parse(data)} catch (err) {group={}};
+      if (group.hasOwnProperty('teams')) {
+        group.teams.forEach((t)=>{
           let team=this.addTeam(t);
-          t.events.forEach((e)=>{team.addEvent(e)});
+          if (t.hasOwnProperty('events')) {
+            t.events.forEach((e)=>{team.addEvent(e)});
+          } 
         });
       }
     }
@@ -96,7 +98,7 @@ Group.prototype.addTeam = function(json) {
   if ( (this.hasOwnProperty('teams'))
      &&(this.teams instanceof Array)
      &&(typeof team.id !== 'undefined')
-     &&(this.findTeam(team.id).id!==team.id)
+     &&(!this.findTeam(team.id))
      )
   {
     this.teams.push(team);
@@ -119,9 +121,8 @@ Team.prototype.addEvent = function(json) {
   let event=new Event(json);
   if ( (this.hasOwnProperty('events'))
      &&(this.events instanceof Array)
-     &&(typeof this.id !== 'undefined')
      &&(typeof event.datetime !== 'undefined')
-     &&(this.findEvent(event.datetime).datetime!==event.datetime)
+     &&(!this.findEvent(event.datetime))
      )
   {
     this.events.push(event);
