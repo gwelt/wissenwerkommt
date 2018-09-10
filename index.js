@@ -63,6 +63,9 @@ app.use('/api/:r', function (req, res, next) {
     case 'dump':
       res.json(db);
       break;
+    case 'status':
+      res.json(db.status());
+      break;
     default:
       res.send('no a valid API-call');
   }
@@ -189,6 +192,18 @@ Group.prototype.deleteTeam = function(json) {
     if (!this.teams.length) {this.teams=undefined; return [];};
     return this.teams;
   } else {return false}
+}
+
+Group.prototype.status = function() {
+  let teamCount=0;
+  let eventCount=0;
+  let attendCount=0;
+  let refusalCount=0;
+  try {teamCount=this.teams.length} catch(e) {};
+  try {eventCount=this.teams.reduce((a,t)=>a+t.events.length,0)} catch(e) {};
+  try {attendCount=this.teams.reduce((a,t)=>a+t.events.reduce((b,u)=>b+((u.attendees instanceof Array)?u.attendees.length:0),0),0)} catch(e) {};
+  try {refusalCount=this.teams.reduce((a,t)=>a+t.events.reduce((b,u)=>b+((u.refusals instanceof Array)?u.refusals.length:0),0),0)} catch(e) {};
+  return {"teams":teamCount,"events":eventCount,"attendees":attendCount,"refusals":refusalCount};
 }
 
 Group.prototype.findEvent = function(teamid,datetime) {
