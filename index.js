@@ -133,6 +133,7 @@ Group.prototype.getTeam = function(teamid) {
   //todo: use of teamtoken
   let t=this.findTeam(teamid);
   if (t) {
+    if (!(t.events instanceof Array)) {t.events=[]};
     // groom: delete all past events
     let d=getDateString();
     t.events=t.events.filter(e=>e.datetime>d);
@@ -143,6 +144,7 @@ Group.prototype.getTeam = function(teamid) {
     t.generateNextRecurringEvents();
     // order events by date
     t.events.sort((a,b)=>{return a.datetime>b.datetime});
+    if (!t.events.length) {t.events=undefined};
   }
   return t;
 }
