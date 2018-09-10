@@ -18,7 +18,7 @@ app.use('/api/:r', function (req, res, next) {
   res.setHeader('Access-Control-Allow-Origin','*');
   switch (req.params.r) {
     case 'addTeam':
-		  res.json(db.addTeam({"id":"fbhh","name":"Testteam","recurrence":[{"weekday":1,"time":"18:00"},{"weekday":3,"time":"20:00"}]}));
+      res.json(db.addTeam({"id":"fbhh","name":"Testteam","recurrence":[{"weekday":1,"time":"18:00"},{"weekday":3,"time":"20:00"}]}));
       break;
     case 'getTeam':
       res.json(db.getTeam('fbhh'));
@@ -44,7 +44,7 @@ app.use('/api/:r', function (req, res, next) {
       if (dteam) {res.json(dteam.deleteEvent({"datetime":"2018-10-13T11:11"}))} else {res.json(false)}
       break;
     case 'deleteTeam':
-		  res.json(db.deleteTeam({"id":"fbhh"}));
+      res.json(db.deleteTeam({"id":"fbhh"}));
       break;
     /*
     case 'load':
@@ -76,11 +76,11 @@ function Team(json) {
   this.id=json.hasOwnProperty('id')?json.id:undefined;
   this.name=json.hasOwnProperty('name')?json.name:undefined;
   if (json.recurrence instanceof Array) {
-  	this.recurrence=[];
-  	json.recurrence.forEach((rc)=>{
-  		if ((rc.hasOwnProperty('weekday'))&&(rc.hasOwnProperty('time'))) {this.recurrence.push({"weekday":rc.weekday,"time":rc.time})}
-  	});
-  	if (!this.recurrence.length) {this.recurrence=undefined}
+    this.recurrence=[];
+    json.recurrence.forEach((rc)=>{
+      if ((rc.hasOwnProperty('weekday'))&&(rc.hasOwnProperty('time'))) {this.recurrence.push({"weekday":rc.weekday,"time":rc.time})}
+    });
+    if (!this.recurrence.length) {this.recurrence=undefined}
   } else {this.recurrence=undefined}
   this.admintoken=json.hasOwnProperty('admintoken')?json.admintoken:undefined;
   this.teamtoken=json.hasOwnProperty('teamtoken')?json.teamtoken:undefined;
@@ -177,18 +177,18 @@ Group.prototype.addTeam = function(json) {
     this.teams.push(team);
     return team;
   } else {
- 		if (!this.teams.length) {this.teams=undefined};
+    if (!this.teams.length) {this.teams=undefined};
     return false;
   }
 }
 
 Group.prototype.deleteTeam = function(json) {
   //todo: use of admintoken
-	if ( (json.hasOwnProperty('id')) && (this.findTeam(json.id)) ) {
-		this.teams=this.teams.filter(t=>t.id!==json.id);
- 		if (!this.teams.length) {this.teams=undefined; return [];};
-		return this.teams;
-	} else {return false}
+  if ( (json.hasOwnProperty('id')) && (this.findTeam(json.id)) ) {
+    this.teams=this.teams.filter(t=>t.id!==json.id);
+    if (!this.teams.length) {this.teams=undefined; return [];};
+    return this.teams;
+  } else {return false}
 }
 
 Group.prototype.findEvent = function(teamid,datetime) {
@@ -200,7 +200,7 @@ Group.prototype.findEvent = function(teamid,datetime) {
 Team.prototype.findEvent = function(datetime) {
   //todo: use of teamtoken
   if (this.events instanceof Array) {
-  	return this.events.find(e => e.datetime==datetime)||false;
+    return this.events.find(e => e.datetime==datetime)||false;
   } else {return false}
 }
 
@@ -213,18 +213,18 @@ Team.prototype.addEvent = function(json) {
     this.events.push(event);
     return event;
   } else {
- 		if (!this.events.length) {this.events=undefined};
+    if (!this.events.length) {this.events=undefined};
     return false;
   }
 }
 
 Team.prototype.deleteEvent = function(json) {
   //todo: use of admintoken
-	if ( (json.hasOwnProperty('datetime')) && (this.findEvent(json.datetime)) ) {
-		this.events=this.events.filter(e=>e.datetime!==json.datetime);
- 		if (!this.events.length) {this.events=undefined; return [];};
- 		return this.events;
-	} else {return false}
+  if ( (json.hasOwnProperty('datetime')) && (this.findEvent(json.datetime)) ) {
+    this.events=this.events.filter(e=>e.datetime!==json.datetime);
+    if (!this.events.length) {this.events=undefined; return [];};
+    return this.events;
+  } else {return false}
 }
 
 Event.prototype.attend = function(name) {
