@@ -191,6 +191,7 @@ Team.prototype.addEvent = function(json) {
 Event.prototype.attend = function(name) {
   if (!(this.attendees instanceof Array)) {this.attendees=[]};
   this.attendees.push(name);
+  this.attendees=this.attendees.filter(a=>a!==name);
   if (this.refusals instanceof Array) {this.refusals=this.refusals.filter(r=>r!==name)};
   return this;
 }
@@ -198,6 +199,7 @@ Event.prototype.attend = function(name) {
 Event.prototype.refuse = function(name) {
   if (!(this.refusals instanceof Array)) {this.refusals=[]};
   this.refusals.push(name);
+  this.refusals=this.refusals.filter(r=>r!==name);
   if (this.attendees instanceof Array) {this.attendees=this.attendees.filter(a=>a!==name)};
   return this;
 }
