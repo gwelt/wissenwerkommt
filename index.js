@@ -191,20 +191,20 @@ Team.prototype.addEvent = function(json) {
 Event.prototype.attend = function(name) {
   if (!(this.attendees instanceof Array)) {this.attendees=[]};
   if (!this.attendees.includes(name)) {this.attendees.push(name)};
-  if (this.refusals instanceof Array) {this.refusals=this.refusals.filter(r=>r!==name)};
+  if (this.refusals instanceof Array) {this.refusals=this.refusals.filter(r=>r!==name); if (!this.refusals.length) {this.refusals=undefined};};
   return this;
 }
 
 Event.prototype.refuse = function(name) {
   if (!(this.refusals instanceof Array)) {this.refusals=[]};
   if (!this.refusals.includes(name)) {this.refusals.push(name)};
-  if (this.attendees instanceof Array) {this.attendees=this.attendees.filter(a=>a!==name)};
+  if (this.attendees instanceof Array) {this.attendees=this.attendees.filter(a=>a!==name); if (!this.attendees.length) {this.attendees=undefined};};
   return this;
 }
 
 Event.prototype.undecided = function(name) {
-  if (this.attendees instanceof Array) {this.attendees=this.attendees.filter(a=>a!==name)};
-  if (this.refusals instanceof Array) {this.refusals=this.refusals.filter(r=>r!==name)};
+  if (this.attendees instanceof Array) {this.attendees=this.attendees.filter(a=>a!==name); if (!this.attendees.length) {this.attendees=undefined};};
+  if (this.refusals instanceof Array) {this.refusals=this.refusals.filter(r=>r!==name); if (!this.refusals.length) {this.refusals=undefined};};
   return this;
 }
 
