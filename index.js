@@ -87,7 +87,6 @@ function Team(json) {
   } else {this.recurrence=undefined}
   this.admintoken=json.hasOwnProperty('admintoken')?json.admintoken:undefined;
   this.teamtoken=json.hasOwnProperty('teamtoken')?json.teamtoken:undefined;
-  //todo: use of teamtoken
 }
 
 function Event(json) {
@@ -138,7 +137,7 @@ Group.prototype.getTeam = function(teamid) {
     let d=getDateString();
     t.events=t.events.filter(e=>e.datetime>d);
     // groom: delete all events that have no data yet (=events that only have one property that has to be 'datetime')
-    // this will delete all automatic generated events without changes/edits (assumption is, that manually added events will have at least one other property)
+    // this will delete all automatic generated events without changes/edits (manually added events should have at least one other property)
     t.events=t.events.filter(e=>Object.values(e).reduce((a,c)=>(c!==undefined)?a+1:a,0)>1);
     // backfill: generate future events, if any recurrance is specified
     t.generateNextRecurringEvents();
@@ -163,7 +162,7 @@ Team.prototype.generateNextRecurringEvents = function(count) {
 }
 
 function getNextDaysWithWeekday(weekday,count) {
-  d=new Date(getDateString());
+  let d=new Date(getDateString());
   let offset=(weekday%7)-d.getDay();
   if (offset<0) {offset+=7};
   res=[];
@@ -174,13 +173,12 @@ function getNextDaysWithWeekday(weekday,count) {
 
 Group.prototype.addTeam = function(json) {
   let team=new Team(json);
-  if (!(this.teams instanceof Array)) {this.teams=[]};
   if ( (typeof team.id !== 'undefined') && (!this.findTeam(team.id)) )
   {
+    if (!(this.teams instanceof Array)) {this.teams=[]};
     this.teams.push(team);
     return team;
   } else {
-    if (!this.teams.length) {this.teams=undefined};
     return false;
   }
 }
@@ -222,13 +220,12 @@ Team.prototype.findEvent = function(datetime) {
 Team.prototype.addEvent = function(json) {
   //todo: use of admintoken
   let event=new Event(json);
-  if (!(this.events instanceof Array)) {this.events=[]};
   if ( (typeof event.datetime !== 'undefined') && (!this.findEvent(event.datetime)) )
   {
+    if (!(this.events instanceof Array)) {this.events=[]};
     this.events.push(event);
     return event;
   } else {
-    if (!this.events.length) {this.events=undefined};
     return false;
   }
 }
