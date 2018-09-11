@@ -2,22 +2,41 @@
 <html>
 <body>
 
-<h2>WISSENWERKOMMT will start soon</h2>
+<h2>wissenwerkommt</h2>
 
 Team-ID: <input id="teamid" type="text" maxlength="64" value="fbhh">
 Datetime: <input id="datetime" type="text" maxlength="64" value="2018-09-13T18:30">
 Name: <input id="name" type="text" maxlength="64" value="sven">
-<button type="button" onclick="let id=document.getElementById('teamid').value;ajax((r)=>{updateTeam(r)},{action:'getTeam',teamid:id})">load</button>
-<button type="button" onclick="let id=document.getElementById('teamid').value;let datetime=document.getElementById('datetime').value;let name=document.getElementById('name').value;ajax((r)=>{updateTeam(r)},{action:'attend',teamid:id,datetime:datetime,name:name})">attend</button>
-<button type="button" onclick="let id=document.getElementById('teamid').value;let datetime=document.getElementById('datetime').value;let name=document.getElementById('name').value;ajax((r)=>{updateTeam(r)},{action:'refuse',teamid:id,datetime:datetime,name:name})">refuse</button>
-<button type="button" onclick="let id=document.getElementById('teamid').value;let datetime=document.getElementById('datetime').value;let name=document.getElementById('name').value;ajax((r)=>{updateTeam(r)},{action:'undecided',teamid:id,datetime:datetime,name:name})">undecided</button>
+<button type="button" onclick="getTeam()">load</button>
+<button type="button" onclick="changeStatus('attend')">attend</button>
+<button type="button" onclick="changeStatus('refuse')">refuse</button>
+<button type="button" onclick="changeStatus('undecided')">undecided</button>
 
-<br><br><div id="out"></div>
+<br><br><div id="status"></div>
+<br><div id="teams"></div>
 
 <script>
-function updateTeam(json) {
+function getTeam(teamid) {
+  if (!teamid) {teamid=document.getElementById('teamid').value;}
+  ajax((r)=>{updateView(r)},{action:'getTeam',teamid:teamid});
+}
+
+function changeStatus(status,teamid,datetime,name) {
+  if (!teamid) {teamid=document.getElementById('teamid').value;}
+  if (!datetime) {datetime=document.getElementById('datetime').value;}
+  if (!name) {name=document.getElementById('name').value;}
+  ajax((r)=>{updateStatus(r)},{action:status,teamid:teamid,datetime:datetime,name:name});
+}
+
+function updateView(json) {
   let o=JSON.parse(json);
-  document.getElementById("out").innerHTML = JSON.stringify(o);
+  document.getElementById("teams").innerHTML = JSON.stringify(o);
+}
+
+function updateStatus(json) {
+  let o=JSON.parse(json);
+  document.getElementById("status").innerHTML = JSON.stringify(o);
+  getTeam();
 }
 
 function ajax(callback,json) {
