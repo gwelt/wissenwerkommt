@@ -1,4 +1,5 @@
 var express = require('express');
+var bodyParser = require('body-parser');
 var app = express();
 var server = require('http').createServer(app);
 var io = require('socket.io')(server);
@@ -11,21 +12,38 @@ var db=new Group();
 server.listen(port, function () {
   console.log('Server listening at port %d', port);
   db.load_from_file('data.json',(group)=>{console.log(JSON.stringify(group))});
-  //db.addTeam({"id":"fbhh","name":"Fußball","recurrence":[{"weekday":4,"time":"18:30"}]});
+  db.addTeam({"id":"fbhh","name":"Fußball","recurrence":[{"weekday":4,"time":"18:30"}],"admintoken":"secret"});
 });
+
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.post('/api/ajax', function (req, res) {
+  switch (req.body.action) {
+    case 'getTeam':
+      res.json(db.getTeam(req.body.teamid));
+      break;
+    case 'attend':
+      let aevent=db.findEvent(req.body.teamid,req.body.datetime);
+      if (aevent) {res.json(aevent.attend(req.body.name))} else {res.json(false)}
+      break;
+    case 'refuse':
+      let revent=db.findEvent(req.body.teamid,req.body.datetime);
+      if (revent) {res.json(revent.refuse(req.body.name))} else {res.json(false)}
+      break;
+    case 'undecided':
+      let uevent=db.findEvent(req.body.teamid,req.body.datetime);
+      if (uevent) {res.json(uevent.undecided(req.body.name))} else {res.json(false)}
+      break;
+    default:
+      res.json({'error':'not a valid AJAX-API-call'});
+  }
+})
 
 app.use('/api/:r', function (req, res, next) {
   res.setHeader('Access-Control-Allow-Origin','*');
   switch (req.params.r) {
-    case 'addTeam':
-      res.json(db.addTeam({"id":"fbhh","name":"Testteam","recurrence":[{"weekday":1,"time":"18:00"},{"weekday":3,"time":"20:00"}]}));
-      break;
     case 'getTeam':
       res.json(db.getTeam('fbhh'));
-      break;
-    case 'addEvent':
-      let ateam=db.findTeam('fbhh');
-      if (ateam) {res.json(ateam.addEvent({"datetime":"2018-10-13T11:11"}))} else {res.json(false)}
       break;
     case 'attend':
       let aevent=db.findEvent('fbhh','2018-09-13T18:30');
@@ -39,20 +57,49 @@ app.use('/api/:r', function (req, res, next) {
       let uevent=db.findEvent('fbhh','2018-09-13T18:30');
       if (uevent) {res.json(uevent.undecided('sven'))} else {res.json(false)}
       break;
-    case 'deleteEvent':
-      let dteam=db.findTeam('fbhh');
-      if (dteam) {res.json(dteam.deleteEvent({"datetime":"2018-10-13T11:11"}))} else {res.json(false)}
+
+    case 'addTeam':
+      res.json(db.addTeam({"id":"fbhh","name":"Testteam","recurrence":[{"weekday":4,"time":"18:30"},{"weekday":3,"time":"20:00"}]}));
+      break;
+    case 'editTeam':
+      res.json(db.editTeam({"id":"fbhh","name":"","recurrence":[]}));
       break;
     case 'deleteTeam':
       res.json(db.deleteTeam({"id":"fbhh"}));
       break;
-    /*
+
+    case 'addEvent':
+      let ateam=db.findTeam('fbhh');
+      if (ateam) {res.json(ateam.addEvent({"datetime":"2018-10-13T11:11","comment":"manually added event"}))} else {res.json(false)}
+      break;
+    case 'cancelEvent':
+      let devent=db.findEvent('fbhh','2018-09-13T18:30');
+      if (devent) {res.json(devent.cancelEvent())} else {res.json(false)}
+      break;
+    case 'reviveEvent':
+      let vevent=db.findEvent('fbhh','2018-09-13T18:30');
+      if (vevent) {res.json(vevent.reviveEvent())} else {res.json(false)}
+      break;
+    case 'commentEvent':
+      let cevent=db.findEvent('fbhh','2018-09-13T18:30');
+      if (cevent) {res.json(cevent.commentEvent('Kommentar zum Event.'))} else {res.json(false)}
+      break;
+    case 'deleteEvent':
+      let dteam=db.findTeam('fbhh');
+      if (dteam) {res.json(dteam.deleteEvent({"datetime":"2018-10-13T11:11"}))} else {res.json(false)}
+      break;
+
     case 'load':
       db.load_from_file('data.json',(group)=>{res.json(group)});
       break;
-    */
     case 'save':
       db.save_to_file('data.json',(group)=>{res.json(group)});
+      break;
+    case 'stats':
+      res.json(db.status());
+      break;
+    case 'dump':
+      res.json(db);
       break;
     case 'findTeam':
       res.json(db.findTeam('99'));
@@ -60,14 +107,8 @@ app.use('/api/:r', function (req, res, next) {
     case 'findEvent':
       res.json(db.findEvent('99','2018-10-01T10:00'));
       break;
-    case 'dump':
-      res.json(db);
-      break;
-    case 'status':
-      res.json(db.status());
-      break;
     default:
-      res.send('no a valid API-call');
+      res.send('not a valid API-call');
   }
 })
 app.use(express.static(path.join(__dirname, 'public')));
@@ -77,7 +118,7 @@ function Group() {}
 function Team(json) {
   //todo: stealthen
   this.id=json.hasOwnProperty('id')?json.id:undefined;
-  this.name=json.hasOwnProperty('name')?json.name:undefined;
+  this.name=(json.hasOwnProperty('name')&&(json.name.length))?json.name:undefined;
   if (json.recurrence instanceof Array) {
     this.recurrence=[];
     json.recurrence.forEach((rc)=>{
@@ -85,8 +126,8 @@ function Team(json) {
     });
     if (!this.recurrence.length) {this.recurrence=undefined}
   } else {this.recurrence=undefined}
-  this.admintoken=json.hasOwnProperty('admintoken')?json.admintoken:undefined;
-  this.teamtoken=json.hasOwnProperty('teamtoken')?json.teamtoken:undefined;
+  this.admintoken=(json.hasOwnProperty('admintoken')&&(json.admintoken.length))?json.admintoken:undefined;
+  this.teamtoken=(json.hasOwnProperty('teamtoken')&&(json.teamtoken.length))?json.teamtoken:undefined;
 }
 
 function Event(json) {
@@ -185,6 +226,22 @@ Group.prototype.addTeam = function(json) {
   }
 }
 
+Group.prototype.editTeam = function(json) {
+  //todo: use of admintoken
+  // create a temporary team-object to make use of data-checks in constructor
+  let editTeam=new Team(json);
+  let team=this.findTeam(editTeam.id);
+  if (team) {
+    // check for each property, if json-key (!) is not undefined
+    // editTeam[key] may be undefined because the constructor made it undefined ... that's ok!
+    // that way, a string with no length can replace/delete a current string
+    for (let key of Object.keys(editTeam)) {if (json[key]!==undefined) {team[key]=editTeam[key]}};
+    return team;
+  } else {
+    return false;
+  }
+}
+
 Group.prototype.deleteTeam = function(json) {
   //todo: use of admintoken
   if ( (json.hasOwnProperty('id')) && (this.findTeam(json.id)) ) {
@@ -194,7 +251,8 @@ Group.prototype.deleteTeam = function(json) {
   } else {return false}
 }
 
-Group.prototype.status = function() {
+Group.prototype.stats = function() {
+  //todo: use of sysop-token
   let teamCount=0;
   let eventCount=0;
   let attendCount=0;
@@ -267,12 +325,32 @@ Event.prototype.undecided = function(name) {
   return this;
 }
 
+Event.prototype.commentEvent = function(comment) {
+  //todo: use of teamtoken
+  //todo: stealthen
+  this.comment=comment;
+  return this;
+}
+
+Event.prototype.cancelEvent = function() {
+  //todo: use of admintoken
+  this.cancelled=true;
+  return this;
+}
+
+Event.prototype.reviveEvent = function() {
+  //todo: use of admintoken
+  this.cancelled=undefined;
+  return this;
+}
+
+
 const crypto = require('crypto');
 function crypt(str) {
   return crypto.createHmac('sha256','dontwanttousesalthere').update(str).digest('base64');
 }
-function auth(word,hash) {
-  return ( (typeof hash === 'undefined') || (hash === crypt(word)) );
+function auth(str,hash) {
+  return ( (typeof hash === 'undefined') || (hash === crypt(str)) );
 }
 
 process.on('SIGINT', function(){console.log('SIGINT'); process.exit()});

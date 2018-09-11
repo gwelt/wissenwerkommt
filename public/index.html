@@ -1,1 +1,33 @@
-WISSENWERKOMMT INDEX (will start soon)
+<!DOCTYPE html>
+<html>
+<body>
+
+<h2>WISSENWERKOMMT will start soon</h2>
+
+Team-ID: <input id="teamid" type="text" maxlength="64" value="fbhh">
+Datetime: <input id="datetime" type="text" maxlength="64" value="2018-09-13T18:30">
+Name: <input id="name" type="text" maxlength="64" value="sven">
+<button type="button" onclick="let id=document.getElementById('teamid').value;ajax((r)=>{updateTeam(r)},{action:'getTeam',teamid:id})">load</button>
+<button type="button" onclick="let id=document.getElementById('teamid').value;let datetime=document.getElementById('datetime').value;let name=document.getElementById('name').value;ajax((r)=>{updateTeam(r)},{action:'attend',teamid:id,datetime:datetime,name:name})">attend</button>
+<button type="button" onclick="let id=document.getElementById('teamid').value;let datetime=document.getElementById('datetime').value;let name=document.getElementById('name').value;ajax((r)=>{updateTeam(r)},{action:'refuse',teamid:id,datetime:datetime,name:name})">refuse</button>
+<button type="button" onclick="let id=document.getElementById('teamid').value;let datetime=document.getElementById('datetime').value;let name=document.getElementById('name').value;ajax((r)=>{updateTeam(r)},{action:'undecided',teamid:id,datetime:datetime,name:name})">undecided</button>
+
+<br><br><div id="out"></div>
+
+<script>
+function updateTeam(json) {
+  let o=JSON.parse(json);
+  document.getElementById("out").innerHTML = JSON.stringify(o);
+}
+
+function ajax(callback,json) {
+  var req = new XMLHttpRequest();
+  req.onreadystatechange = function() {if (this.readyState == 4 && this.status == 200) {callback(this.responseText)}};
+  req.open("POST","/api/ajax",true);
+  req.setRequestHeader("Content-Type","application/json;charset=UTF-8");
+  req.send(JSON.stringify(json));
+}
+</script>
+
+</body>
+</html>
