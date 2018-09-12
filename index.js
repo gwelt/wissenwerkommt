@@ -15,12 +15,14 @@ server.listen(port, function () {
   db.addTeam({"id":"fbhh","name":"Fußball","recurrence":[{"weekday":4,"time":"18:30"}],"admintoken":"secret"});
 });
 
+app.use(express.static(path.join(__dirname, 'public')));
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.post('/api/ajax', function (req, res) {
-  switch (req.body.action) {
+app.use('/api/:r/:t?', function (req, res) {
+  switch (req.params.r) {
     case 'getTeam':
-      res.json(db.getTeam(req.body.teamid));
+      res.json(db.getTeam(req.params.t||req.body.teamid));
       break;
     case 'attend':
       let aevent=db.findEvent(req.body.teamid,req.body.datetime);
@@ -34,12 +36,20 @@ app.post('/api/ajax', function (req, res) {
       let uevent=db.findEvent(req.body.teamid,req.body.datetime);
       if (uevent) {res.json(uevent.undecided(req.body.name))} else {res.json(false)}
       break;
+    case 'getListOfTeamIDs':
+      res.json(db.getListOfTeamIDs());
+      break;
     default:
       res.json({'error':'not a valid AJAX-API-call'});
   }
 })
 
-app.use('/api/:r', function (req, res, next) {
+app.use(function(req, res, next){
+  res.sendFile('index.html', { root: path.join(__dirname, 'public')});
+});
+
+/*
+app.use('/testapi/:r', function (req, res, next) {
   res.setHeader('Access-Control-Allow-Origin','*');
   switch (req.params.r) {
     case 'getTeam':
@@ -111,7 +121,8 @@ app.use('/api/:r', function (req, res, next) {
       res.send('not a valid API-call');
   }
 })
-app.use(express.static(path.join(__dirname, 'public')));
+*/
+
 
 function Group() {}
 
@@ -161,6 +172,13 @@ Group.prototype.load_from_file = function(filename,callback) {
 Group.prototype.save_to_file = function(filename,callback) {
   //todo: use of sysop-token
   fs.writeFile(filename, JSON.stringify(this), 'utf8', (err)=>{console.log('File saved. Errors: '+err);callback(this)});
+}
+
+Group.prototype.getListOfTeamIDs = function() {
+  //todo: use of sysop-token (?)
+  if (this.teams instanceof Array) {
+    return this.teams.map(t=>t.id);
+  } else {return false}
 }
 
 Group.prototype.findTeam = function(teamid) {
@@ -302,34 +320,42 @@ Team.prototype.deleteEvent = function(json) {
 Event.prototype.attend = function(name) {
   //todo: use of teamtoken
   //todo: stealthen
-  if (!(this.attendees instanceof Array)) {this.attendees=[]};
-  if (!this.attendees.includes(name)) {this.attendees.push(name)};
-  if (this.refusals instanceof Array) {this.refusals=this.refusals.filter(r=>r!==name); if (!this.refusals.length) {this.refusals=undefined};};
-  return this;
+  if (issafe(name)) {
+    if (!(this.attendees instanceof Array)) {this.attendees=[]};  
+    if (!this.attendees.includes(name)) {this.attendees.push(name)};
+    if (this.refusals instanceof Array) {this.refusals=this.refusals.filter(r=>r!==name); if (!this.refusals.length) {this.refusals=undefined};};
+    return this;
+  } else {return false}
 }
 
 Event.prototype.refuse = function(name) {
   //todo: use of teamtoken
   //todo: stealthen
-  if (!(this.refusals instanceof Array)) {this.refusals=[]};
-  if (!this.refusals.includes(name)) {this.refusals.push(name)};
-  if (this.attendees instanceof Array) {this.attendees=this.attendees.filter(a=>a!==name); if (!this.attendees.length) {this.attendees=undefined};};
-  return this;
+  if (issafe(name)) {
+    if (!(this.refusals instanceof Array)) {this.refusals=[]};
+    if (!this.refusals.includes(name)) {this.refusals.push(name)};
+    if (this.attendees instanceof Array) {this.attendees=this.attendees.filter(a=>a!==name); if (!this.attendees.length) {this.attendees=undefined};};
+    return this;
+  } else {return false}
 }
 
 Event.prototype.undecided = function(name) {
   //todo: use of teamtoken
   //todo: stealthen
-  if (this.attendees instanceof Array) {this.attendees=this.attendees.filter(a=>a!==name); if (!this.attendees.length) {this.attendees=undefined};};
-  if (this.refusals instanceof Array) {this.refusals=this.refusals.filter(r=>r!==name); if (!this.refusals.length) {this.refusals=undefined};};
-  return this;
+  if (issafe(name)) {
+    if (this.attendees instanceof Array) {this.attendees=this.attendees.filter(a=>a!==name); if (!this.attendees.length) {this.attendees=undefined};};
+    if (this.refusals instanceof Array) {this.refusals=this.refusals.filter(r=>r!==name); if (!this.refusals.length) {this.refusals=undefined};};
+    return this;
+  } else {return false}
 }
 
 Event.prototype.commentEvent = function(comment) {
   //todo: use of teamtoken
   //todo: stealthen
-  this.comment=comment;
-  return this;
+  if (issafe(name)) {
+    this.comment=comment;
+    return this;
+  } else {return false}
 }
 
 Event.prototype.cancelEvent = function() {
@@ -352,6 +378,8 @@ function crypt(str) {
 function auth(str,hash) {
   return ( (typeof hash === 'undefined') || (hash === crypt(str)) );
 }
+function safe_text(text) {return unescape(text).replace(/[^\w\s\däüöÄÜÖß\.,'!\@#$^&%*()\+=\-\[\]\/{}\|:\?]/g,'').slice(0,256)}
+function issafe(text) {return !!text}
 
 process.on('SIGINT', function(){console.log('SIGINT'); process.exit()});
 process.on('SIGTERM', function(){console.log('SIGTERM'); process.exit()});

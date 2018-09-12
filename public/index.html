@@ -1,51 +1,98 @@
 <!DOCTYPE html>
 <html>
-<body>
+<body onload="getTeam();getCookie('name',true);">
 
-<h2>wissenwerkommt</h2>
-
-Team-ID: <input id="teamid" type="text" maxlength="64" value="fbhh">
-Datetime: <input id="datetime" type="text" maxlength="64" value="2018-09-13T18:30">
-Name: <input id="name" type="text" maxlength="64" value="sven">
-<button type="button" onclick="getTeam()">load</button>
-<button type="button" onclick="changeStatus('attend')">attend</button>
-<button type="button" onclick="changeStatus('refuse')">refuse</button>
-<button type="button" onclick="changeStatus('undecided')">undecided</button>
-
-<br><br><div id="status"></div>
-<br><div id="teams"></div>
+<div id="welcomemessage"></div>
+<div id="main"></div>
 
 <script>
+
+function updateView(json) {  
+  var team=JSON.parse(json);
+  let main=document.getElementById("main");
+  if (!team) {
+	// MAIN-page if no team is requested
+  	serverRequest('getListOfTeamIDs',{},(r)=>{main.innerHTML+="Here is a list of all teams: "; r=JSON.parse(r); r.forEach((t)=>{main.innerHTML+='<a href=/'+t+'>'+t+'</a> '})});
+  } else {
+	main.innerHTML = '<h2><a href=/'+team.id+'>'+team.name+'</a></h2>';
+	team.events.forEach(function (e) {
+		main.innerHTML+=''+e.datetime+' ('+(!e.attendees?0:e.attendees.length)+') '
+		+'<button onclick=changeStatus("attend","'+team.id+'","'+e.datetime+'")>attend</button> '
+		+'<button onclick=changeStatus("refuse","'+team.id+'","'+e.datetime+'")>refuse</button> '
+		+'<button onclick=changeStatus("undecided","'+team.id+'","'+e.datetime+'")>undecided</button> '
+		+(!e.attendees?'':e.attendees)+'<br>';
+	});
+	main.innerHTML += '<br>'+JSON.stringify(team);
+  }
+}
+
 function getTeam(teamid) {
-  if (!teamid) {teamid=document.getElementById('teamid').value;}
-  ajax((r)=>{updateView(r)},{action:'getTeam',teamid:teamid});
-}
-
-function changeStatus(status,teamid,datetime,name) {
-  if (!teamid) {teamid=document.getElementById('teamid').value;}
-  if (!datetime) {datetime=document.getElementById('datetime').value;}
-  if (!name) {name=document.getElementById('name').value;}
-  ajax((r)=>{updateStatus(r)},{action:status,teamid:teamid,datetime:datetime,name:name});
-}
-
-function updateView(json) {
-  let o=JSON.parse(json);
-  document.getElementById("teams").innerHTML = JSON.stringify(o);
+  if (!teamid) {teamid=window.location.pathname.substr(1)};
+  serverRequest('getTeam',{teamid:teamid},(r)=>{updateView(r)});
 }
 
 function updateStatus(json) {
-  let o=JSON.parse(json);
-  document.getElementById("status").innerHTML = JSON.stringify(o);
+  //let o=JSON.parse(json);
+  //document.getElementById("status").innerHTML = JSON.stringify(o);
   getTeam();
 }
 
-function ajax(callback,json) {
+function updateWelcomeMessage(name) {
+  document.getElementById('welcomemessage').innerHTML='Welcome, <button onclick=askCookie("name")>'+name+'</button>.';
+}
+
+function changeStatus(status,teamid,datetime,name) {
+  if (!teamid) {teamid=window.location.pathname.substr(1)};
+  //if (!datetime) {datetime=document.getElementById('datetime').value;}
+  if (!name) {name=getCookie('name')};
+  serverRequest(status,{teamid:teamid,datetime:datetime,name:name},(r)=>{updateStatus(r)});
+}
+
+function serverRequest(apicall,json,callback) {
   var req = new XMLHttpRequest();
   req.onreadystatechange = function() {if (this.readyState == 4 && this.status == 200) {callback(this.responseText)}};
-  req.open("POST","/api/ajax",true);
+  req.open("POST","/api/"+apicall,true);
   req.setRequestHeader("Content-Type","application/json;charset=UTF-8");
   req.send(JSON.stringify(json));
 }
+
+
+function askCookie(cname) {
+    preval=getCookie(cname,true);
+    val = prompt("Please enter "+cname, preval);
+    return setCookie(cname, val, -1); //-1 = sessioncookie
+}
+
+function setCookie(cname, cvalue, exdays) {
+    var expires='';
+    if (cvalue==""||cvalue==null) {exdays=0} //0 = delete cookie
+    if (exdays>=0) {
+    	var d = new Date();
+    	d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+    	expires = "expires="+d.toUTCString();
+    }
+    document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+    return getCookie(cname,true);
+    //return cvalue;
+}
+
+function getCookie(cname,dontask) {
+    var name = cname + "=";
+    var ca = document.cookie.split(';');
+    for(var i = 0; i < ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0) == ' ') {
+            c = c.substring(1);
+        }
+        if (c.indexOf(name) == 0) {
+            let res=c.substring(name.length, c.length);
+		    updateWelcomeMessage(res);
+            return res;
+        }
+    }
+    if (!dontask) {return askCookie(cname)} else {updateWelcomeMessage('unknown'); return undefined};
+}
+
 </script>
 
 </body>
