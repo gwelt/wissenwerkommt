@@ -12,7 +12,7 @@ var db=new Group();
 server.listen(port, function () {
   console.log('Server listening at port %d', port);
   db.load_from_file('data.json',(group)=>{console.log(JSON.stringify(group))});
-  db.addTeam({"id":"fbhh","name":"Fußball","recurrence":[{"weekday":4,"time":"18:30"}],"admintoken":"secret"});
+  db.addTeam({"id":"fbhh","name":"Fußball","recurrence":[{"weekday":4,"time":"18:30"}],"admintoken":"secret","teamtoken":"123"});
 });
 
 app.use(express.static(path.join(__dirname, 'public')));
@@ -21,6 +21,11 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/api/:r/:t?', function (req, res) {
   switch (req.params.r) {
+
+    case 'getListOfTeamIDs':
+      res.json(db.getListOfTeamIDs());
+      break;
+
     case 'getTeam':
       res.json(db.getTeam(req.params.t||req.body.teamid));
       break;
@@ -36,11 +41,25 @@ app.use('/api/:r/:t?', function (req, res) {
       let uevent=db.findEvent(req.body.teamid,req.body.datetime);
       if (uevent) {res.json(uevent.undecided(req.body.name))} else {res.json(false)}
       break;
-    case 'getListOfTeamIDs':
-      res.json(db.getListOfTeamIDs());
+
+    case 'addTeam':
+      res.json(db.addTeam(req.body));
+      //res.json(db.addTeam({"id":"fbhh","name":"Testteam","recurrence":[{"weekday":4,"time":"18:30"},{"weekday":3,"time":"20:00"}]}));
       break;
+    case 'editTeam':
+      res.json(db.editTeam(req.body));
+      break;
+    case 'deleteTeam':
+      res.json(db.deleteTeam(req.body));
+      break;
+
+    case 'stats':
+      res.json(db.stats());
+      break;
+
     default:
       res.json({'error':'not a valid AJAX-API-call'});
+
   }
 })
 
@@ -128,7 +147,7 @@ function Group() {}
 
 function Team(json) {
   //todo: stealthen
-  this.id=json.hasOwnProperty('id')?json.id:undefined;
+  this.id=((json.hasOwnProperty('id'))&&(json.id.length))?json.id:undefined;
   this.name=(json.hasOwnProperty('name')&&(json.name.length))?json.name:undefined;
   if (json.recurrence instanceof Array) {
     this.recurrence=[];
@@ -265,7 +284,7 @@ Group.prototype.deleteTeam = function(json) {
   if ( (json.hasOwnProperty('id')) && (this.findTeam(json.id)) ) {
     this.teams=this.teams.filter(t=>t.id!==json.id);
     if (!this.teams.length) {this.teams=undefined; return [];};
-    return this.teams;
+    return true;
   } else {return false}
 }
 
@@ -276,9 +295,9 @@ Group.prototype.stats = function() {
   let attendCount=0;
   let refusalCount=0;
   try {teamCount=this.teams.length} catch(e) {};
-  try {eventCount=this.teams.reduce((a,t)=>a+t.events.length,0)} catch(e) {};
-  try {attendCount=this.teams.reduce((a,t)=>a+t.events.reduce((b,u)=>b+((u.attendees instanceof Array)?u.attendees.length:0),0),0)} catch(e) {};
-  try {refusalCount=this.teams.reduce((a,t)=>a+t.events.reduce((b,u)=>b+((u.refusals instanceof Array)?u.refusals.length:0),0),0)} catch(e) {};
+  eventCount=this.teams.reduce((a,t)=>a+=t.events?t.events.length:0,0);
+  attendCount=this.teams.reduce((a,t)=>a+=t.events?t.events.reduce((b,u)=>b+=u.attendees?u.attendees.length:0,0):0,0);
+  refusalCount=this.teams.reduce((a,t)=>a+=t.events?t.events.reduce((b,u)=>b+=u.refusals?u.refusals.length:0,0):0,0);
   return {"teams":teamCount,"events":eventCount,"attendees":attendCount,"refusals":refusalCount};
 }
 
