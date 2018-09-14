@@ -207,7 +207,7 @@ Group.prototype.load_from_file = function(filename,callback) {
       if (group.hasOwnProperty('teams')) {
         group.teams.forEach((t)=>{
           let team=this.addTeam(t);
-          if (t.hasOwnProperty('events')) {
+          if ((team)&&(t.hasOwnProperty('events'))) {
             t.events.forEach((e)=>{team.addEvent(e)});
           } 
         });
