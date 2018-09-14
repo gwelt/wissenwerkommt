@@ -22,20 +22,27 @@ function updateView(json) {
 		let minute=0; while (minute<60) {minute<10?minute='0'+minute:true;minute_selection+='<option value="'+minute+'">'+minute+'</option>';minute=minute*1+15;}
 		minute_selection+='</select>';
 
-		main.innerHTML='<input type="text" id="teamid" value="id"> <input type="text" id="name" value="name"> '+weekday_selection+' '+hour_selection+' '+minute_selection +' <button onclick=addTeam()>create Team</button> <button onclick=editTeam()>update Team</button> <button onclick=deleteTeam()>delete Team</button><br>';
-  	serverRequest('getListOfTeamIDs',{},(r)=>{main.innerHTML+="Here is a list of all teams: "; r=JSON.parse(r); r.forEach((t)=>{main.innerHTML+='<a href=/'+t+'>'+t+'</a> '})});
+		main.innerHTML='<input type="text" id="teamid" value="'+((window.location.pathname.substr(1))||'teamid')+'"> <input type="text" id="name" value="name"> '+weekday_selection+' '+hour_selection+' '+minute_selection +' <button onclick=addTeam()>create Team</button> <button onclick=editTeam()>update Team</button> <button onclick=deleteTeam()>delete Team</button>';
+  	main.innerHTML+='<br><button onclick=load()>load</button> <button onclick=save()>save</button> <button onclick=dump()>dump</button>';
+  	serverRequest('getListOfTeamIDs',{},(r)=>{main.innerHTML+="<br>Here is a list of all teams: "; r=JSON.parse(r); r.forEach((t)=>{main.innerHTML+='<a href=/'+t+'>'+t+'</a> '})});
   	serverRequest('stats',{},(r)=>{main.innerHTML+="<br>Here are some stats: "+r});
   } else {
 		// TEAM-page
-		main.innerHTML = '<h2><a href=/'+team.id+'>'+team.name+'</a></h2>';
+		main.innerHTML = '<h2><a href=/'+team.teamid+'>'+team.name+'</a></h2>';
 		team.events?team.events.forEach(function (e) {
 			main.innerHTML+=['So','Mo','Di','Mi','Do','Fr','Sa'][new Date(e.datetime).getDay()]+' '+e.datetime+' ('+(!e.attendees?0:e.attendees.length)+') '
 			+'<button onclick=changeStatus("attend","'+e.datetime+'")>attend</button> '
 			+'<button onclick=changeStatus("refuse","'+e.datetime+'")>refuse</button> '
 			+'<button onclick=changeStatus("undecided","'+e.datetime+'")>undecided</button> '
+			+'<button onclick=cancelEvent("'+e.datetime+'")>cancel event</button> '
+			+'<button onclick=reviveEvent("'+e.datetime+'")>revive event</button> '
+			+'<button onclick=deleteEvent("'+e.datetime+'")>delete event</button> '
+			+'<input type="text" id="comment'+e.datetime+'" value="Kommentar"> '
+			+'<button onclick=commentEvent("'+e.datetime+'")>comment event</button> '
 			+(!e.attendees?'':'JA:'+e.attendees)+' '
 			+(!e.refusals?'':'NEIN:'+e.refusals)+'<br>';
 		}):false;
+		main.innerHTML+='<br><input type="text" id="datetime" value="2018-09-21T19:00"> <input type="text" id="comment" value="Turnbeutel nicht vergessen"> <button onclick=addEvent()>add Event</button><br>';
 		main.innerHTML += '<br>Team-JSON: '+JSON.stringify(team);
   }
 }
@@ -61,16 +68,48 @@ function changeStatus(status,datetime) {
 }
 
 function addTeam() {
-	serverRequest('addTeam',{id:document.getElementById('teamid').value,name:document.getElementById('name').value,recurrence:[{weekday:document.getElementById('weekday').value,time:document.getElementById('hour').value+':'+document.getElementById('minute').value}]},(r)=>{updateStatus(r)});
+	serverRequest('addTeam',{teamid:document.getElementById('teamid').value,name:document.getElementById('name').value,recurrence:[{weekday:document.getElementById('weekday').value,time:document.getElementById('hour').value+':'+document.getElementById('minute').value}]},(r)=>{updateStatus(r)});
 	//res.json(db.addTeam({"id":"fbhh","name":"Testteam","recurrence":[{"weekday":4,"time":"18:30"},{"weekday":3,"time":"20:00"}]}));
 }
 
 function editTeam() {
-	serverRequest('editTeam',{id:document.getElementById('teamid').value,name:document.getElementById('name').value,recurrence:[{weekday:document.getElementById('weekday').value,time:document.getElementById('hour').value+':'+document.getElementById('minute').value}]},(r)=>{updateStatus(r)});
+	serverRequest('editTeam',{teamid:document.getElementById('teamid').value,name:document.getElementById('name').value,recurrence:[{weekday:document.getElementById('weekday').value,time:document.getElementById('hour').value+':'+document.getElementById('minute').value}]},(r)=>{updateStatus(r)});
 }
 
 function deleteTeam() {
-	serverRequest('deleteTeam',{id:document.getElementById('teamid').value},(r)=>{updateStatus(r)});
+	serverRequest('deleteTeam',{teamid:document.getElementById('teamid').value},(r)=>{updateStatus(r)});
+}
+
+function addEvent() {
+	serverRequest('addEvent',{teamid:window.location.pathname.substr(1),datetime:document.getElementById('datetime').value,comment:document.getElementById('comment').value},(r)=>{updateStatus(r)});
+}
+
+function cancelEvent(datetime) {
+	serverRequest('cancelEvent',{teamid:window.location.pathname.substr(1),datetime:datetime},(r)=>{updateStatus(r)});
+}
+
+function reviveEvent(datetime) {
+	serverRequest('reviveEvent',{teamid:window.location.pathname.substr(1),datetime:datetime},(r)=>{updateStatus(r)});
+}
+
+function commentEvent(datetime) {
+	serverRequest('commentEvent',{teamid:window.location.pathname.substr(1),datetime:datetime,comment:document.getElementById('comment'+datetime).value},(r)=>{updateStatus(r)});
+}
+
+function deleteEvent(datetime) {
+	serverRequest('deleteEvent',{teamid:window.location.pathname.substr(1),datetime:datetime},(r)=>{updateStatus(r)});
+}
+
+function load() {
+	serverRequest('load',{},(r)=>{updateStatus(r)});
+}
+
+function save() {
+	serverRequest('save',{},(r)=>{updateStatus(r)});
+}
+
+function dump() {
+	serverRequest('dump',{},(r)=>{updateStatus(r)});
 }
 
 function serverRequest(apicall,json,callback) {

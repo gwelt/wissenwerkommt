@@ -12,7 +12,7 @@ var db=new Group();
 server.listen(port, function () {
   console.log('Server listening at port %d', port);
   db.load_from_file('data.json',(group)=>{console.log(JSON.stringify(group))});
-  db.addTeam({"id":"fbhh","name":"Fußball","recurrence":[{"weekday":4,"time":"18:30"}],"admintoken":"secret","teamtoken":"123"});
+  //db.addTeam({"teamid":"fbhh","name":"Fußball","recurrence":[{"weekday":4,"time":"18:30"}],"admintoken":"secret","teamtoken":"123"});
 });
 
 app.use(express.static(path.join(__dirname, 'public')));
@@ -44,7 +44,6 @@ app.use('/api/:r/:t?', function (req, res) {
 
     case 'addTeam':
       res.json(db.addTeam(req.body));
-      //res.json(db.addTeam({"id":"fbhh","name":"Testteam","recurrence":[{"weekday":4,"time":"18:30"},{"weekday":3,"time":"20:00"}]}));
       break;
     case 'editTeam':
       res.json(db.editTeam(req.body));
@@ -53,8 +52,38 @@ app.use('/api/:r/:t?', function (req, res) {
       res.json(db.deleteTeam(req.body));
       break;
 
+    case 'addEvent':
+      let ateam=db.findTeam(req.body.teamid);
+      if (ateam) {res.json(ateam.addEvent({"datetime":req.body.datetime,"comment":req.body.comment}))} else {res.json(false)}
+      break;
+    case 'cancelEvent':
+      let devent=db.findEvent(req.body.teamid,req.body.datetime);
+      if (devent) {res.json(devent.cancelEvent())} else {res.json(false)}
+      break;
+    case 'reviveEvent':
+      let vevent=db.findEvent(req.body.teamid,req.body.datetime);
+      if (vevent) {res.json(vevent.reviveEvent())} else {res.json(false)}
+      break;
+    case 'commentEvent':
+      let cevent=db.findEvent(req.body.teamid,req.body.datetime);
+      if (cevent) {res.json(cevent.commentEvent(req.body.comment))} else {res.json(false)}
+      break;
+    case 'deleteEvent':
+      let dteam=db.findTeam(req.body.teamid);
+      if (dteam) {res.json(dteam.deleteEvent({"datetime":req.body.datetime}))} else {res.json(false)}
+      break;
+
     case 'stats':
       res.json(db.stats());
+      break;
+    case 'load':
+      db.load_from_file('data.json',(group)=>{res.json(group)});
+      break;
+    case 'save':
+      db.save_to_file('data.json',(group)=>{res.json(group)});
+      break;
+    case 'dump':
+      res.json(db);
       break;
 
     default:
@@ -88,13 +117,13 @@ app.use('/testapi/:r', function (req, res, next) {
       break;
 
     case 'addTeam':
-      res.json(db.addTeam({"id":"fbhh","name":"Testteam","recurrence":[{"weekday":4,"time":"18:30"},{"weekday":3,"time":"20:00"}]}));
+      res.json(db.addTeam({"teamid":"fbhh","name":"Testteam","recurrence":[{"weekday":4,"time":"18:30"},{"weekday":3,"time":"20:00"}]}));
       break;
     case 'editTeam':
-      res.json(db.editTeam({"id":"fbhh","name":"","recurrence":[]}));
+      res.json(db.editTeam({"teamid":"fbhh","name":"","recurrence":[]}));
       break;
     case 'deleteTeam':
-      res.json(db.deleteTeam({"id":"fbhh"}));
+      res.json(db.deleteTeam({"teamid":"fbhh"}));
       break;
 
     case 'addEvent':
@@ -147,7 +176,7 @@ function Group() {}
 
 function Team(json) {
   //todo: stealthen
-  this.id=((json.hasOwnProperty('id'))&&(json.id.length))?json.id:undefined;
+  this.teamid=((json.hasOwnProperty('teamid'))&&(json.teamid.length))?json.teamid:undefined;
   this.name=(json.hasOwnProperty('name')&&(json.name.length))?json.name:undefined;
   if (json.recurrence instanceof Array) {
     this.recurrence=[];
@@ -166,7 +195,7 @@ function Event(json) {
   this.attendees=(json.attendees instanceof Array)?json.attendees:undefined;
   this.refusals=(json.refusals instanceof Array)?json.refusals:undefined;
   this.cancelled=json.hasOwnProperty('cancelled')?json.cancelled:undefined;
-  this.comment=json.hasOwnProperty('comment')?json.comment:undefined;
+  this.comment=(json.hasOwnProperty('comment')&&(json.comment.length))?json.comment:undefined;
 }
 
 Group.prototype.load_from_file = function(filename,callback) {
@@ -196,14 +225,14 @@ Group.prototype.save_to_file = function(filename,callback) {
 Group.prototype.getListOfTeamIDs = function() {
   //todo: use of sysop-token (?)
   if (this.teams instanceof Array) {
-    return this.teams.map(t=>t.id);
+    return this.teams.map(t=>t.teamid);
   } else {return false}
 }
 
 Group.prototype.findTeam = function(teamid) {
   //todo: use of teamtoken
   if (this.teams instanceof Array) {
-    return this.teams.find(t => t.id==teamid)||false;
+    return this.teams.find(t => t.teamid==teamid)||false;
   } else {return false}
 }
 
@@ -253,7 +282,7 @@ function getNextDaysWithWeekday(weekday,count) {
 
 Group.prototype.addTeam = function(json) {
   let team=new Team(json);
-  if ( (typeof team.id !== 'undefined') && (!this.findTeam(team.id)) )
+  if ( (typeof team.teamid !== 'undefined') && (!this.findTeam(team.teamid)) )
   {
     if (!(this.teams instanceof Array)) {this.teams=[]};
     this.teams.push(team);
@@ -267,7 +296,7 @@ Group.prototype.editTeam = function(json) {
   //todo: use of admintoken
   // create a temporary team-object to make use of data-checks in constructor
   let editTeam=new Team(json);
-  let team=this.findTeam(editTeam.id);
+  let team=this.findTeam(editTeam.teamid);
   if (team) {
     // check for each property, if json-key (!) is not undefined
     // editTeam[key] may be undefined because the constructor made it undefined ... that's ok!
@@ -281,8 +310,8 @@ Group.prototype.editTeam = function(json) {
 
 Group.prototype.deleteTeam = function(json) {
   //todo: use of admintoken
-  if ( (json.hasOwnProperty('id')) && (this.findTeam(json.id)) ) {
-    this.teams=this.teams.filter(t=>t.id!==json.id);
+  if ( (json.hasOwnProperty('teamid')) && (this.findTeam(json.teamid)) ) {
+    this.teams=this.teams.filter(t=>t.teamid!==json.teamid);
     if (!this.teams.length) {this.teams=undefined; return [];};
     return true;
   } else {return false}
@@ -371,8 +400,9 @@ Event.prototype.undecided = function(name) {
 Event.prototype.commentEvent = function(comment) {
   //todo: use of teamtoken
   //todo: stealthen
-  if (issafe(name)) {
+  if (issafe(comment)) {
     this.comment=comment;
+    if ((this.hasOwnProperty('comment'))&&(!this.comment.length)) {this.comment=undefined}
     return this;
   } else {return false}
 }
@@ -398,7 +428,7 @@ function auth(str,hash) {
   return ( (typeof hash === 'undefined') || (hash === crypt(str)) );
 }
 function safe_text(text) {return unescape(text).replace(/[^\w\s\däüöÄÜÖß\.,'!\@#$^&%*()\+=\-\[\]\/{}\|:\?]/g,'').slice(0,256)}
-function issafe(text) {return !!text}
+function issafe(text) {return text==safe_text(text)}
 
 process.on('SIGINT', function(){console.log('SIGINT'); process.exit()});
 process.on('SIGTERM', function(){console.log('SIGTERM'); process.exit()});
