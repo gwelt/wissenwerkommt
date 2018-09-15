@@ -2,7 +2,6 @@ var express = require('express');
 var bodyParser = require('body-parser');
 var app = express();
 var server = require('http').createServer(app);
-//var io = require('socket.io')(server);
 var fs = require('fs');
 var path = require('path');
 var config = {};
@@ -12,7 +11,6 @@ var db=new Group();
 server.listen(port, function () {
   console.log('Server listening at port %d', port);
   db.load_from_file('data.json',(group)=>{console.log(JSON.stringify(group))});
-  //db.addTeam({"teamid":"fbhh","name":"Fußball","recurrence":[{"weekday":4,"time":"18:30"}],"admintoken":"secret","teamtoken":"123"});
 });
 
 app.use(express.static(path.join(__dirname, 'public')));
@@ -20,159 +18,119 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/api/:r/:t?', function (req, res) {
+  
   switch (req.params.r) {
 
+    // open
     case 'getListOfTeamIDs':
       res.json(db.getListOfTeamIDs());
       break;
-
-    case 'getTeam':
-      res.json(db.getTeam(req.params.t||req.body.teamid));
-      break;
-    case 'attend':
-      let aevent=db.findEvent(req.body.teamid,req.body.datetime);
-      if (aevent) {res.json(aevent.attend(req.body.name))} else {res.json(false)}
-      break;
-    case 'refuse':
-      let revent=db.findEvent(req.body.teamid,req.body.datetime);
-      if (revent) {res.json(revent.refuse(req.body.name))} else {res.json(false)}
-      break;
-    case 'undecided':
-      let uevent=db.findEvent(req.body.teamid,req.body.datetime);
-      if (uevent) {res.json(uevent.undecided(req.body.name))} else {res.json(false)}
-      break;
-
     case 'addTeam':
       res.json(db.addTeam(req.body));
       break;
-    case 'editTeam':
-      res.json(db.editTeam(req.body));
-      break;
-    case 'deleteTeam':
-      res.json(db.deleteTeam(req.body));
-      break;
-
-    case 'addEvent':
-      let ateam=db.findTeam(req.body.teamid);
-      if (ateam) {res.json(ateam.addEvent({"datetime":req.body.datetime,"comment":req.body.comment}))} else {res.json(false)}
-      break;
-    case 'cancelEvent':
-      let devent=db.findEvent(req.body.teamid,req.body.datetime);
-      if (devent) {res.json(devent.cancelEvent())} else {res.json(false)}
-      break;
-    case 'reviveEvent':
-      let vevent=db.findEvent(req.body.teamid,req.body.datetime);
-      if (vevent) {res.json(vevent.reviveEvent())} else {res.json(false)}
-      break;
-    case 'commentEvent':
-      let cevent=db.findEvent(req.body.teamid,req.body.datetime);
-      if (cevent) {res.json(cevent.commentEvent(req.body.comment))} else {res.json(false)}
-      break;
-    case 'deleteEvent':
-      let dteam=db.findTeam(req.body.teamid);
-      if (dteam) {res.json(dteam.deleteEvent({"datetime":req.body.datetime}))} else {res.json(false)}
-      break;
-
     case 'stats':
       res.json(db.stats());
       break;
+
+    // team members only
+    case 'getTeam':
+      if (getUserLevel(req)>-1) {
+        res.json(db.getTeam(req.params.t||req.body.teamid));
+      } else {res.json({'error':'not sufficient rights to do that'})}
+      break;
+    case 'attend':
+      if (getUserLevel(req)>0) {
+        let aevent=db.findEvent(req.body.teamid,req.body.datetime);
+        if (aevent) {res.json(aevent.attend(req.body.name))} else {res.json(false)}
+      } else {res.json({'error':'not sufficient rights to do that'})}
+      break;
+    case 'refuse':
+      if (getUserLevel(req)>0) {
+        let revent=db.findEvent(req.body.teamid,req.body.datetime);
+        if (revent) {res.json(revent.refuse(req.body.name))} else {res.json(false)}
+      } else {res.json({'error':'not sufficient rights to do that'})}
+      break;
+    case 'undecided':
+      if (getUserLevel(req)>0) {
+        let uevent=db.findEvent(req.body.teamid,req.body.datetime);
+        if (uevent) {res.json(uevent.undecided(req.body.name))} else {res.json(false)}
+      } else {res.json({'error':'not sufficient rights to do that'})}
+      break;
+    case 'commentEvent':
+      if (getUserLevel(req)>0) {
+        let cevent=db.findEvent(req.body.teamid,req.body.datetime);
+        if (cevent) {res.json(cevent.commentEvent(req.body.comment))} else {res.json(false)}
+      } else {res.json({'error':'not sufficient rights to do that'})}
+      break;
+  
+    // team admins only
+    case 'editTeam':
+        if (getUserLevel(req)>1) {
+        res.json(db.editTeam(req.body));
+      } else {res.json({'error':'not sufficient rights to do that'})}
+      break;
+    case 'deleteTeam':
+        if (getUserLevel(req)>1) {
+        res.json(db.deleteTeam(req.body));
+      } else {res.json({'error':'not sufficient rights to do that'})}
+      break;
+    case 'addEvent':
+      if (getUserLevel(req)>1) {
+        let ateam=db.findTeam(req.body.teamid);
+        if (ateam) {res.json(ateam.addEvent({"datetime":req.body.datetime,"comment":req.body.comment}))} else {res.json(false)}
+      } else {res.json({'error':'not sufficient rights to do that'})}
+      break;
+    case 'cancelEvent':
+      if (getUserLevel(req)>1) {
+        let devent=db.findEvent(req.body.teamid,req.body.datetime);
+        if (devent) {res.json(devent.cancelEvent())} else {res.json(false)}
+      } else {res.json({'error':'not sufficient rights to do that'})}
+      break;
+    case 'reviveEvent':
+      if (getUserLevel(req)>1) {
+        let vevent=db.findEvent(req.body.teamid,req.body.datetime);
+        if (vevent) {res.json(vevent.reviveEvent())} else {res.json(false)}
+      } else {res.json({'error':'not sufficient rights to do that'})}
+      break;
+    case 'deleteEvent':
+      if (getUserLevel(req)>1) {
+        let dteam=db.findTeam(req.body.teamid);
+        if (dteam) {res.json(dteam.deleteEvent({"datetime":req.body.datetime}))} else {res.json(false)}
+      } else {res.json({'error':'not sufficient rights to do that'})}
+      break;
+
+    // sysops only
     case 'load':
-      db.load_from_file('data.json',(group)=>{res.json(group)});
+      if (getUserLevel(req)>2) {
+        db.load_from_file('data.json',(db)=>{res.json(db)});
+      } else {res.json({'error':'not sufficient rights to do that'})}
       break;
     case 'save':
-      db.save_to_file('data.json',(group)=>{res.json(group)});
+      if (getUserLevel(req)>2) {
+        db.save_to_file('data.json',(db)=>{res.json(db)});
+      } else {res.json({'error':'not sufficient rights to do that'})}
       break;
     case 'dump':
-      res.json(db);
+      if (getUserLevel(req)>2) {
+        res.json(db);
+      } else {res.json({'error':'not sufficient rights to do that'})}
       break;
 
     default:
       res.json({'error':'not a valid AJAX-API-call'});
 
   }
+
 })
 
 app.use(function(req, res, next){
   res.sendFile('index.html', { root: path.join(__dirname, 'public')});
 });
 
-/*
-app.use('/testapi/:r', function (req, res, next) {
-  res.setHeader('Access-Control-Allow-Origin','*');
-  switch (req.params.r) {
-    case 'getTeam':
-      res.json(db.getTeam('fbhh'));
-      break;
-    case 'attend':
-      let aevent=db.findEvent('fbhh','2018-09-13T18:30');
-      if (aevent) {res.json(aevent.attend('sven'))} else {res.json(false)}
-      break;
-    case 'refuse':
-      let revent=db.findEvent('fbhh','2018-09-13T18:30');
-      if (revent) {res.json(revent.refuse('sven'))} else {res.json(false)}
-      break;
-    case 'undecided':
-      let uevent=db.findEvent('fbhh','2018-09-13T18:30');
-      if (uevent) {res.json(uevent.undecided('sven'))} else {res.json(false)}
-      break;
 
-    case 'addTeam':
-      res.json(db.addTeam({"teamid":"fbhh","name":"Testteam","recurrence":[{"weekday":4,"time":"18:30"},{"weekday":3,"time":"20:00"}]}));
-      break;
-    case 'editTeam':
-      res.json(db.editTeam({"teamid":"fbhh","name":"","recurrence":[]}));
-      break;
-    case 'deleteTeam':
-      res.json(db.deleteTeam({"teamid":"fbhh"}));
-      break;
-
-    case 'addEvent':
-      let ateam=db.findTeam('fbhh');
-      if (ateam) {res.json(ateam.addEvent({"datetime":"2018-10-13T11:11","comment":"manually added event"}))} else {res.json(false)}
-      break;
-    case 'cancelEvent':
-      let devent=db.findEvent('fbhh','2018-09-13T18:30');
-      if (devent) {res.json(devent.cancelEvent())} else {res.json(false)}
-      break;
-    case 'reviveEvent':
-      let vevent=db.findEvent('fbhh','2018-09-13T18:30');
-      if (vevent) {res.json(vevent.reviveEvent())} else {res.json(false)}
-      break;
-    case 'commentEvent':
-      let cevent=db.findEvent('fbhh','2018-09-13T18:30');
-      if (cevent) {res.json(cevent.commentEvent('Kommentar zum Event.'))} else {res.json(false)}
-      break;
-    case 'deleteEvent':
-      let dteam=db.findTeam('fbhh');
-      if (dteam) {res.json(dteam.deleteEvent({"datetime":"2018-10-13T11:11"}))} else {res.json(false)}
-      break;
-
-    case 'load':
-      db.load_from_file('data.json',(group)=>{res.json(group)});
-      break;
-    case 'save':
-      db.save_to_file('data.json',(group)=>{res.json(group)});
-      break;
-    case 'stats':
-      res.json(db.status());
-      break;
-    case 'dump':
-      res.json(db);
-      break;
-    case 'findTeam':
-      res.json(db.findTeam('99'));
-      break;
-    case 'findEvent':
-      res.json(db.findEvent('99','2018-10-01T10:00'));
-      break;
-    default:
-      res.send('not a valid API-call');
-  }
-})
-*/
-
-
-function Group() {}
+function Group() {
+  this.teams=[];
+}
 
 function Team(json) {
   //todo: stealthen
@@ -198,46 +156,13 @@ function Event(json) {
   this.comment=(json.hasOwnProperty('comment')&&(json.comment.length))?json.comment:undefined;
 }
 
-Group.prototype.load_from_file = function(filename,callback) {
-  //todo: use of sysop-token
-  this.teams=[];
-  fs.readFile(filename, 'utf8', (err, data)=>{
-    if (err){console.log('No data-file.')} else {
-      try {group = JSON.parse(data)} catch (err) {group={}};
-      if (group.hasOwnProperty('teams')) {
-        group.teams.forEach((t)=>{
-          let team=this.addTeam(t);
-          if ((team)&&(t.hasOwnProperty('events'))) {
-            t.events.forEach((e)=>{team.addEvent(e)});
-          } 
-        });
-      }
-    }
-    callback(this);
-  });
-}
-
-Group.prototype.save_to_file = function(filename,callback) {
-  //todo: use of sysop-token
-  fs.writeFile(filename, JSON.stringify(this), 'utf8', (err)=>{console.log('File saved. Errors: '+err);callback(this)});
-}
-
 Group.prototype.getListOfTeamIDs = function() {
-  //todo: use of sysop-token (?)
   if (this.teams instanceof Array) {
     return this.teams.map(t=>t.teamid);
   } else {return false}
 }
 
-Group.prototype.findTeam = function(teamid) {
-  //todo: use of teamtoken
-  if (this.teams instanceof Array) {
-    return this.teams.find(t => t.teamid==teamid)||false;
-  } else {return false}
-}
-
 Group.prototype.getTeam = function(teamid) {
-  //todo: use of teamtoken
   let t=this.findTeam(teamid);
   if (t) {
     if (!(t.events instanceof Array)) {t.events=[]};
@@ -280,6 +205,35 @@ function getNextDaysWithWeekday(weekday,count) {
   return res;
 }
 
+Event.prototype.attend = function(name) {
+  //todo: stealthen
+  if (issafe(name)) {
+    if (!(this.attendees instanceof Array)) {this.attendees=[]};  
+    if (!this.attendees.includes(name)) {this.attendees.push(name)};
+    if (this.refusals instanceof Array) {this.refusals=this.refusals.filter(r=>r!==name); if (!this.refusals.length) {this.refusals=undefined};};
+    return this;
+  } else {return false}
+}
+
+Event.prototype.refuse = function(name) {
+  //todo: stealthen
+  if (issafe(name)) {
+    if (!(this.refusals instanceof Array)) {this.refusals=[]};
+    if (!this.refusals.includes(name)) {this.refusals.push(name)};
+    if (this.attendees instanceof Array) {this.attendees=this.attendees.filter(a=>a!==name); if (!this.attendees.length) {this.attendees=undefined};};
+    return this;
+  } else {return false}
+}
+
+Event.prototype.undecided = function(name) {
+  //todo: stealthen
+  if (issafe(name)) {
+    if (this.attendees instanceof Array) {this.attendees=this.attendees.filter(a=>a!==name); if (!this.attendees.length) {this.attendees=undefined};};
+    if (this.refusals instanceof Array) {this.refusals=this.refusals.filter(r=>r!==name); if (!this.refusals.length) {this.refusals=undefined};};
+    return this;
+  } else {return false}
+}
+
 Group.prototype.addTeam = function(json) {
   let team=new Team(json);
   if ( (typeof team.teamid !== 'undefined') && (!this.findTeam(team.teamid)) )
@@ -293,7 +247,6 @@ Group.prototype.addTeam = function(json) {
 }
 
 Group.prototype.editTeam = function(json) {
-  //todo: use of admintoken
   // create a temporary team-object to make use of data-checks in constructor
   let editTeam=new Team(json);
   let team=this.findTeam(editTeam.teamid);
@@ -309,42 +262,14 @@ Group.prototype.editTeam = function(json) {
 }
 
 Group.prototype.deleteTeam = function(json) {
-  //todo: use of admintoken
   if ( (json.hasOwnProperty('teamid')) && (this.findTeam(json.teamid)) ) {
     this.teams=this.teams.filter(t=>t.teamid!==json.teamid);
-    if (!this.teams.length) {this.teams=undefined; return [];};
+    //if (!this.teams.length) {this.teams=undefined; return [];};
     return true;
   } else {return false}
 }
 
-Group.prototype.stats = function() {
-  //todo: use of sysop-token
-  let teamCount=0;
-  let eventCount=0;
-  let attendCount=0;
-  let refusalCount=0;
-  try {teamCount=this.teams.length} catch(e) {};
-  eventCount=this.teams.reduce((a,t)=>a+=t.events?t.events.length:0,0);
-  attendCount=this.teams.reduce((a,t)=>a+=t.events?t.events.reduce((b,u)=>b+=u.attendees?u.attendees.length:0,0):0,0);
-  refusalCount=this.teams.reduce((a,t)=>a+=t.events?t.events.reduce((b,u)=>b+=u.refusals?u.refusals.length:0,0):0,0);
-  return {"teams":teamCount,"events":eventCount,"attendees":attendCount,"refusals":refusalCount};
-}
-
-Group.prototype.findEvent = function(teamid,datetime) {
-  //todo: use of teamtoken
-  let team=this.findTeam(teamid);
-  if (team) {return team.findEvent(datetime)} else {return false}
-}
-
-Team.prototype.findEvent = function(datetime) {
-  //todo: use of teamtoken
-  if (this.events instanceof Array) {
-    return this.events.find(e => e.datetime==datetime)||false;
-  } else {return false}
-}
-
 Team.prototype.addEvent = function(json) {
-  //todo: use of admintoken
   let event=new Event(json);
   if ( (typeof event.datetime !== 'undefined') && (!this.findEvent(event.datetime)) )
   {
@@ -356,49 +281,7 @@ Team.prototype.addEvent = function(json) {
   }
 }
 
-Team.prototype.deleteEvent = function(json) {
-  //todo: use of admintoken
-  if ( (json.hasOwnProperty('datetime')) && (this.findEvent(json.datetime)) ) {
-    this.events=this.events.filter(e=>e.datetime!==json.datetime);
-    if (!this.events.length) {this.events=undefined; return [];};
-    return this.events;
-  } else {return false}
-}
-
-Event.prototype.attend = function(name) {
-  //todo: use of teamtoken
-  //todo: stealthen
-  if (issafe(name)) {
-    if (!(this.attendees instanceof Array)) {this.attendees=[]};  
-    if (!this.attendees.includes(name)) {this.attendees.push(name)};
-    if (this.refusals instanceof Array) {this.refusals=this.refusals.filter(r=>r!==name); if (!this.refusals.length) {this.refusals=undefined};};
-    return this;
-  } else {return false}
-}
-
-Event.prototype.refuse = function(name) {
-  //todo: use of teamtoken
-  //todo: stealthen
-  if (issafe(name)) {
-    if (!(this.refusals instanceof Array)) {this.refusals=[]};
-    if (!this.refusals.includes(name)) {this.refusals.push(name)};
-    if (this.attendees instanceof Array) {this.attendees=this.attendees.filter(a=>a!==name); if (!this.attendees.length) {this.attendees=undefined};};
-    return this;
-  } else {return false}
-}
-
-Event.prototype.undecided = function(name) {
-  //todo: use of teamtoken
-  //todo: stealthen
-  if (issafe(name)) {
-    if (this.attendees instanceof Array) {this.attendees=this.attendees.filter(a=>a!==name); if (!this.attendees.length) {this.attendees=undefined};};
-    if (this.refusals instanceof Array) {this.refusals=this.refusals.filter(r=>r!==name); if (!this.refusals.length) {this.refusals=undefined};};
-    return this;
-  } else {return false}
-}
-
 Event.prototype.commentEvent = function(comment) {
-  //todo: use of teamtoken
   //todo: stealthen
   if (issafe(comment)) {
     this.comment=comment;
@@ -408,16 +291,75 @@ Event.prototype.commentEvent = function(comment) {
 }
 
 Event.prototype.cancelEvent = function() {
-  //todo: use of admintoken
   this.cancelled=true;
   return this;
 }
 
 Event.prototype.reviveEvent = function() {
-  //todo: use of admintoken
   this.cancelled=undefined;
   return this;
 }
+
+Team.prototype.deleteEvent = function(json) {
+  if ( (json.hasOwnProperty('datetime')) && (this.findEvent(json.datetime)) ) {
+    this.events=this.events.filter(e=>e.datetime!==json.datetime);
+    if (!this.events.length) {this.events=undefined; return [];};
+    return this.events;
+  } else {return false}
+}
+
+Group.prototype.stats = function() {
+  let teamCount=0;
+  let eventCount=0;
+  let attendCount=0;
+  let refusalCount=0;
+  try {teamCount=this.teams.length} catch(e) {};
+  eventCount=this.teams.reduce((a,t)=>a+=t.events?t.events.length:0,0);
+  attendCount=this.teams.reduce((a,t)=>a+=t.events?t.events.reduce((b,u)=>b+=u.attendees?u.attendees.length:0,0):0,0);
+  refusalCount=this.teams.reduce((a,t)=>a+=t.events?t.events.reduce((b,u)=>b+=u.refusals?u.refusals.length:0,0):0,0);
+  return {"teams":teamCount,"events":eventCount,"attendees":attendCount,"refusals":refusalCount};
+}
+
+Group.prototype.load_from_file = function(filename,callback) {
+  this.teams=[];
+  fs.readFile(filename, 'utf8', (err, data)=>{
+    if (err){console.log('No data-file.')} else {
+      try {group = JSON.parse(data)} catch (err) {group={}};
+      if (group.hasOwnProperty('teams')) {
+        group.teams.forEach((t)=>{
+          let team=this.addTeam(t);
+          if ((team)&&(t.hasOwnProperty('events'))) {
+            t.events.forEach((e)=>{team.addEvent(e)});
+          } 
+        });
+      }
+    }
+    callback(this);
+  });
+}
+
+Group.prototype.save_to_file = function(filename,callback) {
+  fs.writeFile(filename, JSON.stringify(this), 'utf8', (err)=>{console.log('File saved. Errors: '+err);callback(this)});
+}
+
+
+Group.prototype.findTeam = function(teamid) {
+  if (this.teams instanceof Array) {
+    return this.teams.find(t => t.teamid==teamid)||false;
+  } else {return false}
+}
+
+Group.prototype.findEvent = function(teamid,datetime) {
+  let team=this.findTeam(teamid);
+  if (team) {return team.findEvent(datetime)} else {return false}
+}
+
+Team.prototype.findEvent = function(datetime) {
+  if (this.events instanceof Array) {
+    return this.events.find(e => e.datetime==datetime)||false;
+  } else {return false}
+}
+
 
 
 const crypto = require('crypto');
@@ -427,6 +369,25 @@ function crypt(str) {
 function auth(str,hash) {
   return ( (typeof hash === 'undefined') || (hash === crypt(str)) );
 }
+
+function getUserLevel(req) {
+  let team=db.findTeam(req.params.t||req.body.teamid);
+  let userLevel=0; // not a member
+  if (team) {
+    if ((team.admintoken)&&(req.body.token==team.admintoken)) {
+      userLevel=2; // admin
+    } else {
+      if ((!team.teamtoken)||(req.body.token==team.teamtoken)) {
+        userLevel=1;  // team member
+        if (!team.admintoken) {userLevel=2} // admin
+      }
+    }
+  }
+  if (req.body.token=='sysop') {userLevel=3} // todo: sysop
+  //console.log('team:'+req.body.teamid+' teamtoken:'+team.teamtoken+' usertoken:'+req.body.token+' = '+userLevel);
+  return userLevel;
+};
+
 function safe_text(text) {return unescape(text).replace(/[^\w\s\däüöÄÜÖß\.,'!\@#$^&%*()\+=\-\[\]\/{}\|:\?]/g,'').slice(0,256)}
 function issafe(text) {return text==safe_text(text)}
 

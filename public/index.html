@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html>
-<body onload="getCookie('name',true);getTeam();">
+<body onload="updateWelcomeMessage();getTeam();">
 
 <div id="welcomemessage"></div>
 <div id="main"></div>
@@ -11,24 +11,23 @@
 function updateView(json) {  
   var team=json?JSON.parse(json):false;
   let main=document.getElementById("main");
-  if (!team) {
+  let weekday_selection='<select id="weekday"><option value="1">montags</option><option value="2">dienstags</option><option value="3">mittwochs</option><option value="4">donnerstags</option><option value="5">freitags</option><option value="6">samstags</option><option value="0">sonntags</option></select>';
+  let hour_selection='<select id="hour">';
+  let hour=-1; while (++hour<24) {hour<10?hour='0'+hour:true;hour_selection+='<option value="'+hour+'">'+hour+'</option>'}
+  hour_selection+='</select>';
+  let minute_selection='<select id="minute">';
+  let minute=0; while (minute<60) {minute<10?minute='0'+minute:true;minute_selection+='<option value="'+minute+'">'+minute+'</option>';minute=minute*1+15;}
+  minute_selection+='</select>';
+  if (!team||team.error) {
 		// MAIN-page if no team is requested
-		let weekday_selection='<select id="weekday"><option value="1">montags</option><option value="2">dienstags</option><option value="3">mittwochs</option><option value="4">donnerstags</option><option value="5">freitags</option><option value="6">samstags</option><option value="0">sonntags</option></select>';
-		let hour_selection='<select id="hour">';
-		let hour=-1; while (++hour<24) {hour<10?hour='0'+hour:true;hour_selection+='<option value="'+hour+'">'+hour+'</option>'}
-		hour_selection+='</select>';
-
-		let minute_selection='<select id="minute">';
-		let minute=0; while (minute<60) {minute<10?minute='0'+minute:true;minute_selection+='<option value="'+minute+'">'+minute+'</option>';minute=minute*1+15;}
-		minute_selection+='</select>';
-
-		main.innerHTML='<input type="text" id="teamid" value="'+((window.location.pathname.substr(1))||'teamid')+'"> <input type="text" id="name" value="name"> '+weekday_selection+' '+hour_selection+' '+minute_selection +' <button onclick=addTeam()>create Team</button> <button onclick=editTeam()>update Team</button> <button onclick=deleteTeam()>delete Team</button>';
-  	main.innerHTML+='<br><button onclick=load()>load</button> <button onclick=save()>save</button> <button onclick=dump()>dump</button>';
+    if (team.error) {document.getElementById("reply").innerHTML = '<br>The server answered: '+JSON.stringify(team);}
+		main.innerHTML='teamid:<input type="text" id="teamid" value="'+window.location.pathname.substr(1)+'"> name:<input type="text" id="name" value=""> teamtoken:<input type="text" id="teamtoken" value="'+(team.teamtoken||'')+'"> admintoken:<input type="text" id="admintoken" value="'+(team.admintoken||'')+'"> '+weekday_selection+' '+hour_selection+' '+minute_selection +' <button onclick=addTeam()>create Team</button> &nbsp; <button onclick=load()>load</button> <button onclick=save()>save</button> <button onclick=dump()>dump</button>';
   	serverRequest('getListOfTeamIDs',{},(r)=>{main.innerHTML+="<br>Here is a list of all teams: "; r=JSON.parse(r); r.forEach((t)=>{main.innerHTML+='<a href=/'+t+'>'+t+'</a> '})});
   	serverRequest('stats',{},(r)=>{main.innerHTML+="<br>Here are some stats: "+r});
   } else {
 		// TEAM-page
-		main.innerHTML = '<h2><a href=/'+team.teamid+'>'+team.name+'</a></h2>';
+		main.innerHTML='<h2><a href=/'+team.teamid+'>'+team.name+'</a></h2>';
+    main.innerHTML+='<input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'"> name:<input type="text" id="name" value="'+team.name+'"> teamtoken:<input type="text" id="teamtoken" value="'+(team.teamtoken||'')+'"> admintoken:<input type="text" id="admintoken" value="'+(team.admintoken||'')+'"> '+weekday_selection+' '+hour_selection+' '+minute_selection +' <button onclick=editTeam()>update Team</button> <button onclick=deleteTeam()>delete Team</button><br><br>';
 		team.events?team.events.forEach(function (e) {
 			main.innerHTML+=['So','Mo','Di','Mi','Do','Fr','Sa'][new Date(e.datetime).getDay()]+' '+e.datetime+' ('+(!e.attendees?0:e.attendees.length)+') '
 			+'<button onclick=changeStatus("attend","'+e.datetime+'")>attend</button> '
@@ -37,12 +36,12 @@ function updateView(json) {
 			+'<button onclick=cancelEvent("'+e.datetime+'")>cancel event</button> '
 			+'<button onclick=reviveEvent("'+e.datetime+'")>revive event</button> '
 			+'<button onclick=deleteEvent("'+e.datetime+'")>delete event</button> '
-			+'<input type="text" id="comment'+e.datetime+'" value="Kommentar"> '
-			+'<button onclick=commentEvent("'+e.datetime+'")>comment event</button> '
+      +'<input type="text" id="comment'+e.datetime+'" value="'+(e.comment||'')+'"> '
+      +'<button onclick=commentEvent("'+e.datetime+'")>comment event</button> '
 			+(!e.attendees?'':'JA:'+e.attendees)+' '
 			+(!e.refusals?'':'NEIN:'+e.refusals)+'<br>';
 		}):false;
-		main.innerHTML+='<br><input type="text" id="datetime" value="2018-09-21T19:00"> <input type="text" id="comment" value="Turnbeutel nicht vergessen"> <button onclick=addEvent()>add Event</button><br>';
+		main.innerHTML+='<br><input type="text" id="datetime" value="'+getDateString()+'T00:00"> <input type="text" id="comment" value="Turnbeutel nicht vergessen"> <button onclick=addEvent()>add Event</button><br>';
 		main.innerHTML += '<br>Team-JSON: '+JSON.stringify(team);
   }
 }
@@ -53,64 +52,71 @@ function updateStatus(json) {
   getTeam();
 }
 
-function updateWelcomeMessage(name) {
-  document.getElementById('welcomemessage').innerHTML='<a href=/>Welcome</a>, <button onclick=askCookie("name")>'+name+'</button>.';
+function updateWelcomeMessage() {
+  document.getElementById('welcomemessage').innerHTML='<a href=/>Welcome</a>, <button onclick=askCookie("name")>'+(getCookie('name',true)||'click here')+'</button> <button onclick=askCookie("token")>'+(getCookie('token',true)||'set token')+'</button>.';
 }
 
 
 function getTeam(teamid) {
   if (!teamid) {teamid=window.location.pathname.substr(1)};
-  serverRequest('getTeam',{teamid:teamid},(r)=>{updateView(r)});
+  if (teamid) {
+    serverRequest('getTeam',{token:getCookie('token',true),teamid:teamid},(r)=>{updateView(r)});
+  } else {updateView()}
 }
 
 function changeStatus(status,datetime) {
-  serverRequest(status,{teamid:window.location.pathname.substr(1),datetime:datetime,name:getCookie('name')},(r)=>{updateStatus(r)});
+  serverRequest(status,{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:datetime,name:getCookie('name')},(r)=>{updateStatus(r)});
 }
 
 function addTeam() {
-	serverRequest('addTeam',{teamid:document.getElementById('teamid').value,name:document.getElementById('name').value,recurrence:[{weekday:document.getElementById('weekday').value,time:document.getElementById('hour').value+':'+document.getElementById('minute').value}]},(r)=>{updateStatus(r)});
-	//res.json(db.addTeam({"id":"fbhh","name":"Testteam","recurrence":[{"weekday":4,"time":"18:30"},{"weekday":3,"time":"20:00"}]}));
+  serverRequest('addTeam',{token:getCookie('token',true),teamid:document.getElementById('teamid').value,name:document.getElementById('name').value,teamtoken:document.getElementById('teamtoken').value,admintoken:document.getElementById('admintoken').value,recurrence:[{weekday:document.getElementById('weekday').value,time:document.getElementById('hour').value+':'+document.getElementById('minute').value}]},(r)=>{updateStatus(r)});
 }
 
 function editTeam() {
-	serverRequest('editTeam',{teamid:document.getElementById('teamid').value,name:document.getElementById('name').value,recurrence:[{weekday:document.getElementById('weekday').value,time:document.getElementById('hour').value+':'+document.getElementById('minute').value}]},(r)=>{updateStatus(r)});
+	serverRequest('editTeam',{token:getCookie('token',true),teamid:document.getElementById('teamid').value,name:document.getElementById('name').value,teamtoken:document.getElementById('teamtoken').value,admintoken:document.getElementById('admintoken').value,recurrence:[{weekday:document.getElementById('weekday').value,time:document.getElementById('hour').value+':'+document.getElementById('minute').value}]},(r)=>{updateStatus(r)});
 }
 
 function deleteTeam() {
-	serverRequest('deleteTeam',{teamid:document.getElementById('teamid').value},(r)=>{updateStatus(r)});
+	serverRequest('deleteTeam',{token:getCookie('token',true),teamid:document.getElementById('teamid').value},(r)=>{updateStatus(r)});
 }
 
 function addEvent() {
-	serverRequest('addEvent',{teamid:window.location.pathname.substr(1),datetime:document.getElementById('datetime').value,comment:document.getElementById('comment').value},(r)=>{updateStatus(r)});
+	serverRequest('addEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:document.getElementById('datetime').value,comment:document.getElementById('comment').value},(r)=>{updateStatus(r)});
 }
 
 function cancelEvent(datetime) {
-	serverRequest('cancelEvent',{teamid:window.location.pathname.substr(1),datetime:datetime},(r)=>{updateStatus(r)});
+	serverRequest('cancelEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:datetime},(r)=>{updateStatus(r)});
 }
 
 function reviveEvent(datetime) {
-	serverRequest('reviveEvent',{teamid:window.location.pathname.substr(1),datetime:datetime},(r)=>{updateStatus(r)});
+	serverRequest('reviveEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:datetime},(r)=>{updateStatus(r)});
 }
 
 function commentEvent(datetime) {
-	serverRequest('commentEvent',{teamid:window.location.pathname.substr(1),datetime:datetime,comment:document.getElementById('comment'+datetime).value},(r)=>{updateStatus(r)});
+	serverRequest('commentEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:datetime,comment:document.getElementById('comment'+datetime).value},(r)=>{updateStatus(r)});
 }
 
 function deleteEvent(datetime) {
-	serverRequest('deleteEvent',{teamid:window.location.pathname.substr(1),datetime:datetime},(r)=>{updateStatus(r)});
+	serverRequest('deleteEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:datetime},(r)=>{updateStatus(r)});
 }
 
 function load() {
-	serverRequest('load',{},(r)=>{updateStatus(r)});
+	serverRequest('load',{token:getCookie('token',true)},(r)=>{updateStatus(r)});
 }
 
 function save() {
-	serverRequest('save',{},(r)=>{updateStatus(r)});
+	serverRequest('save',{token:getCookie('token',true)},(r)=>{updateStatus(r)});
 }
 
 function dump() {
-	serverRequest('dump',{},(r)=>{updateStatus(r)});
+	serverRequest('dump',{token:getCookie('token',true)},(r)=>{updateStatus(r)});
 }
+
+function getDateString(d) {
+  if (!d) {d=new Date()};
+  var tzoffset = d.getTimezoneOffset() * 60000;
+  return (new Date(d-tzoffset)).toISOString().slice(0, -14);
+} 
 
 function serverRequest(apicall,json,callback) {
   var req = new XMLHttpRequest();
@@ -135,7 +141,9 @@ function setCookie(cname, cvalue, exdays) {
   	expires = "expires="+d.toUTCString();
   }
   document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
-  return getCookie(cname,true);
+  updateWelcomeMessage(); 
+  return cvalue;
+  //return getCookie(cname,true);
 }
 
 function getCookie(cname,dontask) {
@@ -148,11 +156,11 @@ function getCookie(cname,dontask) {
     }
     if (c.indexOf(name) == 0) {
     	let res=c.substring(name.length, c.length);
-    	if (cname=='name') {updateWelcomeMessage(res)};
+    	//if (cname=='name') {updateWelcomeMessage(res)};
     	return res;
     }
   }
-  if (!dontask) {return askCookie(cname)} else {if (cname=='name') {updateWelcomeMessage('click here')}; return undefined};
+  if (!dontask) {return askCookie(cname)} else {return undefined};
 }
 
 </script>
