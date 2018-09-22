@@ -8,8 +8,9 @@
 
 <script>
 
+var team=false;
 function updateView(json) {  
-  var team=json?JSON.parse(json):false;
+  team=json?JSON.parse(json):false;
   let main=document.getElementById("main");
   let weekday_selection='<select id="weekday"><option value="1">montags</option><option value="2">dienstags</option><option value="3">mittwochs</option><option value="4">donnerstags</option><option value="5">freitags</option><option value="6">samstags</option><option value="0">sonntags</option></select>';
   let hour_selection='<select id="hour">';
@@ -27,7 +28,8 @@ function updateView(json) {
   } else {
 		// TEAM-page
 		main.innerHTML='<h2><a href=/'+team.teamid+'>'+team.name+'</a></h2>';
-    main.innerHTML+='<input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'"> name:<input type="text" id="name" value="'+team.name+'"> teamtoken:<input type="text" id="teamtoken" value="'+(team.teamtoken||'')+'"> admintoken:<input type="text" id="admintoken" value="'+(team.admintoken||'')+'"> '+weekday_selection+' '+hour_selection+' '+minute_selection +' <button onclick=editTeam()>update Team</button> <button onclick=deleteTeam()>delete Team</button><br><br>';
+    main.innerHTML+='<input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'"> name:<input type="text" id="name" value="'+team.name+'"> teamtoken:<input type="text" id="teamtoken" value="'+(team.teamtoken||'')+'"> admintoken:<input type="text" id="admintoken" value="'+(team.admintoken||'')+'"> '+weekday_selection+' '+hour_selection+' '+minute_selection +' <button onclick=editTeam()>update Team</button> <button onclick=deleteTeam()>delete Team</button><br>';
+    main.innerHTML+='<br>datetime:<input type="text" id="datetime" value="'+getDateString()+'T00:00"> comment:<input type="text" id="comment" value="Einzeltermin"> <button onclick=addEvent()>add Event</button><br><br>';
 		team.events?team.events.forEach(function (e) {
 			main.innerHTML+=['So','Mo','Di','Mi','Do','Fr','Sa'][new Date(e.datetime).getDay()]+' '+e.datetime+' ('+(!e.attendees?0:e.attendees.length)+') '
 			+'<button onclick=changeStatus("attend","'+e.datetime+'")>attend</button> '
@@ -41,7 +43,6 @@ function updateView(json) {
 			+(!e.attendees?'':'JA:'+e.attendees)+' '
 			+(!e.refusals?'':'NEIN:'+e.refusals)+'<br>';
 		}):false;
-		main.innerHTML+='<br><input type="text" id="datetime" value="'+getDateString()+'T00:00"> <input type="text" id="comment" value="Turnbeutel nicht vergessen"> <button onclick=addEvent()>add Event</button><br>';
 		main.innerHTML += '<br>Team-JSON: '+JSON.stringify(team);
   }
 }
@@ -65,11 +66,11 @@ function getTeam(teamid) {
 }
 
 function changeStatus(status,datetime) {
-  serverRequest(status,{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:datetime,name:getCookie('name')},(r)=>{updateStatus(r)});
+  serverRequest(status,{token:getCookie('token',!team.teamtoken),teamid:window.location.pathname.substr(1),datetime:datetime,name:getCookie('name')},(r)=>{updateStatus(r)});
 }
 
 function addTeam() {
-  serverRequest('addTeam',{token:getCookie('token',true),teamid:document.getElementById('teamid').value,name:document.getElementById('name').value,teamtoken:document.getElementById('teamtoken').value,admintoken:document.getElementById('admintoken').value,recurrence:[{weekday:document.getElementById('weekday').value,time:document.getElementById('hour').value+':'+document.getElementById('minute').value}]},(r)=>{updateStatus(r)});
+  serverRequest('addTeam',{teamid:document.getElementById('teamid').value,name:document.getElementById('name').value,teamtoken:document.getElementById('teamtoken').value,admintoken:document.getElementById('admintoken').value,recurrence:[{weekday:document.getElementById('weekday').value,time:document.getElementById('hour').value+':'+document.getElementById('minute').value}]},(r)=>{updateStatus(r)});
 }
 
 function editTeam() {
