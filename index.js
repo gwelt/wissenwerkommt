@@ -10,7 +10,7 @@ var port = process.env.PORT || config.port || 3000;
 var db=new Group();
 server.listen(port, function () {
   console.log('Server listening at port %d', port);
-  db.load_from_file('data.json',(group)=>{console.log(JSON.stringify(group))});
+  db.load_from_file(config.datafilepath+'/'+config.datafile,(group)=>{console.log(JSON.stringify(group))});
 });
 
 app.use(express.static(path.join(__dirname, 'public')));
@@ -36,84 +36,84 @@ app.use('/api/:r/:t?', function (req, res) {
     case 'getTeam':
       if (getUserLevel(req)>-1) {
         res.json(db.getTeam(req.params.t||req.body.teamid));
-      } else {res.json({'error':'not sufficient rights to do that'})}
+      } else {res.json({'error':'not sufficient rights to get team'})}
       break;
     case 'attend':
       if (getUserLevel(req)>0) {
         let aevent=db.findEvent(req.body.teamid,req.body.datetime);
         if (aevent) {res.json(aevent.attend(req.body.name))} else {res.json(false)}
-      } else {res.json({'error':'not sufficient rights to do that'})}
+      } else {res.json({'error':'not sufficient rights to attend'})}
       break;
     case 'refuse':
       if (getUserLevel(req)>0) {
         let revent=db.findEvent(req.body.teamid,req.body.datetime);
         if (revent) {res.json(revent.refuse(req.body.name))} else {res.json(false)}
-      } else {res.json({'error':'not sufficient rights to do that'})}
+      } else {res.json({'error':'not sufficient rights to refuse'})}
       break;
     case 'undecided':
       if (getUserLevel(req)>0) {
         let uevent=db.findEvent(req.body.teamid,req.body.datetime);
         if (uevent) {res.json(uevent.undecided(req.body.name))} else {res.json(false)}
-      } else {res.json({'error':'not sufficient rights to do that'})}
+      } else {res.json({'error':'not sufficient rights to undecide'})}
       break;
     case 'commentEvent':
       if (getUserLevel(req)>0) {
         let cevent=db.findEvent(req.body.teamid,req.body.datetime);
         if (cevent) {res.json(cevent.commentEvent(req.body.comment))} else {res.json(false)}
-      } else {res.json({'error':'not sufficient rights to do that'})}
+      } else {res.json({'error':'not sufficient rights to comment event'})}
       break;
   
     // team admins only
     case 'editTeam':
         if (getUserLevel(req)>1) {
         res.json(db.editTeam(req.body));
-      } else {res.json({'error':'not sufficient rights to do that'})}
+      } else {res.json({'error':'not sufficient rights to edit team'})}
       break;
     case 'deleteTeam':
         if (getUserLevel(req)>1) {
         res.json(db.deleteTeam(req.body));
-      } else {res.json({'error':'not sufficient rights to do that'})}
+      } else {res.json({'error':'not sufficient rights to delete team'})}
       break;
     case 'addEvent':
       if (getUserLevel(req)>1) {
         let ateam=db.findTeam(req.body.teamid);
         if (ateam) {res.json(ateam.addEvent({"datetime":req.body.datetime,"comment":req.body.comment}))} else {res.json(false)}
-      } else {res.json({'error':'not sufficient rights to do that'})}
+      } else {res.json({'error':'not sufficient rights to add event'})}
       break;
     case 'cancelEvent':
       if (getUserLevel(req)>1) {
         let devent=db.findEvent(req.body.teamid,req.body.datetime);
         if (devent) {res.json(devent.cancelEvent())} else {res.json(false)}
-      } else {res.json({'error':'not sufficient rights to do that'})}
+      } else {res.json({'error':'not sufficient rights to cancel event'})}
       break;
     case 'reviveEvent':
       if (getUserLevel(req)>1) {
         let vevent=db.findEvent(req.body.teamid,req.body.datetime);
         if (vevent) {res.json(vevent.reviveEvent())} else {res.json(false)}
-      } else {res.json({'error':'not sufficient rights to do that'})}
+      } else {res.json({'error':'not sufficient rights to revive event'})}
       break;
     case 'deleteEvent':
       if (getUserLevel(req)>1) {
         let dteam=db.findTeam(req.body.teamid);
         if (dteam) {res.json(dteam.deleteEvent({"datetime":req.body.datetime}))} else {res.json(false)}
-      } else {res.json({'error':'not sufficient rights to do that'})}
+      } else {res.json({'error':'not sufficient rights to delete event'})}
       break;
 
     // sysops only
     case 'load':
       if (getUserLevel(req)>2) {
-        db.load_from_file('data.json',(db)=>{res.json(db)});
-      } else {res.json({'error':'not sufficient rights to do that'})}
+        db.load_from_file(config.datafilepath+'/'+config.datafile,(db)=>{res.json(db)});
+      } else {res.json({'error':'not sufficient rights to do that (load)'})}
       break;
     case 'save':
       if (getUserLevel(req)>2) {
-        db.save_to_file('data.json',(db)=>{res.json(db)});
-      } else {res.json({'error':'not sufficient rights to do that'})}
+        db.save_to_file(config.datafilepath+'/'+config.datafile,(db)=>{res.json(db)});
+      } else {res.json({'error':'not sufficient rights to do that (save)'})}
       break;
     case 'dump':
       if (getUserLevel(req)>2) {
         res.json(db);
-      } else {res.json({'error':'not sufficient rights to do that'})}
+      } else {res.json({'error':'not sufficient rights to do that (dump)'})}
       break;
 
     default:
@@ -135,6 +135,8 @@ function Group() {
 function Team(json) {
   //todo: stealthen
   this.teamid=((json.hasOwnProperty('teamid'))&&(json.teamid.length))?json.teamid:undefined;
+  this.admintoken=(json.hasOwnProperty('admintoken')&&(json.admintoken.length))?json.admintoken:undefined;
+  this.teamtoken=(json.hasOwnProperty('teamtoken')&&(json.teamtoken.length))?json.teamtoken:undefined;
   this.name=(json.hasOwnProperty('name')&&(json.name.length))?json.name:undefined;
   if (json.recurrence instanceof Array) {
     this.recurrence=[];
@@ -143,8 +145,6 @@ function Team(json) {
     });
     if (!this.recurrence.length) {this.recurrence=undefined}
   } else {this.recurrence=undefined}
-  this.admintoken=(json.hasOwnProperty('admintoken')&&(json.admintoken.length))?json.admintoken:undefined;
-  this.teamtoken=(json.hasOwnProperty('teamtoken')&&(json.teamtoken.length))?json.teamtoken:undefined;
 }
 
 function Event(json) {
@@ -178,7 +178,10 @@ Group.prototype.getTeam = function(teamid) {
     t.events.sort((a,b)=>{return a.datetime>b.datetime});
     if (!t.events.length) {t.events=undefined};
   }
-  return t;
+  // remove admin token from return-value
+  var t_res = JSON.parse(JSON.stringify(t));
+  t_res.admintoken=undefined;
+  return t_res;
 }
 
 function getDateString(d) {
@@ -252,8 +255,9 @@ Group.prototype.editTeam = function(json) {
   let team=this.findTeam(editTeam.teamid);
   if (team) {
     // check for each property, if json-key (!) is not undefined
-    // editTeam[key] may be undefined because the constructor made it undefined ... that's ok!
-    // that way, a string with no length can replace/delete a current string
+    // that way, a string with no length ('') can delete/undefine a current string
+    // exceptional case: do not delete/undefine admintoken, if it's left blank
+    if (json['admintoken']=='') {json['admintoken']=undefined};
     for (let key of Object.keys(editTeam)) {if (json[key]!==undefined) {team[key]=editTeam[key]}};
     return team;
   } else {
@@ -321,6 +325,7 @@ Group.prototype.stats = function() {
 }
 
 Group.prototype.load_from_file = function(filename,callback) {
+  if (!filename) {filename=''};
   this.teams=[];
   fs.readFile(filename, 'utf8', (err, data)=>{
     if (err){console.log('No data-file.')} else {
@@ -339,7 +344,11 @@ Group.prototype.load_from_file = function(filename,callback) {
 }
 
 Group.prototype.save_to_file = function(filename,callback) {
-  fs.writeFile(filename, JSON.stringify(this), 'utf8', (err)=>{console.log('File saved. Errors: '+err);callback(this)});
+  if (!filename) {filename=''};
+  fs.writeFile(filename, JSON.stringify(this), 'utf8', (err)=>{
+    console.log('File '+filename+' saved. Errors: '+err);
+    callback(this);
+  });
 }
 
 
@@ -383,7 +392,7 @@ function getUserLevel(req) {
       }
     }
   }
-  if (req.body.token=='sysop') {userLevel=3} // todo: sysop
+  if ((req.body.token==config.sysoptoken) && (req.body.token!==undefined)) {userLevel=3} // todo: sysop
   //console.log('team:'+req.body.teamid+' teamtoken:'+team.teamtoken+' usertoken:'+req.body.token+' = '+userLevel);
   return userLevel;
 };
@@ -391,5 +400,5 @@ function getUserLevel(req) {
 function safe_text(text) {return unescape(text).replace(/[^\w\s\däüöÄÜÖß\.,'!\@#$^&%*()\+=\-\[\]\/{}\|:\?]/g,'').slice(0,256)}
 function issafe(text) {return text==safe_text(text)}
 
-process.on('SIGINT', function(){console.log('SIGINT'); process.exit()});
-process.on('SIGTERM', function(){console.log('SIGTERM'); process.exit()});
+process.on('SIGINT', function(){console.log('SIGINT'); db.save_to_file(config.datafilepath+'/temp_'+getDateString().slice(8,10)+'_'+config.datafile,()=>{process.exit()}); });
+process.on('SIGTERM', function(){console.log('SIGTERM'); db.save_to_file(config.datafilepath+'/temp_'+getDateString().slice(8,10)+'_'+config.datafile,()=>{process.exit()}); });
