@@ -136,7 +136,7 @@ function Team(json) {
   //todo: stealthen
   this.teamid=((json.hasOwnProperty('teamid'))&&(json.teamid.length))?json.teamid:undefined;
   this.admintoken=(json.hasOwnProperty('admintoken')&&(json.admintoken.length))?json.admintoken.trim():undefined;
-  this.teamtoken=(json.hasOwnProperty('teamtoken')&&(json.teamtoken.length))?json.teamtoken:undefined;
+  this.teamtoken=(json.hasOwnProperty('teamtoken')&&(json.teamtoken.length))?json.teamtoken.trim():undefined;
   this.name=(json.hasOwnProperty('name')&&(json.name.length))?json.name:undefined;
   if (json.recurrence instanceof Array) {
     this.recurrence=[];
@@ -200,11 +200,17 @@ Team.prototype.generateNextRecurringEvents = function(count) {
 
 function getNextDaysWithWeekday(weekday,count) {
   let d=new Date(getDateString());
+  let step=7; // step one week, if event recurs weekly
+  // calc the days it takes till the next event takes place (first offset)
   let offset=(weekday%7)-d.getDay();
-  if (offset<0) {offset+=7};
+  if (offset<0) {offset+=step};
+  // 7 is set, if the event recurs every day
+  if (weekday==7) {offset=0; step=1};
   res=[];
   let i=0;
-  while (++i<=(count||4)) {res.push(getDateString(new Date(d.valueOf()+offset*86400000))); offset+=7;}
+  // 8 is set, if the event has no recurrence
+  if (weekday==8) {i=9999};
+  while (++i<=(count||4)) {res.push(getDateString(new Date(d.valueOf()+offset*86400000))); offset+=step;}
   return res;
 }
 
