@@ -1,49 +1,67 @@
 <!DOCTYPE html>
 <html>
-<body onload="updateWelcomeMessage();getTeam();">
-
-<div id="welcomemessage"></div>
-<div id="main"></div>
-<div id="reply"></div>
-
+<head>
 <script>
 
 var team=false;
 function updateView(json) {  
   team=json?JSON.parse(json):false;
   let main=document.getElementById("main");
-  let weekday_selection='<select id="weekday"><option value="1">montags</option><option value="2">dienstags</option><option value="3">mittwochs</option><option value="4">donnerstags</option><option value="5">freitags</option><option value="6">samstags</option><option value="0">sonntags</option></select>';
+  let selected='';
+  let preset_weekday=(team.recurrence)?team.recurrence[0].weekday:0;
+  let preset_hour=(team.recurrence)?team.recurrence[0].time.slice(0,2):0;
+  let preset_minute=(team.recurrence)?team.recurrence[0].time.slice(3,5):0;
+  let weekdays=[[1,'montags'],[2,'dienstags'],[3,'mittwochs'],[4,'donnerstags'],[5,'freitags'],[6,'samstags'],[0,'sonntags'],[7,'täglich'],[8,'unregelmäßig']];
+
+  let weekday_selection='<select id="weekday">';
+  let i=-1;
+  while (++i<weekdays.length) {
+    if (preset_weekday==weekdays[i][0]) {selected=' selected'} else {selected=''}
+    weekday_selection+='<option value="'+weekdays[i][0]+'"'+selected+'>'+weekdays[i][1]+'</option>';
+  }
+  weekday_selection+='</select>';
+
   let hour_selection='<select id="hour">';
-  let hour=-1; while (++hour<24) {hour<10?hour='0'+hour:true;hour_selection+='<option value="'+hour+'">'+hour+'</option>'}
+  let hour=-1; while (++hour<24) {
+    hour<10?hour='0'+hour:true;
+    if (hour==preset_hour) {selected=' selected'} else {selected=''}
+    hour_selection+='<option value="'+hour+'"'+selected+'>'+hour+'</option>';
+  }
   hour_selection+='</select>';
+
   let minute_selection='<select id="minute">';
-  let minute=0; while (minute<60) {minute<10?minute='0'+minute:true;minute_selection+='<option value="'+minute+'">'+minute+'</option>';minute=minute*1+15;}
+  let minute=0; while (minute<60) {
+    minute<10?minute='0'+minute:true;
+    if (minute==preset_minute) {selected=' selected'} else {selected=''}
+    minute_selection+='<option value="'+minute+'"'+selected+'>'+minute+'</option>';minute=minute*1+15;
+  }
   minute_selection+='</select>';
+
   if (!team||team.error) {
-		// MAIN-page if no team is requested
+    // MAIN-page if no team is requested
     if (team.error) {document.getElementById("reply").innerHTML = '<br>The server answered: '+JSON.stringify(team);}
-		main.innerHTML='teamid:<input type="text" id="teamid" value="'+window.location.pathname.substr(1)+'"> name:<input type="text" id="name" value=""> teamtoken:<input type="text" id="teamtoken" value="'+(team.teamtoken||'')+'"> admintoken:<input type="text" id="admintoken" value="'+(team.admintoken||'')+'"> '+weekday_selection+' '+hour_selection+' '+minute_selection +' <button onclick=addTeam()>create Team</button> &nbsp; <button onclick=load()>load</button> <button onclick=save()>save</button> <button onclick=dump()>dump</button>';
-  	serverRequest('getListOfTeamIDs',{},(r)=>{main.innerHTML+="<br>Here is a list of all teams: "; r=JSON.parse(r); r.forEach((t)=>{main.innerHTML+='<a href=/'+t+'>'+t+'</a> '})});
-  	serverRequest('stats',{},(r)=>{main.innerHTML+="<br>Here are some stats: "+r});
+    main.innerHTML='teamid:<input type="text" id="teamid" value="'+window.location.pathname.substr(1)+'"> name:<input type="text" id="name" value=""> teamtoken:<input type="text" id="teamtoken" value="'+(team.teamtoken||'')+'"> admintoken:<input type="text" id="admintoken" value="'+(team.admintoken||'')+'"> '+weekday_selection+' '+hour_selection+' '+minute_selection +' <button onclick=addTeam()>create Team</button> &nbsp; <button onclick=load()>load</button> <button onclick=save()>save</button> <button onclick=dump()>dump</button>';
+    serverRequest('getListOfTeamIDs',{},(r)=>{main.innerHTML+="<br>Here is a list of all teams: "; r=JSON.parse(r); r.forEach((t)=>{main.innerHTML+='<a href=/'+t+'>'+t+'</a> '})});
+    serverRequest('stats',{},(r)=>{main.innerHTML+="<br>Here are some stats: "+r});
   } else {
-		// TEAM-page
-		main.innerHTML='<h2><a href=/'+team.teamid+'>'+team.name+'</a></h2>';
+    // TEAM-page
+    main.innerHTML='<h2><a href=/'+team.teamid+'>'+team.name+'</a></h2>';
     main.innerHTML+='<input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'"> name:<input type="text" id="name" value="'+team.name+'"> teamtoken:<input type="text" id="teamtoken" value="'+(team.teamtoken||'')+'"> admintoken:<input type="text" id="admintoken" value="'+(team.admintoken||'')+'"> '+weekday_selection+' '+hour_selection+' '+minute_selection +' <button onclick=editTeam()>update Team</button> <button onclick=deleteTeam()>delete Team</button><br>';
     main.innerHTML+='<br>datetime:<input type="text" id="datetime" value="'+getDateString()+'T00:00"> comment:<input type="text" id="comment" value="Einzeltermin"> <button onclick=addEvent()>add Event</button><br><br>';
-		team.events?team.events.forEach(function (e) {
-			main.innerHTML+=['So','Mo','Di','Mi','Do','Fr','Sa'][new Date(e.datetime).getDay()]+' '+e.datetime+' ('+(!e.attendees?0:e.attendees.length)+') '
-			+'<button onclick=changeStatus("attend","'+e.datetime+'")>attend</button> '
-			+'<button onclick=changeStatus("refuse","'+e.datetime+'")>refuse</button> '
-			+'<button onclick=changeStatus("undecided","'+e.datetime+'")>undecided</button> '
-			+'<button onclick=cancelEvent("'+e.datetime+'")>cancel event</button> '
-			+'<button onclick=reviveEvent("'+e.datetime+'")>revive event</button> '
-			+'<button onclick=deleteEvent("'+e.datetime+'")>delete event</button> '
+    team.events?team.events.forEach(function (e) {
+      main.innerHTML+=['So','Mo','Di','Mi','Do','Fr','Sa'][new Date(e.datetime).getDay()]+' '+e.datetime+' ('+(!e.attendees?0:e.attendees.length)+') '
+      +'<button onclick=changeStatus("attend","'+e.datetime+'")>attend</button> '
+      +'<button onclick=changeStatus("refuse","'+e.datetime+'")>refuse</button> '
+      +'<button onclick=changeStatus("undecided","'+e.datetime+'")>undecided</button> '
+      +'<button onclick=cancelEvent("'+e.datetime+'")>cancel event</button> '
+      +'<button onclick=reviveEvent("'+e.datetime+'")>revive event</button> '
+      +'<button onclick=deleteEvent("'+e.datetime+'")>delete event</button> '
       +'<input type="text" id="comment'+e.datetime+'" value="'+(e.comment||'')+'"> '
       +'<button onclick=commentEvent("'+e.datetime+'")>comment event</button> '
-			+(!e.attendees?'':'JA:'+e.attendees)+' '
-			+(!e.refusals?'':'NEIN:'+e.refusals)+'<br>';
-		}):false;
-		main.innerHTML += '<br>Team-JSON: '+JSON.stringify(team);
+      +(!e.attendees?'':'JA:'+e.attendees)+' '
+      +(!e.refusals?'':'NEIN:'+e.refusals)+'<br>';
+    }):false;
+    main.innerHTML += '<br>Team-JSON: '+JSON.stringify(team);
   }
 }
 
@@ -74,43 +92,43 @@ function addTeam() {
 }
 
 function editTeam() {
-	serverRequest('editTeam',{token:getCookie('token',true),teamid:document.getElementById('teamid').value,name:document.getElementById('name').value,teamtoken:document.getElementById('teamtoken').value,admintoken:document.getElementById('admintoken').value,recurrence:[{weekday:document.getElementById('weekday').value,time:document.getElementById('hour').value+':'+document.getElementById('minute').value}]},(r)=>{updateStatus(r)});
+  serverRequest('editTeam',{token:getCookie('token',true),teamid:document.getElementById('teamid').value,name:document.getElementById('name').value,teamtoken:document.getElementById('teamtoken').value,admintoken:document.getElementById('admintoken').value,recurrence:[{weekday:document.getElementById('weekday').value,time:document.getElementById('hour').value+':'+document.getElementById('minute').value}]},(r)=>{updateStatus(r)});
 }
 
 function deleteTeam() {
-	serverRequest('deleteTeam',{token:getCookie('token',true),teamid:document.getElementById('teamid').value},(r)=>{updateStatus(r)});
+  serverRequest('deleteTeam',{token:getCookie('token',true),teamid:document.getElementById('teamid').value},(r)=>{updateStatus(r)});
 }
 
 function addEvent() {
-	serverRequest('addEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:document.getElementById('datetime').value,comment:document.getElementById('comment').value},(r)=>{updateStatus(r)});
+  serverRequest('addEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:document.getElementById('datetime').value,comment:document.getElementById('comment').value},(r)=>{updateStatus(r)});
 }
 
 function cancelEvent(datetime) {
-	serverRequest('cancelEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:datetime},(r)=>{updateStatus(r)});
+  serverRequest('cancelEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:datetime},(r)=>{updateStatus(r)});
 }
 
 function reviveEvent(datetime) {
-	serverRequest('reviveEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:datetime},(r)=>{updateStatus(r)});
+  serverRequest('reviveEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:datetime},(r)=>{updateStatus(r)});
 }
 
 function commentEvent(datetime) {
-	serverRequest('commentEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:datetime,comment:document.getElementById('comment'+datetime).value},(r)=>{updateStatus(r)});
+  serverRequest('commentEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:datetime,comment:document.getElementById('comment'+datetime).value},(r)=>{updateStatus(r)});
 }
 
 function deleteEvent(datetime) {
-	serverRequest('deleteEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:datetime},(r)=>{updateStatus(r)});
+  serverRequest('deleteEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:datetime},(r)=>{updateStatus(r)});
 }
 
 function load() {
-	serverRequest('load',{token:getCookie('token',true)},(r)=>{updateStatus(r)});
+  serverRequest('load',{token:getCookie('token',true)},(r)=>{updateStatus(r)});
 }
 
 function save() {
-	serverRequest('save',{token:getCookie('token',true)},(r)=>{updateStatus(r)});
+  serverRequest('save',{token:getCookie('token',true)},(r)=>{updateStatus(r)});
 }
 
 function dump() {
-	serverRequest('dump',{token:getCookie('token',true)},(r)=>{updateStatus(r)});
+  serverRequest('dump',{token:getCookie('token',true)},(r)=>{updateStatus(r)});
 }
 
 function getDateString(d) {
@@ -134,12 +152,12 @@ function askCookie(cname) {
 }
 
 function setCookie(cname, cvalue, exdays) {
-	var expires='';
-	if (cvalue==""||cvalue==null) {exdays=0} //0 = delete cookie
+  var expires='';
+  if (cvalue==""||cvalue==null) {exdays=0} //0 = delete cookie
   if (exdays>=0) {
-  	var d = new Date();
-  	d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
-  	expires = "expires="+d.toUTCString();
+    var d = new Date();
+    d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+    expires = "expires="+d.toUTCString();
   }
   document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
   updateWelcomeMessage(); 
@@ -156,15 +174,23 @@ function getCookie(cname,dontask) {
       c = c.substring(1);
     }
     if (c.indexOf(name) == 0) {
-    	let res=c.substring(name.length, c.length);
-    	//if (cname=='name') {updateWelcomeMessage(res)};
-    	return res;
+      let res=c.substring(name.length, c.length);
+      //if (cname=='name') {updateWelcomeMessage(res)};
+      return res;
     }
   }
   if (!dontask) {return askCookie(cname)} else {return undefined};
 }
 
 </script>
+  
+</head>
+<body onload="updateWelcomeMessage();getTeam();">
+
+<div id="welcomemessage"></div>
+<div id="main"></div>
+<div id="reply"></div>
+
 
 </body>
 </html>

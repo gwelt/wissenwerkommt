@@ -135,7 +135,7 @@ function Group() {
 function Team(json) {
   //todo: stealthen
   this.teamid=((json.hasOwnProperty('teamid'))&&(json.teamid.length))?json.teamid:undefined;
-  this.admintoken=(json.hasOwnProperty('admintoken')&&(json.admintoken.length))?json.admintoken:undefined;
+  this.admintoken=(json.hasOwnProperty('admintoken')&&(json.admintoken.length))?json.admintoken.trim():undefined;
   this.teamtoken=(json.hasOwnProperty('teamtoken')&&(json.teamtoken.length))?json.teamtoken:undefined;
   this.name=(json.hasOwnProperty('name')&&(json.name.length))?json.name:undefined;
   if (json.recurrence instanceof Array) {
@@ -175,7 +175,7 @@ Group.prototype.getTeam = function(teamid) {
     // backfill: generate future events, if any recurrance is specified
     t.generateNextRecurringEvents();
     // order events by date
-    t.events.sort((a,b)=>{return a.datetime>b.datetime});
+    t.events.sort((a,b)=>{return (a.datetime>b.datetime)?1:-1});
     if (!t.events.length) {t.events=undefined};
   }
   // remove admin token from return-value
@@ -325,7 +325,6 @@ Group.prototype.stats = function() {
 }
 
 Group.prototype.load_from_file = function(filename,callback) {
-  if (!filename) {filename=''};
   this.teams=[];
   fs.readFile(filename, 'utf8', (err, data)=>{
     if (err){console.log('No data-file.')} else {
@@ -344,7 +343,6 @@ Group.prototype.load_from_file = function(filename,callback) {
 }
 
 Group.prototype.save_to_file = function(filename,callback) {
-  if (!filename) {filename=''};
   fs.writeFile(filename, JSON.stringify(this), 'utf8', (err)=>{
     console.log('File '+filename+' saved. Errors: '+err);
     callback(this);
