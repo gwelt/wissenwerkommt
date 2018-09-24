@@ -41,8 +41,8 @@ function updateView(json) {
     // MAIN-page if no team is requested
     if (team.error) {document.getElementById("reply").innerHTML = '<br>The server answered: '+JSON.stringify(team);}
     main.innerHTML='teamid:<input type="text" id="teamid" value="'+window.location.pathname.substr(1)+'"> name:<input type="text" id="name" value=""> teamtoken:<input type="text" id="teamtoken" value="'+(team.teamtoken||'')+'"> admintoken:<input type="text" id="admintoken" value="'+(team.admintoken||'')+'"> '+weekday_selection+' '+hour_selection+' '+minute_selection +' <button onclick=addTeam()>create Team</button> &nbsp; <button onclick=load()>load</button> <button onclick=save()>save</button> <button onclick=dump()>dump</button>';
-    serverRequest('getListOfTeamIDs',{},(r)=>{main.innerHTML+="<br>Here is a list of all teams: "; r=JSON.parse(r); r.forEach((t)=>{main.innerHTML+='<a href=/'+t+'>'+t+'</a> '})});
-    serverRequest('stats',{},(r)=>{main.innerHTML+="<br>Here are some stats: "+r});
+    serverRequest('getListOfTeamIDs',{},function (r){main.innerHTML+="<br>Here is a list of all teams: "; r=JSON.parse(r); r.forEach(function (t){main.innerHTML+='<a href=/'+t+'>'+t+'</a> '})});
+    serverRequest('stats',{},function (r){main.innerHTML+="<br>Here are some stats: "+r});
   } else {
     // TEAM-page
     main.innerHTML='<h2><a href=/'+team.teamid+'>'+team.name+'</a></h2>';
@@ -79,56 +79,56 @@ function updateWelcomeMessage() {
 function getTeam(teamid) {
   if (!teamid) {teamid=window.location.pathname.substr(1)};
   if (teamid) {
-    serverRequest('getTeam',{token:getCookie('token',true),teamid:teamid},(r)=>{updateView(r)});
+    serverRequest('getTeam',{token:getCookie('token',true),teamid:teamid},function (r){updateView(r)});
   } else {updateView()}
 }
 
 function changeStatus(status,datetime) {
-  serverRequest(status,{token:getCookie('token',!team.teamtoken),teamid:window.location.pathname.substr(1),datetime:datetime,name:getCookie('name')},(r)=>{updateStatus(r)});
+  serverRequest(status,{token:getCookie('token',!team.teamtoken),teamid:window.location.pathname.substr(1),datetime:datetime,name:getCookie('name')},function (r){updateStatus(r)});
 }
 
 function addTeam() {
-  serverRequest('addTeam',{teamid:document.getElementById('teamid').value,name:document.getElementById('name').value,teamtoken:document.getElementById('teamtoken').value,admintoken:document.getElementById('admintoken').value,recurrence:[{weekday:document.getElementById('weekday').value,time:document.getElementById('hour').value+':'+document.getElementById('minute').value}]},(r)=>{updateStatus(r)});
+  serverRequest('addTeam',{teamid:document.getElementById('teamid').value,name:document.getElementById('name').value,teamtoken:document.getElementById('teamtoken').value,admintoken:document.getElementById('admintoken').value,recurrence:[{weekday:document.getElementById('weekday').value,time:document.getElementById('hour').value+':'+document.getElementById('minute').value}]},function (r){updateStatus(r)});
 }
 
 function editTeam() {
-  serverRequest('editTeam',{token:getCookie('token',true),teamid:document.getElementById('teamid').value,name:document.getElementById('name').value,teamtoken:document.getElementById('teamtoken').value,admintoken:document.getElementById('admintoken').value,recurrence:[{weekday:document.getElementById('weekday').value,time:document.getElementById('hour').value+':'+document.getElementById('minute').value}]},(r)=>{updateStatus(r)});
+  serverRequest('editTeam',{token:getCookie('token',true),teamid:document.getElementById('teamid').value,name:document.getElementById('name').value,teamtoken:document.getElementById('teamtoken').value,admintoken:document.getElementById('admintoken').value,recurrence:[{weekday:document.getElementById('weekday').value,time:document.getElementById('hour').value+':'+document.getElementById('minute').value}]},function (r){updateStatus(r)});
 }
 
 function deleteTeam() {
-  serverRequest('deleteTeam',{token:getCookie('token',true),teamid:document.getElementById('teamid').value},(r)=>{updateStatus(r)});
+  serverRequest('deleteTeam',{token:getCookie('token',true),teamid:document.getElementById('teamid').value},function (r){updateStatus(r)});
 }
 
 function addEvent() {
-  serverRequest('addEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:document.getElementById('datetime').value,comment:document.getElementById('comment').value},(r)=>{updateStatus(r)});
+  serverRequest('addEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:document.getElementById('datetime').value,comment:document.getElementById('comment').value},function (r){updateStatus(r)});
 }
 
 function cancelEvent(datetime) {
-  serverRequest('cancelEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:datetime},(r)=>{updateStatus(r)});
+  serverRequest('cancelEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:datetime},function (r){updateStatus(r)});
 }
 
 function reviveEvent(datetime) {
-  serverRequest('reviveEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:datetime},(r)=>{updateStatus(r)});
+  serverRequest('reviveEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:datetime},function (r){updateStatus(r)});
 }
 
 function commentEvent(datetime) {
-  serverRequest('commentEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:datetime,comment:document.getElementById('comment'+datetime).value},(r)=>{updateStatus(r)});
+  serverRequest('commentEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:datetime,comment:document.getElementById('comment'+datetime).value},function (r){updateStatus(r)});
 }
 
 function deleteEvent(datetime) {
-  serverRequest('deleteEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:datetime},(r)=>{updateStatus(r)});
+  serverRequest('deleteEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:datetime},function (r){updateStatus(r)});
 }
 
 function load() {
-  serverRequest('load',{token:getCookie('token',true)},(r)=>{updateStatus(r)});
+  serverRequest('load',{token:getCookie('token',true)},function (r){updateStatus(r)});
 }
 
 function save() {
-  serverRequest('save',{token:getCookie('token',true)},(r)=>{updateStatus(r)});
+  serverRequest('save',{token:getCookie('token',true)},function (r){updateStatus(r)});
 }
 
 function dump() {
-  serverRequest('dump',{token:getCookie('token',true)},(r)=>{updateStatus(r)});
+  serverRequest('dump',{token:getCookie('token',true)},function (r){updateStatus(r)});
 }
 
 function getDateString(d) {
