@@ -12,7 +12,7 @@ server.listen(port, function () {
   //console.log('Server listening at port %d', port);
   db.load_from_file(config.datafilepath+'/'+config.datafile,(group)=>{/*console.log(JSON.stringify(group))*/});
 });
-module.exports = app;
+module.exports = server;
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.json());
@@ -34,7 +34,7 @@ app.use('/api/:r/:t?', function (req, res) {
 
     // team members only
     case 'getTeam':
-      if (getUserLevel(req)>-1) {
+      if (getUserLevel(req)>0) {
         res.json(db.getTeam(req.params.t||req.body.teamid));
       } else {res.status(401).json({'error':'not sufficient rights to get team'})}
       break;
