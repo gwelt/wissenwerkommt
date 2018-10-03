@@ -1,6 +1,7 @@
 /* SUPERTEST HTTP/REST-API TESTS */
 const request = require('supertest');
 var app = require('../index');
+app.close();
 
 // OPEN REST-REQUESTS
 
