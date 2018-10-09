@@ -4,7 +4,8 @@
   "description": "Simple attending|not_attending-service for reoccuring team-events with REST-API.",
   "main": "index.js",
   "scripts": {
-    "test": "mocha test",
+    "testall": "mocha test",
+    "test": "./node_modules/.bin/mocha --reporter tap",
     "start": "node index.js"
   },
   "repository": {

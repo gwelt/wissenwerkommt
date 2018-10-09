@@ -57,6 +57,22 @@ Group.prototype.getTeam = function(teamid) {
   return t_res;
 }
 
+Group.prototype.getUserLevel = function(teamid,token) {
+  let t=this.findTeam(teamid);
+  let userLevel=0; // not a member
+  if (t) {
+    if ((t.admintoken)&&(token==t.admintoken)) {
+      userLevel=2; // team-admin
+    } else {
+      if ((!t.teamtoken)||(token==t.teamtoken)) {
+        userLevel=1;  // team-member
+        if (!t.admintoken) {userLevel=2} // team-admin
+      }
+    }
+  }
+  return userLevel;
+};
+
 function getDateString(d) {
   if (!d) {d=new Date()};
   var tzoffset = d.getTimezoneOffset() * 60000;

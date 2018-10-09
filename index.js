@@ -31,18 +31,21 @@ app.use('/api/:r/:t?', function (req, res) {
     case 'stats':
       res.json(db.stats());
       break;
+    case 'getUserLevel':
+      res.json(getUserLevel(req));
+      break;
 
     // team members only
     case 'getTeam':
       if (getUserLevel(req)>0) {
         res.json(db.getTeam(req.params.t||req.body.teamid));
-      } else {res.status(401).json({'error':'not sufficient rights to get team'})}
+      } else {res.status(401).json({'error':'not sufficient rights to get team or team does not exist'})}
       break;
     case 'attend':
       if (getUserLevel(req)>0) {
         let aevent=db.findEvent(req.body.teamid,req.body.datetime);
         if (aevent) {res.json(aevent.attend(req.body.name))} else {res.status(403).json({'error':'event not found'})}
-      } else {res.status(401).son({'error':'not sufficient rights to attend'})}
+      } else {res.status(401).json({'error':'not sufficient rights to attend'})}
       break;
     case 'refuse':
       if (getUserLevel(req)>0) {
@@ -124,26 +127,13 @@ app.use('/api/:r/:t?', function (req, res) {
 })
 
 app.use(function(req, res, next){
-  res.sendFile('index.html', { root: path.join(__dirname, 'public')});
+  res.sendFile('index.html',{root:path.join(__dirname,'public')});
 });
 
 function getUserLevel(req) {
-  let team=db.findTeam(req.params.t||req.body.teamid);
-  let userLevel=0; // not a member
-  if (team) {
-    if ((team.admintoken)&&(req.body.token==team.admintoken)) {
-      userLevel=2; // admin
-    } else {
-      if ((!team.teamtoken)||(req.body.token==team.teamtoken)) {
-        userLevel=1;  // team member
-        if (!team.admintoken) {userLevel=2} // admin
-      }
-    }
-  }
-  if ((req.body.token==config.sysoptoken) && (req.body.token!==undefined)) {userLevel=3} // todo: sysop
-  //console.log('team:'+req.body.teamid+' teamtoken:'+team.teamtoken+' usertoken:'+req.body.token+' = '+userLevel);
-  return userLevel;
-};
+  if ((req.body.token==config.sysoptoken) && (req.body.token!==undefined)) {return 3}
+  return db.getUserLevel((req.params.t||req.body.teamid),req.body.token);
+}
 
 function getDateString(d) {
   if (!d) {d=new Date()};
