@@ -1,5 +1,4 @@
-[![Build Status](https://travis-ci.com/gwelt/wissenwerkommt.svg?branch=master)](https://travis-ci.com/gwelt/wissenwerkommt)
-
+[![Build Status](https://travis-ci.org/gwelt/wissenwerkommt.svg?branch=master)](https://travis-ci.org/gwelt/wissenwerkommt)
 
 # wissenwerkommt
 
