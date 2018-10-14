@@ -1,74 +1,114 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="manifest" href="manifest.json">
 <script>
-
 var team=false;
+var adminMode=false;
+
+function checkSize() {
+  var width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+  document.getElementById("debug_width").innerHTML="width="+width;
+}
+
 function updateView(json) {  
   team=json?JSON.parse(json):false;
-  let main=document.getElementById("main");
-  let selected='';
-  let preset_weekday=(team.recurrence)?team.recurrence[0].weekday:0;
-  let preset_hour=(team.recurrence)?team.recurrence[0].time.slice(0,2):0;
-  let preset_minute=(team.recurrence)?team.recurrence[0].time.slice(3,5):0;
-  let weekdays=[[1,'montags'],[2,'dienstags'],[3,'mittwochs'],[4,'donnerstags'],[5,'freitags'],[6,'samstags'],[0,'sonntags'],[7,'täglich'],[8,'unregelmäßig']];
 
-  let weekday_selection='<select id="weekday">';
-  let i=-1;
+  var selected='';
+  var preset_weekday=(team.recurrence)?team.recurrence[0].weekday:new Date().getDay();
+  var preset_hour=(team.recurrence)?team.recurrence[0].time.slice(0,2):new Date().getHours();
+  var preset_minute=(team.recurrence)?team.recurrence[0].time.slice(3,5):(Math.floor(new Date().getMinutes()/15)*15);
+  var weekdays=[[1,'montags'],[2,'dienstags'],[3,'mittwochs'],[4,'donnerstags'],[5,'freitags'],[6,'samstags'],[0,'sonntags'],[7,'täglich'],[8,'unregelmäßig']];
+
+  var weekday_selection='<select id="weekday">';
+  var i=-1;
   while (++i<weekdays.length) {
     if (preset_weekday==weekdays[i][0]) {selected=' selected'} else {selected=''}
     weekday_selection+='<option value="'+weekdays[i][0]+'"'+selected+'>'+weekdays[i][1]+'</option>';
   }
   weekday_selection+='</select>';
 
-  let hour_selection='<select id="hour">';
-  let hour=-1; while (++hour<24) {
+  var hour_selection='<select id="hour">';
+  var hour=-1; while (++hour<24) {
     hour<10?hour='0'+hour:true;
     if (hour==preset_hour) {selected=' selected'} else {selected=''}
     hour_selection+='<option value="'+hour+'"'+selected+'>'+hour+'</option>';
   }
   hour_selection+='</select>';
 
-  let minute_selection='<select id="minute">';
-  let minute=0; while (minute<60) {
+  var minute_selection='<select id="minute">';
+  var minute=0; while (minute<60) {
     minute<10?minute='0'+minute:true;
     if (minute==preset_minute) {selected=' selected'} else {selected=''}
     minute_selection+='<option value="'+minute+'"'+selected+'>'+minute+'</option>';minute=minute*1+15;
   }
   minute_selection+='</select>';
 
+
+  let svg_menu='<svg xmlns="http://www.w3.org/2000/svg" id="svg_menu" fill="#000" width="24px" height="16px" viewBox="0 0 24 24"><path d="M24 6h-24v-4h24v4zm0 4h-24v4h24v-4zm0 8h-24v4h24v-4z"/></svg>';
+
+  mobile_head.innerHTML="<button onclick=toggleView('mobile_options')>"+svg_menu+"</button>";
+  mobile_options.innerHTML='<button onclick=\'toggleView("mobile_options","none");askCookie("name");\'>'+(getCookie("name",true)||"your name")+'</button> <button onclick=\'toggleView("mobile_options","none");askCookie("token")\'>'+(getCookie("token",true)||"set token")+'</button> <button class="admintoggle" onclick=\'toggleView("mobile_options","none");setAdminMode()\'>toggle Admin-Options</button><hr>';
+
   if ((!team||team.error)&&(!window.location.pathname.substr(1))) {
     // MAIN-page if no team is requested
-    if (team.error) {document.getElementById("reply").innerHTML = '<br>The server answered: '+JSON.stringify(team);}
-    mobile_main.innerHTML='<hr>CREATE A NEW TEAM<br>teamid:<input type="text" id="teamid" value="'+window.location.pathname.substr(1)+'"> name:<input type="text" id="name" value=""> '+weekday_selection+' '+hour_selection+' '+minute_selection +'<br>teamtoken:<input type="text" id="teamtoken" value="'+(team.teamtoken||'')+'"> admintoken:<input type="text" id="admintoken" value="'+(team.admintoken||'')+'"> <button onclick=addTeam()>create Team</button><hr>ADMIN: <button onclick=load()>load</button> <button onclick=save()>save</button> <button onclick=dump()>dump</button><hr>';
-    serverRequest('getListOfTeamIDs',{},function (r){mobile_main.innerHTML+="Here is a list of all teams: "; r=JSON.parse(r); r.forEach(function (t){mobile_main.innerHTML+='<a href=/'+t+'>'+t+'</a> '})});
-    serverRequest('stats',{},function (r){mobile_main.innerHTML+="<br>Here are some stats: "+r});
+    if (team.error) {document.getElementById("debug").innerHTML='<br>The server answered: '+JSON.stringify(team);}
+    mobile_head.innerHTML+=" ";
+    mobile_main.innerHTML='CREATE A NEW TEAM<br><input type="text" id="name" value="" placeholder="name of the team"><br>'+weekday_selection+' '+hour_selection+' '+minute_selection +'<br><input type="text" id="teamid" value="'+window.location.pathname.substr(1)+'" placeholder="team id"><br><input type="text" id="admintoken" value="'+(team.admintoken||'')+'" placeholder="admin token"><!--<br>teamtoken: --><input type="hidden" id="teamtoken" value="'+(team.teamtoken||'')+'"><br><button onclick=addTeam()>create Team</button>';
+    mobile_admin.innerHTML='ADMIN: <button onclick=load()>load</button> <button onclick=save()>save</button> <button onclick=dump()>dump</button>'
+    serverRequest('getListOfTeamIDs',{},function (r){mobile_main.innerHTML+="<hr>Teams: "; r=JSON.parse(r); r.forEach(function (t){mobile_main.innerHTML+='<a href=/'+t+'>'+t+'</a> '})});
+    // serverRequest('stats',{},function (r){mobile_main.innerHTML+="<br>Here are some stats: "+r});
+
   } else {
     // TEAM-page
-    mobile_main.innerHTML="<a href=/>Hallo</a> <button onclick=askCookie('name')>"+(getCookie('name',true)||'click here')+"</button> <button onclick=askCookie('token')>"+(getCookie('token',true)||'set token')+"</button>. Team: <a href=/"+team.teamid+">"+team.name+"</a> <span id='userlevel'></span><br>";
-    mobile_main.innerHTML+="<div id='mobile_admin' style='display:none'></div>";
+    mobile_head.innerHTML+=" <a href=/"+team.teamid+" style=text-decoration:none>"+team.name+"</a>";
+    let name=getCookie('name',true);
+    mobile_main.innerHTML='';
     team.events?team.events.forEach(function (e) {
-      mobile_main.innerHTML+=['So','Mo','Di','Mi','Do','Fr','Sa'][new Date(e.datetime).getDay()]+' '+e.datetime+' ('+(!e.attendees?0:e.attendees.length)+') '
-      +'<button id="status'+e.datetime+'" onclick=toggleStatus("'+e.datetime+'")>'+getStatus(e.datetime)+'</button> '
-      +'<input type="text" id="comment'+e.datetime+'" value="'+(e.comment||'')+'"> '
-      +'<button onclick=commentEvent("'+e.datetime+'")>comment event</button> '
+      let comment='<div class="admin" style="display:none"> <input type="text" id="comment'+e.datetime+'" value="'+(e.comment||'')+'"> <button onclick=commentEvent("'+e.datetime+'")>comment event</button></div>';
+      let day=['So','Mo','Di','Mi','Do','Fr','Sa'][new Date(e.datetime).getDay()]+' '+e.datetime.substring(8,10)+'.'+e.datetime.substring(5,7)+'. '+e.datetime.substring(11,16)+' Uhr';
+      mobile_main.innerHTML+='<button id="status'+e.datetime+'" onclick=toggleStatus("'+e.datetime+'")>'+day+'</button> '
+      +' ('+(!e.attendees?0:e.attendees.length)+') '
       +(!e.attendees?'':'JA:'+e.attendees)+' '
-      +(!e.refusals?'':'NEIN:'+e.refusals)+'<br>';
+      +(!e.refusals?'':'NEIN:'+e.refusals)+'<br>'+comment;
+
+      if (e.attendees&&e.attendees.includes(name)) {document.getElementById('status'+e.datetime).className='button_attending'}
+      else if (e.refusals&&e.refusals.includes(name)) {document.getElementById('status'+e.datetime).className='button_refused'} 
+      else {document.getElementById('status'+e.datetime).className=''}
+
     }):false;
+    mobile_main.innerHTML+='<hr><a href=/>zur Startseite</a>'
     
-    mobile_admin.innerHTML='<input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'"> name:<input type="text" id="name" value="'+team.name+'"> teamtoken:<input type="text" id="teamtoken" value="'+(team.teamtoken||'')+'"> admintoken:<input type="text" id="admintoken" value="'+(team.admintoken||'')+'"> '+weekday_selection+' '+hour_selection+' '+minute_selection +' <button onclick=editTeam()>update Team</button> <button onclick=deleteTeam()>delete Team</button><br><br>datetime:<input type="text" id="datetime" value="'+getDateString()+'T00:00"> comment:<input type="text" id="comment" value="Einzeltermin"> <button onclick=addEvent()>add Event</button><br><br>';
+    mobile_admin.innerHTML='<input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'"><input type="text" id="name" value="'+team.name+'" placeholder="name of the team"><br><input type="text" id="teamtoken" value="'+(team.teamtoken||'')+'" placeholder="team token"><br><input type="text" id="admintoken" value="'+(team.admintoken||'')+'" placeholder="admin token [verborgen]"><br>'+weekday_selection+' '+hour_selection+' '+minute_selection +'<br><button onclick=editTeam()>update Team</button> <button onclick=deleteTeam()>delete Team</button><hr><input type="text" id="datetime" value="'+getDateString()+'T00:00" placeholder="datetime"><br><input type="text" id="comment" value="Einzeltermin" placeholder="comment"><br><button onclick=addEvent()>add Event</button><hr>';
 
     debug('Team-JSON: '+JSON.stringify(team));    
-    getUserLevel();  
   }
+  getUserLevel();
+  setAdminMode(adminMode);
 }
 
-function getStatus(datetime) {
-  let e=findEvent(team,datetime);
-  let name=getCookie('name',true);
-  if (e.attendees&&e.attendees.includes(name)) {return 'A'}
-  else if (e.refusals&&e.refusals.includes(name)) {return 'R'} 
-  else {return '?'}
+function toggleStatus(datetime) {
+  var e=findEvent(team,datetime);
+  var name=getCookie('name',true);
+  if (e.attendees&&e.attendees.includes(name)) {changeStatus("refuse",datetime)}
+  else if (e.refusals&&e.refusals.includes(name)) {changeStatus("undecided",datetime)} 
+  else {changeStatus("attend",datetime)}
+}
+
+function toggleView(id,state) {
+  let e=document.getElementById(id);
+  if (state) {e.style.display=state} 
+  else if (e.currentStyle?e.currentStyle.display:getComputedStyle(e, null).display=='none') {e.style.display='block'} else {e.style.display='none'}
+}
+
+function setAdminMode(state) {
+  if (state==undefined) {adminMode=!adminMode} else {adminMode=state};
+  if (adminMode) {
+    [].forEach.call(document.getElementsByClassName('admin'), function (c) {c.style.display='block'});
+  } else {
+    [].forEach.call(document.getElementsByClassName('admin'), function (c) {c.style.display='none'});
+  }
 }
 
 function findEvent(team,datetime) {
@@ -77,32 +117,22 @@ function findEvent(team,datetime) {
   } else {return false}
 }
 
-function toggleStatus(datetime) {
-  switch (getStatus(datetime)) {
-    case 'A':
-      changeStatus("refuse",datetime);
-      break;
-    case 'R':
-      changeStatus("undecided",datetime);
-      break;
-    case '?':
-      changeStatus("attend",datetime);
-      break;
-  }
-}
-
 function getUserLevel(teamid) {
   if (!teamid) {teamid=window.location.pathname.substr(1)};
-  if (teamid) {
+  if (1) {
     serverRequest('getUserLevel',{token:getCookie('token',true),teamid:teamid},function (r){
-      document.getElementById('userlevel').innerHTML='(Level '+r+')';
-      if (r>1) {document.getElementById('mobile_admin').style.display='block'}
+      document.getElementById('userlevel').innerHTML='Level '+r+', ';
+      if (r>1) {
+        [].forEach.call(document.getElementsByClassName('admintoggle'), function (e) {e.style.display='block'});
+      } else {
+        [].forEach.call(document.getElementsByClassName('admintoggle'), function (e) {e.style.display='none'});
+      }
     });
   }
 }
 
 function updateStatus(json) {
-  let o=JSON.parse(json);
+  var o=JSON.parse(json);
   debug('The server answered: '+JSON.stringify(o));
   getTeam();
 }
@@ -204,7 +234,7 @@ function getCookie(cname,dontask) {
       c = c.substring(1);
     }
     if (c.indexOf(name) == 0) {
-      let res=c.substring(name.length, c.length);
+      var res=c.substring(name.length, c.length);
       return res;
     }
   }
@@ -214,21 +244,90 @@ function getCookie(cname,dontask) {
 function debug(text) {
   console.log(text);
 }
-
 </script>
 
 <style>
-  .body {max-width:800px}
-  .mobile_main {background-color:#fff; max-width:800px;}
+/* roboto-slab-regular - latin-ext */
+@font-face {
+  font-family: 'Roboto Slab';
+  font-style: normal;
+  font-weight: 400;
+  src: url('/fonts/roboto-slab-v7-latin-ext-regular.eot'); /* IE9 Compat Modes */
+  src: local('Roboto Slab Regular'), local('RobotoSlab-Regular'),
+       url('/fonts/roboto-slab-v7-latin-ext-regular.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
+       url('/fonts/roboto-slab-v7-latin-ext-regular.woff2') format('woff2'), /* Super Modern Browsers */
+       url('/fonts/roboto-slab-v7-latin-ext-regular.woff') format('woff'), /* Modern Browsers */
+       url('/fonts/roboto-slab-v7-latin-ext-regular.ttf') format('truetype'), /* Safari, Android, iOS */
+       url('/fonts/roboto-slab-v7-latin-ext-regular.svg#RobotoSlab') format('svg'); /* Legacy iOS */
+}
+/* roboto-regular - latin-ext */
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 400;
+  src: url('/fonts/roboto-v18-latin-ext-regular.eot'); /* IE9 Compat Modes */
+  src: local('Roboto'), local('Roboto-Regular'),
+       url('/fonts/roboto-v18-latin-ext-regular.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
+       url('/fonts/roboto-v18-latin-ext-regular.woff2') format('woff2'), /* Super Modern Browsers */
+       url('/fonts/roboto-v18-latin-ext-regular.woff') format('woff'), /* Modern Browsers */
+       url('/fonts/roboto-v18-latin-ext-regular.ttf') format('truetype'), /* Safari, Android, iOS */
+       url('/fonts/roboto-v18-latin-ext-regular.svg#Roboto') format('svg'); /* Legacy iOS */
+}
+  * {box-sizing:border-box;}
+  body {padding:0; margin:0; background-color:#fff;font-family: 'Roboto', serif; font-size: 1.6em; color:#000; background-color:#fff}
+  /*
+    green #86E082 #5BCF55 #3BBA34 #1DA416 #0E8108
+    red   #FE9395 #FD686C #E34044 #C81B20 #9E090D
+    brown #FFC393 #FFAC69 #E58A41 #CA691B #A04C0A
+    blue  #6FBFBC #409B98 #278B87 #117B77 #06615E
+  */
+  .head {background-color:rgb(200,200,200); padding:0.8%;}
+  .main {background-color: #fff; padding:0.8%;}
+  .options {background-color: #fff; padding:0.8%; display:none;}
+  .admin {display:none}
+  #mobile_admin {background-color: #fff; padding:0.8%;}
+  #debug {background-color: #fff; padding:0.8%; display:none;}
+  #svg_menu {fill:#000; nheight:100%; nwidth:100%}
+  /*#svg_menu:hover {fill:#ff0000;}*/
+  a {color:inherit}
+  a:hover {color:rgb(0,0,0); nobackground-color:rgb(245,0,0); notext-decoration:none; nopadding: 0 0.5em 0 0.5em; border-radius: 0.2em;}
+  hr {border-color: rgb(0,0,0)}
+  select, input, button {font-family: 'Roboto', serif; font-size: 1em; padding: 0 0.5em 0 0.5em; border-style: none; border-radius: 0.2em; background-color:rgb(235,235,235); outline:0; height:50px; margin:0 0 4px 0;}
+  button {cursor: pointer; background-color:#f2f2f2; height:50px;}
+  .button_attending {cursor: pointer; background-color:#1DA416}
+  .button_refused {cursor: pointer; background-color:#C81B20}
+  button:hover {filter: alpha(opacity=80); opacity: 0.8;}
+
+/* Extra small devices (phones, 600px and down) */
+@media only screen and (max-width: 600px) {.head {background-color:rgb(200,200,200);}} 
+
+/* Small devices (portrait tabvars and large phones, 600px and up) */
+@media only screen and (min-width: 600px) {.head {background-color:rgb(200,200,200);}} 
+
+/* Medium devices (landscape tabvars, 768px and up) */
+@media only screen and (min-width: 768px) {.head {background-color:rgb(200,200,200);}} 
+
+/* Large devices (laptops/desktops, 992px and up) */
+@media only screen and (min-width: 992px) {.head {background-color:rgb(200,200,200);}} 
+
+/* Extra large devices (large laptops and desktops, 1200px and up) */
+@media only screen and (min-width: 1200px) {.head {background-color:rgb(200,200,200);}}
+
 </style>
 
 </head>
-<body onload="getTeam()" class="body">
+<body onload="getTeam();checkSize();" onresize="checkSize()">
 
-<!--<div id="main" class="main"></div>-->
-<div id="mobile_main" class="mobile_main"></div>
-<div id="reply"></div>
-<div id="debug"></div>
+<div id="mobile_head" class="head"></div>
+<div id="mobile_options" class="options"></div>
+<div id="mobile_admin" class="admin"></div>
+<div id="mobile_main" class="main"></div>
+
+<div id="debug" class="debug">
+  <!--<audio id="audio" no_controls="" no_autoplay><source src="sounds/smb_kick.wav" type="audio/wav">audio not supported</audio><button onclick=document.getElementById("audio").play()>play audio</button>-->
+  <span id='userlevel'></span>
+  <span id='debug_width'></span>
+</div>
 
 </body>
 </html>

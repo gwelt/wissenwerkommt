@@ -1,4 +1,4 @@
-//var console = {}; console.log = function(){};
+var console = {}; console.log = function(){};
 
 /* SUPERTEST HTTP/REST-API TESTS */
 const request = require('supertest');
