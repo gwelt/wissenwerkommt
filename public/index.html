@@ -30,7 +30,7 @@ var adminMode=false;
 
 function checkSize() {
   var width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
-  document.getElementById("debug_width").innerHTML="width="+width;
+  debug('clientWidth: '+width);
 }
 
 function updateView(json) {  
@@ -76,38 +76,44 @@ function updateView(json) {
   mobile_head.innerHTML="<button onclick=toggleView('mobile_options')>"+svg_menu+"</button>";
   mobile_options.innerHTML='<button onclick=\'toggleView("mobile_options","none");askCookie("name");\'>'+(getCookie("name",true)||"your name")+'</button> <button onclick=\'toggleView("mobile_options","none");askCookie("token")\'>'+(getCookie("token",true)||"set token")+'</button> <button class="admintoggle" onclick=\'toggleView("mobile_options","none");setAdminMode()\'>toggle Admin-Options</button><hr>';
 
-  if ((!team||team.error)&&(!window.location.pathname.substr(1))) {
+  if (!team) { //&&(!window.location.pathname.substr(1))
     // MAIN-page if no team is requested
-    if (team.error) {document.getElementById("debug").innerHTML='<br>The server answered: '+JSON.stringify(team);}
-    mobile_head.innerHTML+=" ";
     mobile_main.innerHTML='CREATE A NEW TEAM<br><input type="text" id="name" value="" placeholder="name of the team"><br>'+weekday_selection+' '+hour_selection+' '+minute_selection +'<br><input type="text" id="teamid" value="'+window.location.pathname.substr(1)+'" placeholder="team id"><br><input type="text" id="admintoken" value="'+(team.admintoken||'')+'" placeholder="admin token"><!--<br>teamtoken: --><input type="hidden" id="teamtoken" value="'+(team.teamtoken||'')+'"><br><button onclick=addTeam()>create Team</button>';
     mobile_admin.innerHTML='ADMIN: <button onclick=load()>load</button> <button onclick=save()>save</button> <button onclick=dump()>dump</button>'
     serverRequest('getListOfTeamIDs',{},function (r){mobile_main.innerHTML+="<hr>Teams: "; r=JSON.parse(r); r.forEach(function (t){mobile_main.innerHTML+='<a href=/'+t+'>'+t+'</a> '})});
     // serverRequest('stats',{},function (r){mobile_main.innerHTML+="<br>Here are some stats: "+r});
-
   } else {
     // TEAM-page
-    mobile_head.innerHTML+=" <a href=/"+team.teamid+" style=text-decoration:none>"+team.name+"</a>";
-    var name=getCookie('name',true);
-    mobile_main.innerHTML='';
-    team.events?team.events.forEach(function (e) {
-      var comment='<div class="admin" style="display:none"> <input type="text" id="comment'+e.datetime+'" value="'+(e.comment||'')+'"> <button onclick=commentEvent("'+e.datetime+'")>comment event</button></div>';
-      var day=['So','Mo','Di','Mi','Do','Fr','Sa'][new Date(e.datetime).getDay()]+' '+e.datetime.substring(8,10)+'.'+e.datetime.substring(5,7)+'. '+e.datetime.substring(11,16)+' Uhr';
-      mobile_main.innerHTML+='<button id="status'+e.datetime+'" onclick=toggleStatus("'+e.datetime+'")>'+day+'</button> '
-      +' ('+(!e.attendees?0:e.attendees.length)+') '
-      +(!e.attendees?'':'JA:'+e.attendees)+' '
-      +(!e.refusals?'':'NEIN:'+e.refusals)+'<br>'+comment;
+    if (team.error) {
+      debug('ERROR: The server answered: '+JSON.stringify(team))
+      mobile_main.innerHTML=team.error;
+      mobile_main.innerHTML+='<hr><a href=/>zur Startseite</a>';
+      //"This team does not exist<br>- OR -<br>you don't have sufficient rights to view the team!<br><br><a href=/>Back to Main-Page</a>";
+      //<br><button onclick=\"toggleView('mobile_options','none');askCookie('token')\">"+(getCookie('token',true)||'set token')+"</button>
+      getCookie('token');
+    } else {
+      mobile_head.innerHTML+=" <a href=/"+team.teamid+" style=text-decoration:none>"+(!!team.name?team.name:'')+"</a>";
+      var name=getCookie('name',true);
+      mobile_main.innerHTML='';
+      team.events?team.events.forEach(function (e) {
+        var comment='<div class="admin" style="display:none"> <input type="text" id="comment'+e.datetime+'" value="'+(e.comment||'')+'"> <button onclick=commentEvent("'+e.datetime+'")>comment event</button></div>';
+        var day=['So','Mo','Di','Mi','Do','Fr','Sa'][new Date(e.datetime).getDay()]+' '+e.datetime.substring(8,10)+'.'+e.datetime.substring(5,7)+'. '+e.datetime.substring(11,16)+' Uhr';
+        mobile_main.innerHTML+='<button id="status'+e.datetime+'" onclick=toggleStatus("'+e.datetime+'")>'+day+'</button> '
+        +' ('+(!e.attendees?0:e.attendees.length)+') '
+        +(!e.attendees?'':'JA:'+e.attendees)+' '
+        +(!e.refusals?'':'NEIN:'+e.refusals)+'<br>'+comment;
 
-      if (e.attendees&&e.attendees.includes(name)) {document.getElementById('status'+e.datetime).className='button_attending'}
-      else if (e.refusals&&e.refusals.includes(name)) {document.getElementById('status'+e.datetime).className='button_refused'} 
-      else {document.getElementById('status'+e.datetime).className=''}
+        if (e.attendees&&e.attendees.includes(name)) {document.getElementById('status'+e.datetime).className='button_attending'}
+        else if (e.refusals&&e.refusals.includes(name)) {document.getElementById('status'+e.datetime).className='button_refused'} 
+        else {document.getElementById('status'+e.datetime).className=''}
 
-    }):false;
-    mobile_main.innerHTML+='<hr><a href=/>zur Startseite</a>'
-    
-    mobile_admin.innerHTML='<input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'"><input type="text" id="name" value="'+team.name+'" placeholder="name of the team"><br><input type="text" id="teamtoken" value="'+(team.teamtoken||'')+'" placeholder="team token"><br><input type="text" id="admintoken" value="'+(team.admintoken||'')+'" placeholder="admin token [verborgen]"><br>'+weekday_selection+' '+hour_selection+' '+minute_selection +'<br><button onclick=editTeam()>update Team</button> <button onclick=deleteTeam()>delete Team</button><hr><input type="text" id="datetime" value="'+getDateString()+'T00:00" placeholder="datetime"><br><input type="text" id="comment" value="Einzeltermin" placeholder="comment"><br><button onclick=addEvent()>add Event</button><hr>';
+      }):false;
+      mobile_main.innerHTML+='<hr><a href=/>zur Startseite</a>';
+      
+      mobile_admin.innerHTML='<input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'"><input type="text" id="name" value="'+team.name+'" placeholder="name of the team"><br><input type="text" id="teamtoken" value="'+(team.teamtoken||'')+'" placeholder="team token"><br><input type="text" id="admintoken" value="'+(team.admintoken||'')+'" placeholder="admin token [verborgen]"><br>'+weekday_selection+' '+hour_selection+' '+minute_selection +'<br><button onclick=editTeam()>update Team</button> <button onclick=deleteTeam()>delete Team</button><hr><input type="text" id="datetime" value="'+getDateString()+'T00:00" placeholder="datetime"><br><input type="text" id="comment" value="Einzeltermin" placeholder="comment"><br><button onclick=addEvent()>add Event</button><hr>';
 
-    debug('Team-JSON: '+JSON.stringify(team));    
+      debug('Team-JSON: '+JSON.stringify(team));
+    }    
   }
   getUserLevel();
   setAdminMode(adminMode);
@@ -146,11 +152,12 @@ function getUserLevel(teamid) {
   if (!teamid) {teamid=window.location.pathname.substr(1)}
   if (1) {
     serverRequest('getUserLevel',{token:getCookie('token',true),teamid:teamid},function (r){
-      document.getElementById('userlevel').innerHTML='Level '+r+', ';
+      debug('Userlevel: '+r);
       if (r>1) {
-        [].forEach.call(document.getElementsByClassName('admintoggle'), function (e) {e.style.display='block'});
+        [].forEach.call(document.getElementsByClassName('admintoggle'), function (e) {e.style.display='inline'});
       } else {
         [].forEach.call(document.getElementsByClassName('admintoggle'), function (e) {e.style.display='none'});
+        setAdminMode(false);
       }
     });
   }
@@ -174,7 +181,7 @@ function changeStatus(status,datetime) {
 }
 
 function addTeam() {
-  serverRequest('addTeam',{teamid:document.getElementById('teamid').value,name:document.getElementById('name').value,teamtoken:document.getElementById('teamtoken').value,admintoken:document.getElementById('admintoken').value,recurrence:[{weekday:document.getElementById('weekday').value,time:document.getElementById('hour').value+':'+document.getElementById('minute').value}]},function (r){updateStatus(r);});
+  serverRequest('addTeam',{teamid:document.getElementById('teamid').value,name:document.getElementById('name').value,teamtoken:document.getElementById('teamtoken').value,admintoken:document.getElementById('admintoken').value,recurrence:[{weekday:document.getElementById('weekday').value,time:document.getElementById('hour').value+':'+document.getElementById('minute').value}]},function (r){window.location.href = '/'+document.getElementById('teamid').value;});
 }
 
 function editTeam() {
@@ -270,6 +277,7 @@ function getCookie(cname,dontask) {
 function debug(text) {
   console.log(text);
 }
+
 </script>
 
 <style>
@@ -312,7 +320,6 @@ function debug(text) {
   .options {background-color: #fff; padding:0.8%; display:none;}
   .admin {display:none}
   #mobile_admin {background-color: #fff; padding:0.8%;}
-  #debug {background-color: #fff; padding:0.8%; display:none;}
   #svg_menu {fill:#000; nheight:100%; nwidth:100%}
   /*#svg_menu:hover {fill:#ff0000;}*/
   a {color:inherit}
@@ -348,12 +355,7 @@ function debug(text) {
 <div id="mobile_options" class="options"></div>
 <div id="mobile_admin" class="admin"></div>
 <div id="mobile_main" class="main"></div>
-
-<div id="debug" class="debug">
-  <!--<audio id="audio" no_controls="" no_autoplay><source src="sounds/smb_kick.wav" type="audio/wav">audio not supported</audio><button onclick=document.getElementById("audio").play()>play audio</button>-->
-  <span id='userlevel'></span>
-  <span id='debug_width'></span>
-</div>
+<!--<audio id="audio" no_controls="" no_autoplay><source src="sounds/smb_kick.wav" type="audio/wav">audio not supported</audio><button onclick=document.getElementById("audio").play()>play audio</button>-->
 
 </body>
 
