@@ -10,14 +10,20 @@ function loadScript(src, done) {
   var js = document.createElement('script');
   js.src = src;
   js.onload = function() {
-    done();
-  };
-  js.onerror = function() {
-    done(new Error('Failed to load script ' + src));
+    done(src+' executed');
   };
   document.head.appendChild(js);
 }
-function afterPolyfill() {debug('polyfills.js executed')}
+function afterPolyfill(m) {debug(m)}
+// Service-Worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('service-worker.js')
+    .then(function(reg){
+      debug("The service worker registered.");
+    }).catch(function(err) {
+      debug("Something went wrong while registering the service worker. This happened: ", err)
+    });
+}
 
 var team=false;
 var adminMode=false;
@@ -351,15 +357,4 @@ function debug(text) {
 
 </body>
 
-<script>
-  if ('serviceWorker' in navigator) {
-    console.log("Will the service worker register?");
-    navigator.serviceWorker.register('service-worker.js')
-      .then(function(reg){
-        console.log("Yes, it did.");
-      }).catch(function(err) {
-        console.log("No it didn't. This happened: ", err)
-      });
-  }
-</script>
 </html>
