@@ -14,6 +14,10 @@ function checkSize() {
 
 function updateView(json) {  
   team=json?JSON.parse(json):false;
+  var mobile_head=document.getElementById('mobile_head');
+  var mobile_main=document.getElementById('mobile_main');
+  var mobile_options=document.getElementById('mobile_options');
+  var mobile_admin=document.getElementById('mobile_admin');
 
   var selected='';
   var preset_weekday=(team.recurrence)?team.recurrence[0].weekday:new Date().getDay();
@@ -46,7 +50,7 @@ function updateView(json) {
   minute_selection+='</select>';
 
 
-  let svg_menu='<svg xmlns="http://www.w3.org/2000/svg" id="svg_menu" fill="#000" width="24px" height="16px" viewBox="0 0 24 24"><path d="M24 6h-24v-4h24v4zm0 4h-24v4h24v-4zm0 8h-24v4h24v-4z"/></svg>';
+  var svg_menu='<svg xmlns="http://www.w3.org/2000/svg" id="svg_menu" fill="#000" width="24px" height="16px" viewBox="0 0 24 24"><path d="M24 6h-24v-4h24v4zm0 4h-24v4h24v-4zm0 8h-24v4h24v-4z"/></svg>';
 
   mobile_head.innerHTML="<button onclick=toggleView('mobile_options')>"+svg_menu+"</button>";
   mobile_options.innerHTML='<button onclick=\'toggleView("mobile_options","none");askCookie("name");\'>'+(getCookie("name",true)||"your name")+'</button> <button onclick=\'toggleView("mobile_options","none");askCookie("token")\'>'+(getCookie("token",true)||"set token")+'</button> <button class="admintoggle" onclick=\'toggleView("mobile_options","none");setAdminMode()\'>toggle Admin-Options</button><hr>';
@@ -63,11 +67,11 @@ function updateView(json) {
   } else {
     // TEAM-page
     mobile_head.innerHTML+=" <a href=/"+team.teamid+" style=text-decoration:none>"+team.name+"</a>";
-    let name=getCookie('name',true);
+    var name=getCookie('name',true);
     mobile_main.innerHTML='';
     team.events?team.events.forEach(function (e) {
-      let comment='<div class="admin" style="display:none"> <input type="text" id="comment'+e.datetime+'" value="'+(e.comment||'')+'"> <button onclick=commentEvent("'+e.datetime+'")>comment event</button></div>';
-      let day=['So','Mo','Di','Mi','Do','Fr','Sa'][new Date(e.datetime).getDay()]+' '+e.datetime.substring(8,10)+'.'+e.datetime.substring(5,7)+'. '+e.datetime.substring(11,16)+' Uhr';
+      var comment='<div class="admin" style="display:none"> <input type="text" id="comment'+e.datetime+'" value="'+(e.comment||'')+'"> <button onclick=commentEvent("'+e.datetime+'")>comment event</button></div>';
+      var day=['So','Mo','Di','Mi','Do','Fr','Sa'][new Date(e.datetime).getDay()]+' '+e.datetime.substring(8,10)+'.'+e.datetime.substring(5,7)+'. '+e.datetime.substring(11,16)+' Uhr';
       mobile_main.innerHTML+='<button id="status'+e.datetime+'" onclick=toggleStatus("'+e.datetime+'")>'+day+'</button> '
       +' ('+(!e.attendees?0:e.attendees.length)+') '
       +(!e.attendees?'':'JA:'+e.attendees)+' '
@@ -97,13 +101,13 @@ function toggleStatus(datetime) {
 }
 
 function toggleView(id,state) {
-  let e=document.getElementById(id);
+  var e=document.getElementById(id);
   if (state) {e.style.display=state} 
   else if (e.currentStyle?e.currentStyle.display:getComputedStyle(e, null).display=='none') {e.style.display='block'} else {e.style.display='none'}
 }
 
 function setAdminMode(state) {
-  if (state==undefined) {adminMode=!adminMode} else {adminMode=state};
+  if (state==undefined) {adminMode=!adminMode} else {adminMode=state}
   if (adminMode) {
     [].forEach.call(document.getElementsByClassName('admin'), function (c) {c.style.display='block'});
   } else {
@@ -113,12 +117,12 @@ function setAdminMode(state) {
 
 function findEvent(team,datetime) {
   if (team.events instanceof Array) {
-    return team.events.find(e => e.datetime==datetime)||false;
+    return team.events.find(function(e) {return e.datetime==datetime})||false;
   } else {return false}
 }
 
 function getUserLevel(teamid) {
-  if (!teamid) {teamid=window.location.pathname.substr(1)};
+  if (!teamid) {teamid=window.location.pathname.substr(1)}
   if (1) {
     serverRequest('getUserLevel',{token:getCookie('token',true),teamid:teamid},function (r){
       document.getElementById('userlevel').innerHTML='Level '+r+', ';
@@ -138,62 +142,62 @@ function updateStatus(json) {
 }
 
 function getTeam(teamid) {
-  if (!teamid) {teamid=window.location.pathname.substr(1)};
+  if (!teamid) {teamid=window.location.pathname.substr(1)}
   if (teamid) {
     serverRequest('getTeam',{token:getCookie('token',true),teamid:teamid},function (r){updateView(r)});
   } else {updateView()}
 }
 
 function changeStatus(status,datetime) {
-  serverRequest(status,{token:getCookie('token',!team.teamtoken),teamid:window.location.pathname.substr(1),datetime:datetime,name:getCookie('name')},function (r){updateStatus(r)});
+  serverRequest(status,{token:getCookie('token',!team.teamtoken),teamid:window.location.pathname.substr(1),datetime:datetime,name:getCookie('name')},function (r){updateStatus(r);});
 }
 
 function addTeam() {
-  serverRequest('addTeam',{teamid:document.getElementById('teamid').value,name:document.getElementById('name').value,teamtoken:document.getElementById('teamtoken').value,admintoken:document.getElementById('admintoken').value,recurrence:[{weekday:document.getElementById('weekday').value,time:document.getElementById('hour').value+':'+document.getElementById('minute').value}]},function (r){updateStatus(r)});
+  serverRequest('addTeam',{teamid:document.getElementById('teamid').value,name:document.getElementById('name').value,teamtoken:document.getElementById('teamtoken').value,admintoken:document.getElementById('admintoken').value,recurrence:[{weekday:document.getElementById('weekday').value,time:document.getElementById('hour').value+':'+document.getElementById('minute').value}]},function (r){updateStatus(r);});
 }
 
 function editTeam() {
-  serverRequest('editTeam',{token:getCookie('token',true),teamid:document.getElementById('teamid').value,name:document.getElementById('name').value,teamtoken:document.getElementById('teamtoken').value,admintoken:document.getElementById('admintoken').value,recurrence:[{weekday:document.getElementById('weekday').value,time:document.getElementById('hour').value+':'+document.getElementById('minute').value}]},function (r){updateStatus(r)});
+  serverRequest('editTeam',{token:getCookie('token',true),teamid:document.getElementById('teamid').value,name:document.getElementById('name').value,teamtoken:document.getElementById('teamtoken').value,admintoken:document.getElementById('admintoken').value,recurrence:[{weekday:document.getElementById('weekday').value,time:document.getElementById('hour').value+':'+document.getElementById('minute').value}]},function (r){updateStatus(r);});
 }
 
 function deleteTeam() {
-  serverRequest('deleteTeam',{token:getCookie('token',true),teamid:document.getElementById('teamid').value},function (r){updateStatus(r)});
+  serverRequest('deleteTeam',{token:getCookie('token',true),teamid:document.getElementById('teamid').value},function (r){updateStatus(r);});
 }
 
 function addEvent() {
-  serverRequest('addEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:document.getElementById('datetime').value,comment:document.getElementById('comment').value},function (r){updateStatus(r)});
+  serverRequest('addEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:document.getElementById('datetime').value,comment:document.getElementById('comment').value},function (r){updateStatus(r);});
 }
 
 function cancelEvent(datetime) {
-  serverRequest('cancelEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:datetime},function (r){updateStatus(r)});
+  serverRequest('cancelEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:datetime},function (r){updateStatus(r);});
 }
 
 function reviveEvent(datetime) {
-  serverRequest('reviveEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:datetime},function (r){updateStatus(r)});
+  serverRequest('reviveEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:datetime},function (r){updateStatus(r);});
 }
 
 function commentEvent(datetime) {
-  serverRequest('commentEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:datetime,comment:document.getElementById('comment'+datetime).value},function (r){updateStatus(r)});
+  serverRequest('commentEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:datetime,comment:document.getElementById('comment'+datetime).value},function (r){updateStatus(r);});
 }
 
 function deleteEvent(datetime) {
-  serverRequest('deleteEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:datetime},function (r){updateStatus(r)});
+  serverRequest('deleteEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:datetime},function (r){updateStatus(r);});
 }
 
 function load() {
-  serverRequest('load',{token:getCookie('token',true)},function (r){updateStatus(r)});
+  serverRequest('load',{token:getCookie('token',true)},function (r){updateStatus(r);});
 }
 
 function save() {
-  serverRequest('save',{token:getCookie('token',true)},function (r){updateStatus(r)});
+  serverRequest('save',{token:getCookie('token',true)},function (r){updateStatus(r);});
 }
 
 function dump() {
-  serverRequest('dump',{token:getCookie('token',true)},function (r){updateStatus(r)});
+  serverRequest('dump',{token:getCookie('token',true)},function (r){updateStatus(r);});
 }
 
 function getDateString(d) {
-  if (!d) {d=new Date()};
+  if (!d) {d=new Date()}
   var tzoffset = d.getTimezoneOffset() * 60000;
   return (new Date(d-tzoffset)).toISOString().slice(0, -14);
 } 
@@ -207,13 +211,14 @@ function serverRequest(apicall,json,callback) {
 }
 
 function askCookie(cname) {
-  preval=getCookie(cname,true);
-  val = prompt("Please enter "+cname, preval);
+  var preval=getCookie(cname,true);
+  var val = prompt("Please enter "+cname, preval);
   return setCookie(cname, val, -1); //-1 = sessioncookie
 }
 
 function setCookie(cname, cvalue, exdays) {
   var expires='';
+  var exdays=365;
   if (cvalue==""||cvalue==null) {exdays=0} //0 = delete cookie
   if (exdays>=0) {
     var d = new Date();
@@ -238,7 +243,7 @@ function getCookie(cname,dontask) {
       return res;
     }
   }
-  if (dontask) {return undefined} else {return askCookie(cname)};
+  if (dontask) {return undefined} else {return askCookie(cname)}
 }
 
 function debug(text) {
@@ -330,4 +335,16 @@ function debug(text) {
 </div>
 
 </body>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    console.log("Will the service worker register?");
+    navigator.serviceWorker.register('service-worker.js')
+      .then(function(reg){
+        console.log("Yes, it did.");
+      }).catch(function(err) {
+        console.log("No it didn't. This happened: ", err)
+      });
+  }
+</script>
 </html>
