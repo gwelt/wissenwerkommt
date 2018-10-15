@@ -4,6 +4,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="manifest" href="manifest.json">
 <script>
+// Polyfills
+if ((!Array.prototype.includes)||(!Array.prototype.find)) {loadScript('polyfills.js',afterPolyfill)}
+function loadScript(src, done) {
+  var js = document.createElement('script');
+  js.src = src;
+  js.onload = function() {
+    done();
+  };
+  js.onerror = function() {
+    done(new Error('Failed to load script ' + src));
+  };
+  document.head.appendChild(js);
+}
+function afterPolyfill() {debug('polyfills.js executed')}
+
 var team=false;
 var adminMode=false;
 
@@ -103,7 +118,7 @@ function toggleStatus(datetime) {
 function toggleView(id,state) {
   var e=document.getElementById(id);
   if (state) {e.style.display=state} 
-  else if (e.currentStyle?e.currentStyle.display:getComputedStyle(e, null).display=='none') {e.style.display='block'} else {e.style.display='none'}
+  else if (e.currentStyle?e.currentStyle.display=='none':getComputedStyle(e, null).display=='none') {e.style.display='block'} else {e.style.display='none'}
 }
 
 function setAdminMode(state) {
