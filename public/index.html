@@ -71,22 +71,26 @@ function updateView(json) {
   }
   minute_selection+='</select>';
 
-
   var svg_menu='<svg xmlns="http://www.w3.org/2000/svg" id="svg_menu" fill="#000" width="24px" height="16px" viewBox="0 0 24 24"><path d="M24 6h-24v-4h24v4zm0 4h-24v4h24v-4zm0 8h-24v4h24v-4z"/></svg>';
 
   mobile_head.innerHTML="<button onclick=toggleView('mobile_options')>"+svg_menu+"</button>";
-  var admin_options_button='';
-  if (team.userlevel>1) {admin_options_button=' <button onclick=\'toggleView("mobile_options","none");setAdminMode()\'>toggle Admin-Options</button>'}
-  mobile_options.innerHTML='<button onclick=\'toggleView("mobile_options","none");askCookie("name");\'>'+(getCookie("name",true)||"your name")+'</button> <button onclick=\'toggleView("mobile_options","none");askCookie("token")\'>'+(getCookie("token",true)||"set token")+'</button>'+admin_options_button+'<hr>';
 
   if (!team) {
     // MAIN-page if no team is requested
+    var admin_options_button='';
+    serverRequest('getUserLevel',{'token':getCookie('token',true)},function (userlevel){
+      if (userlevel>1) {admin_options_button=' <button onclick=\'toggleView("mobile_options","none");setAdminMode()\'>toggle Admin-Options</button>'} else {adminMode=false; setAdminMode(adminMode);}
+      mobile_options.innerHTML='<button onclick=\'toggleView("mobile_options","none");askCookie("name");\'>'+(getCookie("name",true)||"your name")+'</button> <button onclick=\'toggleView("mobile_options","none");askCookie("token")\'>'+(getCookie("token",true)||"set token")+'</button>'+admin_options_button+'<hr>';
+    });
     mobile_main.innerHTML='CREATE A NEW TEAM<br><input type="text" id="name" value="" placeholder="name of the team"><br>'+weekday_selection+' '+hour_selection+' '+minute_selection +'<br><input type="text" id="teamid" value="'+window.location.pathname.substr(1)+'" placeholder="team id"><br><input type="text" id="admintoken" value="'+(team.admintoken||'')+'" placeholder="admin token"><!--<br>teamtoken: --><input type="hidden" id="teamtoken" value="'+(team.teamtoken||'')+'"><br><button onclick=addTeam()>create Team</button>';
     mobile_admin.innerHTML='ADMIN: <button onclick=load()>load</button> <button onclick=save()>save</button> <button onclick=dump()>dump</button>'
     serverRequest('getListOfTeamIDs',{},function (r){mobile_main.innerHTML+="<hr>Teams: "; r=JSON.parse(r); r.forEach(function (t){mobile_main.innerHTML+='<a href=/'+t+'>'+t+'</a> '})});
     // serverRequest('stats',{},function (r){mobile_main.innerHTML+="<br>Here are some stats: "+r});
   } else {
     // TEAM-page
+    var admin_options_button='';
+    if (team.userlevel>1) {admin_options_button=' <button onclick=\'toggleView("mobile_options","none");setAdminMode()\'>toggle Admin-Options</button>'} else {adminMode=false}
+    mobile_options.innerHTML='<button onclick=\'toggleView("mobile_options","none");askCookie("name");\'>'+(getCookie("name",true)||"your name")+'</button> <button onclick=\'toggleView("mobile_options","none");askCookie("token")\'>'+(getCookie("token",true)||"set token")+'</button>'+admin_options_button+'<hr>';
     if (team.error) {
       debug('ERROR: The server answered: '+JSON.stringify(team))
       mobile_main.innerHTML=team.error;
