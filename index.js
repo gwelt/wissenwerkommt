@@ -38,7 +38,7 @@ app.use('/api/:r/:t?', function (req, res) {
     // team members only
     case 'getTeam':
       if (getUserLevel(req)>0) {
-        res.json(db.getTeam(req.params.t||req.body.teamid));
+        res.json(db.getTeam(req.params.t||req.body.teamid,getUserLevel(req)));
       } else {res.status(401).json({'error':'not sufficient rights to get team or team does not exist'})}
       break;
     case 'attend':

@@ -35,6 +35,7 @@ function checkSize() {
 
 function updateView(json) {  
   team=json?JSON.parse(json):false;
+  if (team.userlevel<2) {adminMode=false}
   var mobile_head=document.getElementById('mobile_head');
   var mobile_main=document.getElementById('mobile_main');
   var mobile_options=document.getElementById('mobile_options');
@@ -74,9 +75,11 @@ function updateView(json) {
   var svg_menu='<svg xmlns="http://www.w3.org/2000/svg" id="svg_menu" fill="#000" width="24px" height="16px" viewBox="0 0 24 24"><path d="M24 6h-24v-4h24v4zm0 4h-24v4h24v-4zm0 8h-24v4h24v-4z"/></svg>';
 
   mobile_head.innerHTML="<button onclick=toggleView('mobile_options')>"+svg_menu+"</button>";
-  mobile_options.innerHTML='<button onclick=\'toggleView("mobile_options","none");askCookie("name");\'>'+(getCookie("name",true)||"your name")+'</button> <button onclick=\'toggleView("mobile_options","none");askCookie("token")\'>'+(getCookie("token",true)||"set token")+'</button> <button class="admintoggle" onclick=\'toggleView("mobile_options","none");setAdminMode()\'>toggle Admin-Options</button><hr>';
+  var admin_options_button='';
+  if (team.userlevel>1) {admin_options_button=' <button onclick=\'toggleView("mobile_options","none");setAdminMode()\'>toggle Admin-Options</button>'}
+  mobile_options.innerHTML='<button onclick=\'toggleView("mobile_options","none");askCookie("name");\'>'+(getCookie("name",true)||"your name")+'</button> <button onclick=\'toggleView("mobile_options","none");askCookie("token")\'>'+(getCookie("token",true)||"set token")+'</button>'+admin_options_button+'<hr>';
 
-  if (!team) { //&&(!window.location.pathname.substr(1))
+  if (!team) {
     // MAIN-page if no team is requested
     mobile_main.innerHTML='CREATE A NEW TEAM<br><input type="text" id="name" value="" placeholder="name of the team"><br>'+weekday_selection+' '+hour_selection+' '+minute_selection +'<br><input type="text" id="teamid" value="'+window.location.pathname.substr(1)+'" placeholder="team id"><br><input type="text" id="admintoken" value="'+(team.admintoken||'')+'" placeholder="admin token"><!--<br>teamtoken: --><input type="hidden" id="teamtoken" value="'+(team.teamtoken||'')+'"><br><button onclick=addTeam()>create Team</button>';
     mobile_admin.innerHTML='ADMIN: <button onclick=load()>load</button> <button onclick=save()>save</button> <button onclick=dump()>dump</button>'
@@ -88,8 +91,6 @@ function updateView(json) {
       debug('ERROR: The server answered: '+JSON.stringify(team))
       mobile_main.innerHTML=team.error;
       mobile_main.innerHTML+='<hr><a href=/>zur Startseite</a>';
-      //"This team does not exist<br>- OR -<br>you don't have sufficient rights to view the team!<br><br><a href=/>Back to Main-Page</a>";
-      //<br><button onclick=\"toggleView('mobile_options','none');askCookie('token')\">"+(getCookie('token',true)||'set token')+"</button>
       getCookie('token');
     } else {
       mobile_head.innerHTML+=" <a href=/"+team.teamid+" style=text-decoration:none>"+(!!team.name?team.name:'')+"</a>";
@@ -115,8 +116,17 @@ function updateView(json) {
       debug('Team-JSON: '+JSON.stringify(team));
     }    
   }
-  getUserLevel();
   setAdminMode(adminMode);
+}
+
+// set/toggle view of admin-options
+function setAdminMode(state) {
+  if (state==undefined) {adminMode=!adminMode} else {adminMode=state}
+  if (adminMode) {
+    [].forEach.call(document.getElementsByClassName('admin'), function (c) {c.style.display='block'});
+  } else {
+    [].forEach.call(document.getElementsByClassName('admin'), function (c) {c.style.display='none'});
+  }
 }
 
 function toggleStatus(datetime) {
@@ -133,34 +143,10 @@ function toggleView(id,state) {
   else if (e.currentStyle?e.currentStyle.display=='none':getComputedStyle(e, null).display=='none') {e.style.display='block'} else {e.style.display='none'}
 }
 
-function setAdminMode(state) {
-  if (state==undefined) {adminMode=!adminMode} else {adminMode=state}
-  if (adminMode) {
-    [].forEach.call(document.getElementsByClassName('admin'), function (c) {c.style.display='block'});
-  } else {
-    [].forEach.call(document.getElementsByClassName('admin'), function (c) {c.style.display='none'});
-  }
-}
-
 function findEvent(team,datetime) {
   if (team.events instanceof Array) {
     return team.events.find(function(e) {return e.datetime==datetime})||false;
   } else {return false}
-}
-
-function getUserLevel(teamid) {
-  if (!teamid) {teamid=window.location.pathname.substr(1)}
-  if (1) {
-    serverRequest('getUserLevel',{token:getCookie('token',true),teamid:teamid},function (r){
-      debug('Userlevel: '+r);
-      if (r>1) {
-        [].forEach.call(document.getElementsByClassName('admintoggle'), function (e) {e.style.display='inline'});
-      } else {
-        [].forEach.call(document.getElementsByClassName('admintoggle'), function (e) {e.style.display='none'});
-        setAdminMode(false);
-      }
-    });
-  }
 }
 
 function updateStatus(json) {
@@ -349,7 +335,7 @@ function debug(text) {
 </style>
 
 </head>
-<body onload="getTeam();checkSize();" onresize="checkSize()">
+<body onload="getTeam()" onresize="">
 
 <div id="mobile_head" class="head"></div>
 <div id="mobile_options" class="options"></div>

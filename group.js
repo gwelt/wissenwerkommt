@@ -35,7 +35,7 @@ Group.prototype.getListOfTeamIDs = function() {
   } else {return false}
 }
 
-Group.prototype.getTeam = function(teamid) {
+Group.prototype.getTeam = function(teamid,userlevel) {
   let t=this.findTeam(teamid);
   if (t) {
     if (!(t.events instanceof Array)) {t.events=[]};
@@ -50,10 +50,12 @@ Group.prototype.getTeam = function(teamid) {
     // order events by date
     t.events.sort((a,b)=>{return (a.datetime>b.datetime)?1:-1});
     if (!t.events.length) {t.events=undefined};
+    // add userlevel-information to result
+    t.userlevel=userlevel;
   }
-  // remove admin token from return-value
   var t_res = JSON.parse(JSON.stringify(t));
-  t_res.admintoken=undefined;
+  // remove admin token from return-value if userlevel is < 2
+  if ((!userlevel)||(userlevel<2)) {t_res.admintoken=undefined;}
   return t_res;
 }
 
