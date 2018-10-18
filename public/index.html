@@ -93,9 +93,9 @@ function updateView(json) {
     mobile_options.innerHTML='<button onclick=\'toggleView("mobile_options","none");askCookie("name");\'>'+(getCookie("name",true)||"your name")+'</button> <button onclick=\'toggleView("mobile_options","none");askCookie("token")\'>'+(getCookie("token",true)||"set token")+'</button>'+admin_options_button+'<hr>';
     if (team.error) {
       debug('ERROR: The server answered: '+JSON.stringify(team))
-      mobile_main.innerHTML=team.error;
+      mobile_main.innerHTML=team.error+'<br>Maybe you need to <a href="" onclick=askCookie(\'token\')>set a(nother) token</a>?';
       mobile_main.innerHTML+='<hr><a href=/>zur Startseite</a>';
-      getCookie('token');
+      //getCookie('token');
     } else {
       mobile_head.innerHTML+=" <a href=/"+team.teamid+" style=text-decoration:none>"+(!!team.name?team.name:'')+"</a>";
       var name=getCookie('name',true);
@@ -115,7 +115,7 @@ function updateView(json) {
       }):false;
       mobile_main.innerHTML+='<hr><a href=/>zur Startseite</a>';
       
-      mobile_admin.innerHTML='<input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'"><input type="text" id="name" value="'+team.name+'" placeholder="name of the team"><br><input type="text" id="teamtoken" value="'+(team.teamtoken||'')+'" placeholder="team token"><br><input type="text" id="admintoken" value="'+(team.admintoken||'')+'" placeholder="admin token"><br>'+weekday_selection+' '+hour_selection+' '+minute_selection +'<br><button onclick=editTeam()>update Team</button> <button onclick=deleteTeam()>delete Team</button><hr><input type="text" id="datetime" value="'+getDateString()+'T00:00" placeholder="datetime"><br><input type="text" id="comment" value="Einzeltermin" placeholder="comment"><br><button onclick=addEvent()>add Event</button><hr>';
+      mobile_admin.innerHTML='<input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'"><input type="text" id="name" value="'+(team.name||'')+'" placeholder="name of the team"><br><input type="text" id="teamtoken" value="'+(team.teamtoken||'')+'" placeholder="team token"><br><input type="text" id="admintoken" value="'+(team.admintoken||'')+'" placeholder="admin token"><br>'+weekday_selection+' '+hour_selection+' '+minute_selection +'<br><button onclick=editTeam()>update Team</button> <button onclick=deleteTeam()>delete Team</button><hr><input type="text" id="datetime" value="'+getDateString()+'T00:00" placeholder="datetime"><br><input type="text" id="comment" value="Einzeltermin" placeholder="comment"><br><button onclick=addEvent()>add Event</button><hr>';
 
       debug('Team-JSON: '+JSON.stringify(team));
     }    
@@ -171,7 +171,7 @@ function changeStatus(status,datetime) {
 }
 
 function addTeam() {
-  serverRequest('addTeam',{teamid:document.getElementById('teamid').value,name:document.getElementById('name').value,teamtoken:document.getElementById('teamtoken').value,admintoken:document.getElementById('admintoken').value,recurrence:[{weekday:document.getElementById('weekday').value,time:document.getElementById('hour').value+':'+document.getElementById('minute').value}]},function (r){window.location.href = '/'+document.getElementById('teamid').value;});
+  serverRequest('addTeam',{teamid:document.getElementById('teamid').value,name:document.getElementById('name').value,teamtoken:document.getElementById('teamtoken').value,admintoken:document.getElementById('admintoken').value,recurrence:[{weekday:document.getElementById('weekday').value,time:document.getElementById('hour').value+':'+document.getElementById('minute').value}]},function (r){if (JSON.parse(r).hasOwnProperty('teamid')) {window.location.href = '/'+document.getElementById('teamid').value;} else {debug(r)}});
 }
 
 function editTeam() {

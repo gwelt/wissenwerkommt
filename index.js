@@ -26,7 +26,7 @@ app.use('/api/:r/:t?', function (req, res) {
       res.json(db.getListOfTeamIDs());
       break;
     case 'addTeam':
-      res.json(db.addTeam(req.body));
+      res.json(db.addTeam(req.body)||{'error':'teamid invalid or existing'});
       break;
     case 'stats':
       res.json(db.stats());
@@ -141,5 +141,5 @@ function getDateString(d) {
   return (new Date(d-tzoffset)).toISOString().slice(0, -14);
 } 
 
-process.on('SIGINT', function(){console.log('SIGINT'); db.save_to_file(config.datafilepath+'/temp_'+getDateString().slice(8,10)+'_'+config.datafile,()=>{process.exit()}); });
-process.on('SIGTERM', function(){console.log('SIGTERM'); db.save_to_file(config.datafilepath+'/temp_'+getDateString().slice(8,10)+'_'+config.datafile,()=>{process.exit()}); });
+process.on('SIGINT', function(){console.log('SIGINT'); db.save_to_file(config.datafilepath+'/'+config.datafile,()=>{process.exit()})});
+process.on('SIGTERM', function(){console.log('SIGTERM'); db.save_to_file(config.datafilepath+'/'+config.datafile,()=>{process.exit()})});
