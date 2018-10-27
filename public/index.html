@@ -93,7 +93,7 @@ function updateView(json) {
     mobile_options.innerHTML='<button onclick=\'toggleView("mobile_options","none");askCookie("name");\'>'+(getCookie("name",true)||"your name")+'</button> <button onclick=\'toggleView("mobile_options","none");askCookie("token")\'>'+(getCookie("token",true)||"set token")+'</button>'+admin_options_button+'<hr>';
     if (team.error) {
       debug('ERROR: The server answered: '+JSON.stringify(team))
-      mobile_main.innerHTML=team.error+'<br>Maybe you need to <a href="" onclick=askCookie(\'token\')>set a(nother) token</a>?';
+      mobile_main.innerHTML=team.error+'<br>Maybe you need to <a href="/'+window.location.pathname.substr(1)+'" onclick=askCookie(\'token\')>set a(nother) token</a>?';
       mobile_main.innerHTML+='<hr><a href=/>zur Startseite</a>';
       //getCookie('token');
     } else {
