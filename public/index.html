@@ -47,7 +47,7 @@ function updateView(json) {
   var preset_minute=(team.recurrence)?team.recurrence[0].time.slice(3,5):(Math.floor(new Date().getMinutes()/15)*15);
   var weekdays=[[1,'montags'],[2,'dienstags'],[3,'mittwochs'],[4,'donnerstags'],[5,'freitags'],[6,'samstags'],[0,'sonntags'],[7,'täglich'],[8,'unregelmäßig']];
 
-  var weekday_selection='<select id="weekday">';
+  var weekday_selection='<select id="weekday" onchange="display_hour_selection()">';
   var i=-1;
   while (++i<weekdays.length) {
     if (preset_weekday==weekdays[i][0]) {selected=' selected'} else {selected=''}
@@ -121,6 +121,13 @@ function updateView(json) {
     }    
   }
   setAdminMode(adminMode);
+}
+
+function display_hour_selection() {
+	var viewstate='inline';
+	if (document.getElementById('weekday').value==8) {viewstate='none'}
+	document.getElementById('hour').style.display=viewstate;
+	document.getElementById('minute').style.display=viewstate;
 }
 
 // set/toggle view of admin-options
@@ -260,7 +267,7 @@ function setCookie(cname, cvalue, exdays) {
   }
   document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
   getTeam();
-  return cvalue;
+  return getCookie(cname,true);
 }
 
 function debug(text) {
