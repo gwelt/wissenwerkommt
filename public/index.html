@@ -42,9 +42,9 @@ function updateView(json) {
   var mobile_admin=document.getElementById('mobile_admin');
 
   var selected='';
-  var preset_weekday=(team.recurrence)?team.recurrence[0].weekday:new Date().getDay();
-  var preset_hour=(team.recurrence)?team.recurrence[0].time.slice(0,2):new Date().getHours();
-  var preset_minute=(team.recurrence)?team.recurrence[0].time.slice(3,5):(Math.floor(new Date().getMinutes()/15)*15);
+  var preset_weekday=(team.recurrence)&&(team.recurrence[0].weekday)?team.recurrence[0].weekday:new Date().getDay();
+  var preset_hour=(team.recurrence)&&(team.recurrence[0].time)?team.recurrence[0].time.slice(0,2):new Date().getHours();
+  var preset_minute=(team.recurrence)&&(team.recurrence[0].slice)?team.recurrence[0].time.slice(3,5):(Math.floor(new Date().getMinutes()/15)*15);
   var weekdays=[[1,'montags'],[2,'dienstags'],[3,'mittwochs'],[4,'donnerstags'],[5,'freitags'],[6,'samstags'],[0,'sonntags'],[7,'täglich'],[8,'unregelmäßig']];
 
   var weekday_selection='<select id="weekday" onchange="display_hour_selection()">';
@@ -120,14 +120,18 @@ function updateView(json) {
       debug('Team-JSON: '+JSON.stringify(team));
     }    
   }
+  display_hour_selection();
   setAdminMode(adminMode);
 }
 
 function display_hour_selection() {
 	var viewstate='inline';
-	if (document.getElementById('weekday').value==8) {viewstate='none'}
-	document.getElementById('hour').style.display=viewstate;
-	document.getElementById('minute').style.display=viewstate;
+  var element_weekday=document.getElementById('weekday');
+  if (element_weekday) {
+    if (element_weekday.value==8) {viewstate='none'}
+    document.getElementById('hour').style.display=viewstate;
+    document.getElementById('minute').style.display=viewstate;    
+  }
 }
 
 // set/toggle view of admin-options
@@ -161,8 +165,8 @@ function findEvent(team,datetime) {
 }
 
 function updateStatus(json) {
-  var o=JSON.parse(json);
-  debug('The server answered: '+JSON.stringify(o));
+  debug('The server answered: '+json);
+  //var o=JSON.parse(json);
   getTeam();
 }
 

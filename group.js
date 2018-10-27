@@ -14,6 +14,11 @@ function Team(json) {
   if (json.recurrence instanceof Array) {
     this.recurrence=[];
     json.recurrence.forEach((rc)=>{
+      // undefine time if there is no recurrence set (preparation)
+      if (rc.weekday==8) {rc.time=undefined} 
+      // undefine time if there is no recurrence set
+      if ((rc.hasOwnProperty('weekday'))&&(!rc.hasOwnProperty('time'))) {this.recurrence.push({"weekday":rc.weekday})}
+      // regular case
       if ((rc.hasOwnProperty('weekday'))&&(rc.hasOwnProperty('time'))) {this.recurrence.push({"weekday":rc.weekday,"time":rc.time})}
     });
     if (!this.recurrence.length) {this.recurrence=undefined}
