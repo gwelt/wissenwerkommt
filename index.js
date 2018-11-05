@@ -135,11 +135,13 @@ function getUserLevel(req) {
   return db.getUserLevel((req.params.t||req.body.teamid),req.body.token);
 }
 
+/*
 function getDateString(d) {
   if (!d) {d=new Date()};
   var tzoffset = d.getTimezoneOffset() * 60000;
   return (new Date(d-tzoffset)).toISOString().slice(0, -14);
 } 
+*/
 
 process.on('SIGINT', function(){console.log('SIGINT'); db.save_to_file(config.datafilepath+'/'+config.datafile,()=>{process.exit()})});
 process.on('SIGTERM', function(){console.log('SIGTERM'); db.save_to_file(config.datafilepath+'/'+config.datafile,()=>{process.exit()})});

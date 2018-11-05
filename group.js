@@ -27,7 +27,7 @@ function Team(json) {
 
 function Event(json) {
   //todo: stealthen
-  this.datetime=json.hasOwnProperty('datetime')?json.datetime:undefined;
+  this.datetime=(json.hasOwnProperty('datetime')&&(isValidDate(json.datetime)))?json.datetime:undefined;
   this.attendees=(json.attendees instanceof Array)?json.attendees:undefined;
   this.refusals=(json.refusals instanceof Array)?json.refusals:undefined;
   this.cancelled=json.hasOwnProperty('cancelled')?json.cancelled:undefined;
@@ -279,3 +279,4 @@ function auth(str,hash) {
 
 function safe_text(text) {return unescape(text).replace(/[^\w\s\däüöÄÜÖß\.,'!\@#$^&%*()\+=\-\[\]\/{}\|:\?]/g,'').slice(0,256)}
 function issafe(text) {return text==safe_text(text)}
+function isValidDate(datestring) {var d=new Date(datestring); return d instanceof Date && !isNaN(d.getTime()) && d.getMonth()+1==datestring.substring(5,7);}
