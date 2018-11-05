@@ -252,7 +252,7 @@ Group.prototype.save_to_file = function(filename,callback) {
 
 
 Group.prototype.findTeam = function(teamid) {
-  if (this.teams instanceof Array) {
+  if (this.teams instanceof Array && teamid) {
     return this.teams.find(t => t.teamid==teamid.toLowerCase())||false;
   } else {return false}
 }
