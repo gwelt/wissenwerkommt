@@ -19,7 +19,7 @@ describe ('OPEN REST-REQUESTS', function() {
           if (err) throw err;
           console.log(res.text);
           let r=JSON.parse(res.text);
-          if ( (r.teamid=='teamG20') && (r.name=='Team G20') && (r.recurrence[0].weekday=='7') && (r.recurrence[0].time=='12:15') && (r.admintoken=='321') && (r.teamtoken=='123') ) {
+          if ( (r.teamid=='teamg20') && (r.name=='Team G20') && (r.recurrence[0].weekday=='7') && (r.recurrence[0].time=='12:15') && (r.admintoken=='321') && (r.teamtoken=='123') ) {
             done()
           } else {
             done(new Error('property not set as expected'))
@@ -38,7 +38,7 @@ describe ('OPEN REST-REQUESTS', function() {
     	  .end(function(err, res) {
     	    if (err) throw err;
     	    console.log(res.text);
-          if (res.text.includes('teamG20')) {done()} else {done(new Error('list does not contain new team'))};
+          if (res.text.includes('teamg20')) {done()} else {done(new Error('list does not contain new team'))};
         });
     });
   });

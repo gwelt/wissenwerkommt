@@ -6,11 +6,10 @@ function Group() {
 }
 
 function Team(json) {
-  //todo: stealthen
-  this.teamid=((json.hasOwnProperty('teamid'))&&(json.teamid.length))?json.teamid:undefined;
-  this.admintoken=(json.hasOwnProperty('admintoken')&&(json.admintoken.length))?json.admintoken.trim():undefined;
-  this.teamtoken=(json.hasOwnProperty('teamtoken')&&(json.teamtoken.length))?json.teamtoken.trim():undefined;
-  this.name=(json.hasOwnProperty('name')&&(json.name.length))?json.name:undefined;
+  this.teamid=((json.hasOwnProperty('teamid'))&&(json.teamid.length)&&(isValidTeamID(json.teamid)))?json.teamid.toLowerCase():undefined;
+  this.admintoken=(json.hasOwnProperty('admintoken')&&(json.admintoken.trim().length)&&(issafe(json.admintoken.trim())))?json.admintoken.trim():undefined;
+  this.teamtoken=(json.hasOwnProperty('teamtoken')&&(json.teamtoken.trim().length)&&(issafe(json.teamtoken.trim())))?json.teamtoken.trim():undefined;
+  this.name=(json.hasOwnProperty('name')&&(json.name.trim().length)&&(issafe(json.name.trim())))?json.name.trim():undefined;
   if (json.recurrence instanceof Array) {
     this.recurrence=[];
     json.recurrence.forEach((rc)=>{
@@ -26,8 +25,8 @@ function Team(json) {
 }
 
 function Event(json) {
-  //todo: stealthen
   this.datetime=(json.hasOwnProperty('datetime')&&(isValidDate(json.datetime)))?json.datetime:undefined;
+  //todo: stealthen
   this.attendees=(json.attendees instanceof Array)?json.attendees:undefined;
   this.refusals=(json.refusals instanceof Array)?json.refusals:undefined;
   this.cancelled=json.hasOwnProperty('cancelled')?json.cancelled:undefined;
@@ -254,7 +253,7 @@ Group.prototype.save_to_file = function(filename,callback) {
 
 Group.prototype.findTeam = function(teamid) {
   if (this.teams instanceof Array) {
-    return this.teams.find(t => t.teamid==teamid)||false;
+    return this.teams.find(t => t.teamid==teamid.toLowerCase())||false;
   } else {return false}
 }
 
@@ -279,4 +278,7 @@ function auth(str,hash) {
 
 function safe_text(text) {return unescape(text).replace(/[^\w\s\däüöÄÜÖß\.,'!\@#$^&%*()\+=\-\[\]\/{}\|:\?]/g,'').slice(0,256)}
 function issafe(text) {return text==safe_text(text)}
+function safe_id(id) {return unescape(id).replace(/\W/g,'').slice(0,16)}
+function issafe_id(id) {return id==safe_id(id)&&id.length>2}
+function isValidTeamID(teamid) {return teamid.trim()==teamid&&issafe_id(teamid)}
 function isValidDate(datestring) {var d=new Date(datestring); return d instanceof Date && !isNaN(d.getTime()) && d.getMonth()+1==datestring.substring(5,7);}
