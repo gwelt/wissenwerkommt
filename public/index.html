@@ -278,6 +278,31 @@ function debug(text) {
   console.log(text);
 }
 
+is_mobile=1;
+function check_mobile() 
+{
+  var old_mobile_status=is_mobile;
+  var width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+  var height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
+  if ( (width<=1024) && (is_mobile!=-1) )//|| ((display_state(document.getElementById('mobile'))==='block')&&(is_mobile!=-1)) ) 
+  {
+    is_mobile=1;
+    document.getElementById('mobile').style.maxWidth='100vw';
+    document.getElementById('mobile').style.height='100vh';
+    document.getElementById('mobile').style.top=0;
+    document.querySelector("meta[name=viewport]").setAttribute('content','initial-scale=1');
+  }
+  else 
+  {
+    if (is_mobile>0) {is_mobile=0}
+    document.getElementById('mobile').style.maxWidth='420px'; 
+    document.getElementById('mobile').style.height='85%';
+    document.getElementById('mobile').style.top='8%';
+    document.querySelector("meta[name=viewport]").setAttribute('content','width=1024,initial-scale=1');
+  }
+  if (old_mobile_status!=is_mobile) {}
+}
+
 </script>
 
 <style>
@@ -308,29 +333,42 @@ function debug(text) {
        url('/fonts/roboto-v18-latin-ext-regular.svg#Roboto') format('svg'); /* Legacy iOS */
 }
   * {-webkit-box-sizing: border-box; -moz-box-sizing: border-box; box-sizing: border-box;}
-  body {padding:0; margin:0; background-color:#fff;font-family: 'Roboto', serif; font-size: 1.6em; color:#000; background-color:#fff}
+  body {padding:0; margin:0; background-color:#fff;font-family: 'Roboto', serif; font-size: 1.6em; color:#000; background-color:#fff;}
   /*
     green #86E082 #5BCF55 #3BBA34 #1DA416 #0E8108
     red   #FE9395 #FD686C #E34044 #C81B20 #9E090D
     brown #FFC393 #FFAC69 #E58A41 #CA691B #A04C0A
     blue  #6FBFBC #409B98 #278B87 #117B77 #06615E
   */
-  .head {background-color:rgb(200,200,200); padding:0.8%;}
-  .main {background-color: #fff; padding:0.8%;}
-  .options {background-color: #fff; padding:0.8%; display:none;}
-  .admin {display:none}
+  .bigscreen {
+    height:100vh;
+    position:relative;
+  }
+  .under_mobile {
+    position: fixed; 
+    z-index:-1;
+    width:100%; height:100%;
+    background: url(images/phone.svg);
+    background-repeat: no-repeat;
+    background-position: top center;
+    background-size: 490px 100%;
+  }
+  .mobile {background-color: #fff; padding:0; position:relative; z-index:99; overflow:auto; margin:auto;}
+    .head {background-color:rgb(200,200,200); padding:0.8%;}
+    .main {background-color: #fff; padding:0.8%;}
+    .options {background-color: #fff; padding:0.8%; display:none;}
+    .admin {display:none}
+
   #mobile_admin {background-color: #fff; padding:0.8%;}
-  #svg_menu {fill:#000; nheight:100%; nwidth:100%}
+  #svg_menu {fill:#000;}
   /*#svg_menu:hover {fill:#ff0000;}*/
   a {color:inherit}
   a:hover {color:rgb(0,0,0); nobackground-color:rgb(245,0,0); notext-decoration:none; nopadding: 0 0.5em 0 0.5em; border-radius: 0.2em;}
   hr {border-color: rgb(0,0,0)}
   select, input, button {font-family: 'Roboto', serif; font-size: 1em; padding: 0 0.5em 0 0.5em; border-style: none; border-radius: 0.2em; background-color:rgb(235,235,235); outline:0; height:50px; margin:0 0 4px 0;}
-  .button_attending {cursor: pointer; background-color:#1DA416; background-image:linear-gradient(#1DB416 84%,#1DA416 0%);}
-  .button_refused {cursor: pointer; background-color:#C81B20; background-image:linear-gradient(#D81B20 84%,#C81B20 0%);}
  
   button {
-    position: relative; overflow: hidden; display:inline-block; cursor: pointer; background-image:linear-gradient(#f2f2f2 84%,#e8e8e8 0%); height:50px;
+    position: relative; overflow: hidden; display:inline-block; cursor: pointer; background-color:#f2f2f2; background-image:linear-gradient(#f2f2f2 84%,#e8e8e8 0%); height:50px;
     letter-spacing: -0.9px; text-transform: uppercase; text-align: center;
     box-shadow: 0 1px 1px rgba(0, 0, 0, 0.16), 0 1px 1px rgba(0, 0, 0, 0.1);
   }
@@ -351,31 +389,47 @@ function debug(text) {
     right: 0;
     opacity: 0.24;
   }
+  .button_attending {cursor: pointer; background-color:#1DA416; background-image:linear-gradient(#1DB416 84%,#1DA416 0%);}
+  .button_refused {cursor: pointer; background-color:#C81B20; background-image:linear-gradient(#D81B20 84%,#C81B20 0%);}
 
 /* Extra small devices (phones, 600px and down) */
-@media only screen and (max-width: 600px) {.head {background-color:rgb(200,200,200);}} 
+@media only screen and (max-width: 600px) {} 
 
 /* Small devices (portrait tabvars and large phones, 600px and up) */
-@media only screen and (min-width: 600px) {.head {background-color:rgb(200,200,200);}} 
+@media only screen and (min-width: 600px) {} 
 
 /* Medium devices (landscape tabvars, 768px and up) */
-@media only screen and (min-width: 768px) {.head {background-color:rgb(200,200,200);}} 
+@media only screen and (min-width: 768px) {} 
 
 /* Large devices (laptops/desktops, 992px and up) */
-@media only screen and (min-width: 992px) {.head {background-color:rgb(200,200,200);}} 
+@media only screen and (min-width: 1024px) {
+  body {
+    background-color:#000; 
+    background-image:linear-gradient(#1DB416 78%, #1DA416 0%);
+  }
+  .mobile {
+    border-radius: 0.4em;
+  }
+  
+} 
 
 /* Extra large devices (large laptops and desktops, 1200px and up) */
-@media only screen and (min-width: 1200px) {.head {background-color:rgb(200,200,200);}}
+@media only screen and (min-width: 1200px) {}
 
 </style>
 
 </head>
-<body onload="getTeam()" onresize="">
+<body onload="getTeam();check_mobile();" onresize="check_mobile()">
 
-<div id="mobile_head" class="head"></div>
-<div id="mobile_options" class="options"></div>
-<div id="mobile_admin" class="admin"></div>
-<div id="mobile_main" class="main"></div>
+<div id="bigscreen" class="bigscreen">
+  <div id="under_mobile" class="under_mobile"></div>
+  <div id="mobile" class="mobile">
+    <div id="mobile_head" class="head"></div>
+    <div id="mobile_options" class="options"></div>
+    <div id="mobile_admin" class="admin"></div>
+    <div id="mobile_main" class="main"></div>
+  </div>
+</div>
 <!--<audio id="audio" no_controls="" no_autoplay><source src="sounds/smb_kick.wav" type="audio/wav">audio not supported</audio><button onclick=document.getElementById("audio").play()>play audio</button>-->
 
 </body>
