@@ -287,6 +287,7 @@ function check_mobile()
   if ( (width<=1024) && (is_mobile!=-1) )//|| ((display_state(document.getElementById('mobile'))==='block')&&(is_mobile!=-1)) ) 
   {
     is_mobile=1;
+    document.getElementById('under_mobile').style.display='none';
     document.getElementById('mobile').style.maxWidth='100vw';
     document.getElementById('mobile').style.height='100vh';
     document.getElementById('mobile').style.top=0;
@@ -295,7 +296,10 @@ function check_mobile()
   else 
   {
     if (is_mobile>0) {is_mobile=0}
-    document.getElementById('mobile').style.maxWidth='420px'; 
+    document.getElementById('under_mobile').style.display='block';
+    var width=380; 
+    document.getElementById('mobile').style.maxWidth=width+'px'; 
+    document.getElementById('under_mobile').style.backgroundSize=width+58+'px 100%';
     document.getElementById('mobile').style.height='85%';
     document.getElementById('mobile').style.top='8%';
     document.querySelector("meta[name=viewport]").setAttribute('content','width=1024,initial-scale=1');
