@@ -3,6 +3,7 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="images/apple-touch-icon-precomposed.png">
 <script>
 // Polyfills
 if ((!Array.prototype.includes)||(!Array.prototype.find)) {loadScript('polyfills.js',afterPolyfill)}
@@ -16,6 +17,7 @@ function loadScript(src, done) {
 }
 function afterPolyfill(m) {debug(m)}
 // Service-Worker
+/*
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('service-worker.js')
     .then(function(reg){
@@ -24,14 +26,10 @@ if ('serviceWorker' in navigator) {
       debug("Something went wrong while registering the service worker. This happened: ", err)
     });
 }
+*/
 
 var team=false;
 var adminMode=false;
-
-function checkSize() {
-  var width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
-  debug('clientWidth: '+width);
-}
 
 function updateView(json) {  
   team=json?JSON.parse(json):false;
@@ -44,7 +42,7 @@ function updateView(json) {
   var selected='';
   var preset_weekday=(team.recurrence)&&(team.recurrence[0].weekday)?team.recurrence[0].weekday:new Date().getDay();
   var preset_hour=(team.recurrence)&&(team.recurrence[0].time)?team.recurrence[0].time.slice(0,2):new Date().getHours();
-  var preset_minute=(team.recurrence)&&(team.recurrence[0].slice)?team.recurrence[0].time.slice(3,5):(Math.floor(new Date().getMinutes()/15)*15);
+  var preset_minute=(team.recurrence)&&(team.recurrence[0].time)?team.recurrence[0].time.slice(3,5):(Math.floor(new Date().getMinutes()/15)*15);
   var weekdays=[[1,'montags'],[2,'dienstags'],[3,'mittwochs'],[4,'donnerstags'],[5,'freitags'],[6,'samstags'],[0,'sonntags'],[7,'täglich'],[8,'unregelmäßig']];
 
   var weekday_selection='<select id="weekday" onchange="display_hour_selection()">';
@@ -67,7 +65,8 @@ function updateView(json) {
   var minute=0; while (minute<60) {
     minute<10?minute='0'+minute:true;
     if (minute==preset_minute) {selected=' selected'} else {selected=''}
-    minute_selection+='<option value="'+minute+'"'+selected+'>'+minute+'</option>';minute=minute*1+15;
+    minute_selection+='<option value="'+minute+'"'+selected+'>'+minute+'</option>';
+    minute=minute*1+15;
   }
   minute_selection+='</select>';
 
@@ -278,6 +277,11 @@ function debug(text) {
   console.log(text);
 }
 
+function checkSize() {
+  var width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+  debug('clientWidth: '+width);
+}
+
 is_mobile=1;
 function check_mobile() 
 {
@@ -287,7 +291,8 @@ function check_mobile()
   if ( (width<=1024) && (is_mobile!=-1) )//|| ((display_state(document.getElementById('mobile'))==='block')&&(is_mobile!=-1)) ) 
   {
     is_mobile=1;
-    document.getElementById('under_mobile').style.display='none';
+    //console.log('mobile YES');
+    //document.getElementById('under_mobile').style.display='none';
     document.getElementById('mobile').style.maxWidth='100vw';
     document.getElementById('mobile').style.height='100vh';
     document.getElementById('mobile').style.top=0;
@@ -296,7 +301,21 @@ function check_mobile()
   else 
   {
     if (is_mobile>0) {is_mobile=0}
-    document.getElementById('under_mobile').style.display='block';
+    //console.log('mobile NO');
+    //document.getElementById('under_mobile').style.display='block';
+    document.getElementById('under_mobile').style.backgroundImage='url(images/phone.svg)';
+    if (!document.getElementById("logoutIMG")) {
+      var img = document.createElement("IMG");
+      img.id='logoutIMG';
+      img.src='/images/logout.svg';
+      img.style.position='fixed';
+      img.style.bottom='10px';
+      img.style.right='10px';
+      img.style.width='60px';
+      document.getElementById('under_mobile').appendChild(img);
+      //<img src="/images/logout.svg" style="position:fixed;bottom:10px;right:10px;width:60px">
+    }
+    
     var width=380; 
     document.getElementById('mobile').style.maxWidth=width+'px'; 
     document.getElementById('under_mobile').style.backgroundSize=width+58+'px 100%';
@@ -349,10 +368,11 @@ function check_mobile()
     position:relative;
   }
   .under_mobile {
-    position: fixed; 
+    display:none;
+    position:fixed;
     z-index:-1;
     width:100%; height:100%;
-    background: url(images/phone.svg);
+    //background: url(images/phone.svg);
     background-repeat: no-repeat;
     background-position: top center;
     background-size: 490px 100%;
@@ -408,13 +428,15 @@ function check_mobile()
 /* Large devices (laptops/desktops, 992px and up) */
 @media only screen and (min-width: 1024px) {
   body {
-    background-color:#000; 
+    //background-color:#1DB416; 
     background-image:linear-gradient(#1DB416 78%, #1DA416 0%);
   }
   .mobile {
-    border-radius: 0.4em;
+    border-radius: 0.2em;
   }
-  
+  .under_mobile {
+    display:block;
+  }
 } 
 
 /* Extra large devices (large laptops and desktops, 1200px and up) */
@@ -426,7 +448,7 @@ function check_mobile()
 <body onload="getTeam();check_mobile();" onresize="check_mobile()">
 
 <div id="bigscreen" class="bigscreen">
-  <div id="under_mobile" class="under_mobile"><img src=/images/logout.svg style=position:fixed;bottom:10px;right:10px;width:60px></div>
+  <div id="under_mobile" class="under_mobile" display="none"></div>
   <div id="mobile" class="mobile">
     <div id="mobile_head" class="head"></div>
     <div id="mobile_options" class="options"></div>
