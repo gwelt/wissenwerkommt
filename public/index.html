@@ -38,10 +38,11 @@ function updateView(json) {
   var mobile_main=document.getElementById('mobile_main');
   var mobile_options=document.getElementById('mobile_options');
   var mobile_admin=document.getElementById('mobile_admin');
+  var mobile_footer=document.getElementById('mobile_footer');
   var selected='';
 
   // prepare weekday-selection
-  var weekdays=[[1,'montags'],[2,'dienstags'],[3,'mittwochs'],[4,'donnerstags'],[5,'freitags'],[6,'samstags'],[0,'sonntags'],[7,'täglich'],[8,'unregelmäßig']];
+  var weekdays=[[0,'sonntags'],[1,'montags'],[2,'dienstags'],[3,'mittwochs'],[4,'donnerstags'],[5,'freitags'],[6,'samstags'],[7,'täglich'],[8,'unregelmäßig']];
   var preset_weekday=(team.recurrence)&&(team.recurrence[0].weekday)?team.recurrence[0].weekday:new Date().getDay();
   var weekday_selection='<select id="weekday" onchange="display_hour_selection()">';
   var i=-1;
@@ -53,7 +54,12 @@ function updateView(json) {
 
   // prepare time-selection
   var preset_hour=(team.recurrence)&&(team.recurrence[0].time)?team.recurrence[0].time.slice(0,2):new Date().getHours();
-  var preset_minute=(team.recurrence)&&(team.recurrence[0].time)?team.recurrence[0].time.slice(3,5):(Math.floor(new Date().getMinutes()/15)*15);
+  var preset_minute=(team.recurrence)&&(team.recurrence[0].time)?team.recurrence[0].time.slice(3,5):(Math.floor(new Date().getMinutes()/5)*5);
+
+  var teams_hour=(team.recurrence)&&(team.recurrence[0].time)?team.recurrence[0].time.slice(0,2):'';
+  var teams_minute=(team.recurrence)&&(team.recurrence[0].time)?team.recurrence[0].time.slice(3,5):'';
+  var teams_weekday_time=weekdays[(team.recurrence)&&(team.recurrence[0].weekday)?team.recurrence[0].weekday:8][1]+" "+((teams_hour)?teams_hour+':'+teams_minute:'');
+
   var hour_selection='<select id="hour">';
   var hour=-1; while (++hour<24) {
     hour<10?hour='0'+hour:true;
@@ -66,12 +72,13 @@ function updateView(json) {
     minute<10?minute='0'+minute:true;
     if (minute==preset_minute) {selected=' selected'} else {selected=''}
     minute_selection+='<option value="'+minute+'"'+selected+'>'+minute+'</option>';
-    minute=minute*1+15;
+    minute=minute*1+5;
   }
   minute_selection+='</select>';
 
+  // HEAD
   var svg_menu='<svg xmlns="http://www.w3.org/2000/svg" id="svg_menu" fill="#000" width="24px" height="18px" viewBox="0 0 24 24"><path d="M24 6h-24v-4h24v4zm0 4h-24v4h24v-4zm0 8h-24v4h24v-4z"/></svg>';
-  mobile_head.innerHTML="<button onclick=toggleView('mobile_options')>"+svg_menu+"</button>";
+  mobile_head.innerHTML="<div class='head_wrapper'><button onclick=toggleView('mobile_options'); style=float:right>"+svg_menu+"</button><a href=/"+team.teamid+" style=text-decoration:none;font-weight:bold>wissenwerkommt</a><br><div style=font-size:0.7em>Startseite</div></div>";
 
   if (!team) {
  
@@ -79,11 +86,12 @@ function updateView(json) {
     var admin_options_button='';
     serverRequest('getUserLevel',{'token':getCookie('token',true)},function (userlevel){
       if (userlevel>1) {admin_options_button=' <button onclick=\'toggleView("mobile_options","none");setAdminMode()\'>toggle Admin-Options</button>'} else {adminMode=false; setAdminMode(adminMode);}
-      mobile_options.innerHTML='<button onclick=\'toggleView("mobile_options","none");askCookie("name");\'>'+(getCookie("name",true)||"your name")+'</button> <button onclick=\'toggleView("mobile_options","none");askCookie("token")\'>'+(getCookie("token",true)||"set token")+'</button>'+admin_options_button+'<hr>';
+      mobile_options.innerHTML='<div class="options_wrapper"><button onclick=\'toggleView("mobile_options","none");askCookie("name");\'>'+(getCookie("name",true)||"your name")+'</button> <button onclick=\'toggleView("mobile_options","none");askCookie("token")\'>'+(getCookie("token",true)||"set token")+'</button>'+admin_options_button+'</div>';
     });
-    mobile_main.innerHTML='CREATE A NEW TEAM<br><input type="text" id="name" value="" placeholder="name of the team"><br>'+weekday_selection+' '+hour_selection+' '+minute_selection +'<br><input type="text" id="teamid" value="'+window.location.pathname.substr(1)+'" placeholder="team id"><br><input type="text" id="admintoken" value="'+(team.admintoken||'')+'" placeholder="admin token"><!--<br>teamtoken: --><input type="hidden" id="teamtoken" value="'+(team.teamtoken||'')+'"><br><button onclick=addTeam()>create Team</button>';
+    mobile_main.innerHTML='<div class="new_team_wrapper"><input type="text" id="name" value="" placeholder="name of your team"><br>'+weekday_selection+'<br>'+hour_selection+' '+minute_selection +'<br><input type="text" id="teamid" value="'+window.location.pathname.substr(1)+'" placeholder="team id"><br><input type="text" id="admintoken" value="'+(team.admintoken||'')+'" placeholder="admin token"><input type="hidden" id="teamtoken" value="'+(team.teamtoken||'')+'"><br><button onclick=addTeam()>create Team</button></div>';
     mobile_admin.innerHTML='ADMIN: <button onclick=load()>load</button> <button onclick=save()>save</button> <button onclick=dump()>dump</button>'
-    serverRequest('getListOfTeamIDs',{},function (r){mobile_main.innerHTML+="<hr>Teams: "; r=JSON.parse(r); r.forEach(function (t){mobile_main.innerHTML+='<a href=/'+t+'>'+t+'</a> '})});
+    mobile_footer.innerHTML+="<div id='footer_wrapper' class='footer_wrapper'>Teams: </div>";
+    serverRequest('getListOfTeamIDs',{},function (r){r=JSON.parse(r); r.forEach(function (t){document.getElementById('footer_wrapper').innerHTML+='<a href=/'+t+'>'+t+'</a> '})});
     // serverRequest('stats',{},function (r){mobile_main.innerHTML+="<br>Here are some stats: "+r});
  
   } else {
@@ -91,16 +99,15 @@ function updateView(json) {
     // TEAM-page
     var admin_options_button='';
     if (team.userlevel>1) {admin_options_button=' <button onclick=\'toggleView("mobile_options","none");setAdminMode()\'>toggle Admin-Options</button>'} else {adminMode=false}
-    mobile_options.innerHTML='<button onclick=\'toggleView("mobile_options","none");askCookie("name");\'>'+(getCookie("name",true)||"your name")+'</button> <button onclick=\'toggleView("mobile_options","none");askCookie("token")\'>'+(getCookie("token",true)||"set token")+'</button>'+admin_options_button+'<hr>';
+    mobile_options.innerHTML='<div class="options_wrapper"><button onclick=\'toggleView("mobile_options","none");askCookie("name");\'>'+(getCookie("name",true)||"your name")+'</button><button onclick=\'toggleView("mobile_options","none");askCookie("token")\'>'+(getCookie("token",true)||"set token")+'</button>'+admin_options_button+'<button><a href=/>home</a></button></div>';
     
     if (team.error) {
       debug('ERROR: The server answered: '+JSON.stringify(team))
       mobile_main.innerHTML=team.error+'<br>Maybe you need to <a href="/'+window.location.pathname.substr(1)+'" onclick=askCookie(\'token\')>set a(nother) token</a>?';
-      mobile_main.innerHTML+='<hr><a href=/>zur Startseite</a>';
       //getCookie('token');
     } else {
  
-      mobile_head.innerHTML+=" <a href=/"+team.teamid+" style=text-decoration:none>"+(!!team.name?team.name:'')+"</a>";
+      mobile_head.innerHTML="<div class='head_wrapper'><button onclick=toggleView('mobile_options'); style=float:right>"+svg_menu+"</button><a href=/"+team.teamid+" style=text-decoration:none;font-weight:bold>"+(!!team.name?team.name:'')+"</a><br><div style=font-size:0.7em>"+teams_weekday_time+"</div></div>";
       var name=getCookie('name',true);
       mobile_main.innerHTML='';
 
@@ -150,9 +157,7 @@ function updateView(json) {
 
       }):false;
 
-      mobile_main.innerHTML+='<hr><a href=/>zur Startseite</a>';
-      
-      mobile_admin.innerHTML='<input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'"><input type="text" id="name" value="'+(team.name||'')+'" placeholder="name of the team"><br><input type="text" id="teamtoken" value="'+(team.teamtoken||'')+'" placeholder="team token"><br><input type="text" id="admintoken" value="'+(team.admintoken||'')+'" placeholder="admin token"><br>'+weekday_selection+' '+hour_selection+' '+minute_selection +'<br><button onclick=editTeam()>update Team</button> <button onclick=deleteTeam()>delete Team</button><hr><input type="text" id="datetime" value="'+getDateString()+'T00:00" placeholder="datetime"><br><input type="text" id="comment" value="Einzeltermin" placeholder="comment"><br><button onclick=addEvent()>add Event</button><hr>';
+      mobile_admin.innerHTML='<div class="admin_wrapper"><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'"><input type="text" id="name" value="'+(team.name||'')+'" placeholder="name of the team"><br><input type="text" id="teamtoken" value="'+(team.teamtoken||'')+'" placeholder="team token"><br><input type="text" id="admintoken" value="'+(team.admintoken||'')+'" placeholder="admin token"><br>'+weekday_selection+' '+hour_selection+' '+minute_selection +'<br><button onclick=editTeam()>update Team</button> <button onclick=deleteTeam()>delete Team</button><br><input type="text" id="datetime" value="'+getDateString()+'T00:00" placeholder="datetime"><br><input type="text" id="comment" value="Einzeltermin" placeholder="comment"><br><button onclick=addEvent()>add Event</button></div>';
 
       debug('Team-JSON: '+JSON.stringify(team));
     }    
@@ -420,6 +425,7 @@ function check_mobile()
     .main {nobackground-color: #fff; padding:0.8%;}
     .options {background-color: #c2c2c2; padding:0.8%; display:none;}
     .admin {nobackground-color: #fff; display:none}
+    .footer {background-color: #c2c2c2; padding:0.8%;}
 
   #mobile_admin {background-color: #c2c2c2; padding:0.8%;}
   #svg_menu {fill:#000;}
@@ -427,13 +433,14 @@ function check_mobile()
   a {color:inherit}
   a:hover {color:rgb(0,0,0); nobackground-color:rgb(245,0,0); notext-decoration:none; nopadding: 0 0.5em 0 0.5em; border-radius: 0.2em;}
   hr {border:none; border-color: rgb(0,0,0)}
-  select, input, button {font-family: 'Roboto', serif; font-size: 1em; padding: 0 0.5em 0 0.5em; border-style: none; border-radius: 0.2em; background-color:rgb(235,235,235); outline:0; height:50px; margin:0 0 4px 0;}
+  select, input, button {font-family: 'Roboto', serif; font-size: 1em; padding: 0 0.5em 0 0.5em; border-style: none; border-radius: 0.2em; background-color:rgb(235,235,235); outline:0; height:50px; margin:0 0 0.5em 0;}
  
   input {position:relative; display:inline-block; width:80%}
 
   button {
     position: relative; overflow: hidden; display:inline-block; cursor: pointer; 
     background-color:#A2A2A2; background-image:linear-gradient(#A2A2A2 84%,#A2A2A2 0%);
+    margin: 0 5px 0 0;
     height:50px; letter-spacing: -0.9px; notext-transform: uppercase; text-align: center;
     box-shadow: 0 1px 1px rgba(0, 0, 0, 0.16), 0 1px 1px rgba(0, 0, 0, 0.1);
   }
@@ -455,6 +462,21 @@ function check_mobile()
     opacity: 0.24;
   }
 
+  div.head_wrapper {
+    border-radius: 0.2em; margin: 6px 1px 0px 6px; padding: 9px 6px 0px 9px; nobackground-color:#fff; text-align: left;
+  }
+  div.new_team_wrapper {
+    border-radius: 0.2em; margin: 6px 6px 0px 6px; padding: 9px 6px 0px 9px; nobackground-color:#fff; text-align: left;
+  }
+  div.options_wrapper {
+    border-radius: 0.2em; margin: 6px 6px 6px 6px; padding: 9px 6px 0px 9px; nobackground-color:#fff; text-align: left;
+  }
+  div.admin_wrapper {
+    border-radius: 0.2em; margin: 10px 6px; padding: 0px; nobackground-color:#fff; text-align: left;
+  }
+  div.footer_wrapper {
+    border-radius: 0.2em; margin: 6px 6px 0px 6px; padding: 9px 6px 0px 9px; nobackground-color:#fff; text-align: left;
+  }
   div.statusbutton_wrapper_first {
     border-radius: 0.2em; margin: 6px 6px 12px 6px; padding: 28px 0px; background-color:#fff; text-align: center;
   }
@@ -514,6 +536,7 @@ function check_mobile()
     <div id="mobile_options" class="options"></div>
     <div id="mobile_admin" class="admin"></div>
     <div id="mobile_main" class="main"></div>
+    <div id="mobile_footer" class="footer"></div>
   </div>
 </div>
 <!--<audio id="audio" no_controls="" no_autoplay><source src="sounds/smb_kick.wav" type="audio/wav">audio not supported</audio><button onclick=document.getElementById("audio").play()>play audio</button>-->
