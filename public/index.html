@@ -98,9 +98,11 @@ function updateView(json) {
   } else {
  
     // TEAM-page
+    var show_prompt_button=' <button onclick=\'show_prompt();\'>show prompt</button>';
+
     var admin_options_button='';
     if (team.userlevel>1) {admin_options_button=' <button onclick=\'toggleView("mobile_options","none");setAdminMode()\'>toggle Admin-Options</button>'} else {adminMode=false}
-    mobile_options.innerHTML='<div class="options_wrapper"><button onclick=\'toggleView("mobile_options","none");askCookie("name");\'>'+(getCookie("name",true)||"your name")+'</button><button onclick=\'toggleView("mobile_options","none");askCookie("token")\'>'+(getCookie("token",true)||"set token")+'</button>'+admin_options_button+'</div>';
+    mobile_options.innerHTML='<div class="options_wrapper"><button onclick=\'toggleView("mobile_options","none");askCookie("name");\'>'+(getCookie("name",true)||"your name")+'</button><button onclick=\'toggleView("mobile_options","none");askCookie("token")\'>'+(getCookie("token",true)||"set token")+'</button>'+admin_options_button+show_prompt_button+'</div>';
     
     if (team.error) {
       debug('ERROR: The server answered: '+JSON.stringify(team))
@@ -130,16 +132,18 @@ function updateView(json) {
         var day=['So','Mo','Di','Mi','Do','Fr','Sa'][new Date(e.datetime).getDay()]+' '+e.datetime.substring(8,10)+'.'+e.datetime.substring(5,7)+'. '+e.datetime.substring(11,16)+' Uhr';
 
         // show content
-        if (event_counter==-1) {
+        var banner='<div class="statusbutton_wrapper">';
+        if ( (event_counter==-1) && (e.attendees&&e.attendees.includes(name)) ) {
           // Teaser / coming up next..
-          button_text='Sei dabei!';
-          if (e.attendees&&e.attendees.includes(name)) {button_text='Du bist dabei!'}
-          else if (e.refusals&&e.refusals.includes(name)) {button_text='Schade!'} 
-          mobile_main.innerHTML+='<div class="teaser_wrapper">'+button_text+'</div>';
+          banner_text='Sei dabei!';
+          if (e.attendees&&e.attendees.includes(name)) {banner_text='Du bist dabei!'}
+          else if (e.refusals&&e.refusals.includes(name)) {banner_text='Schade!'} 
+          banner='<div class="banner">'+banner_text+'</div><div class="statusbutton_wrapper_first">';
+        } else {
         }
 
         // events
-        mobile_main.innerHTML+='<div class="statusbutton_wrapper"><button id="status'+e.datetime+'" onclick=toggleStatus("'+e.datetime+'")>'+day+'</button><br>'+comment_inline+comment+peoples_list_container+attendees_counter+'</div>';
+        mobile_main.innerHTML+=banner+'<button id="status'+e.datetime+'" onclick=toggleStatus("'+e.datetime+'")>'+day+'</button><br>'+comment_inline+comment+peoples_list_container+attendees_counter+'</div>';
         document.getElementById('peoples_list_container_'+event_counter).className='statusbutton_wrapper_attendees_following';
         // set button-attributes to represent the state of attendence
         if (e.attendees&&e.attendees.includes(name)) {document.getElementById('status'+e.datetime).className='statusbutton_attending'}
@@ -360,6 +364,19 @@ function check_mobile()
   if (old_mobile_status!=is_mobile) {}
 }
 
+function show_prompt(text,preval) {
+  var e=document.getElementById('mobile_prompt');
+  e.style.display='block';
+  e.innerHTML='<div class="prompt_wrapper"><div style="width:100%;text-align:left;padding:0px 10px 10px 10px;">Wie ist dein Name?</div><input type="text" id="cookie_name" value='+getCookie('name',true)+' placeholder="your name" autocomplete="off"><button style=min-width:45%; onclick="hide_prompt();">Abbrechen</button><button style=min-width:45%; onclick="setCookie(\'name\',document.getElementById(\'cookie_name\').value,365);hide_prompt();">ok</button></div>';
+  document.getElementById('cookie_name').focus();
+  document.getElementById('mobile_inner').style.display='none';
+}
+
+function hide_prompt(text,preval) {
+  document.getElementById('mobile_prompt').style.display='none';
+  document.getElementById('mobile_inner').style.display='block';
+}
+
 </script>
 
 <style>
@@ -415,12 +432,21 @@ function check_mobile()
     background-position: top center;
     background-size: 490px 100%;
   }
-  .mobile {background-color: #c2c2c2; padding:0; position:relative; z-index:99; overflow:auto; margin:auto;}
-    .head {background-color: #c2c2c2; padding:0.8%;}
-    .main {nobackground-color: #fff; padding:0.8%;}
-    .options {background-color: #c2c2c2; padding:0.8%; display:none;}
-    .admin {nobackground-color: #fff; display:none}
-    .footer {background-color: #c2c2c2; padding:0.8%;}
+  .mobile {z-index:1; background-color: #c2c2c2; padding:0; position:relative; overflow:auto; margin:auto;}
+  .mobile_prompt {
+    z-index:2;
+    overflow:auto;
+    margin:auto;
+    position: relative;
+    display: none;
+    padding: 3px;
+  }
+  .mobile_inner {padding: 3px}
+    .head {}
+    .main {}
+    .options {display:none;}
+    .admin {display:none}
+    .footer {}
 
   #mobile_admin {background-color: #c2c2c2; padding:0.8%;}
   #svg_menu {fill:#000;}
@@ -429,7 +455,7 @@ function check_mobile()
   a:hover {color:rgb(0,0,0); nobackground-color:rgb(245,0,0); notext-decoration:none; nopadding: 0 0.5em 0 0.5em; noborder-radius: 0.2em;}
   select, input, button {font-family: 'Roboto', serif; font-size: 1em; padding: 0 0.5em 0 0.5em; border-style: none; border-radius: 0.1em; background-color:rgb(235,235,235); outline:0; height:50px; margin:0 0 0.5em 0;}
  
-  input {position:relative; display:inline-block; width:80%}
+  input {display:inline; width:100%}
 
   button {
     border-radius: 0.1em;
@@ -481,11 +507,17 @@ function check_mobile()
   div.footer_wrapper {
     border-radius: 0.1em; margin: 6px 6px 20px 6px; padding: 9px 6px 0px 9px; nobackground-color:#fff; text-align: left;
   }
-  div.teaser_wrapper {
-    border-radius: 0.1em; margin: 0px 6px 10px 6px; padding: 10px 0px 10px 0px; background-color:#fff; text-align: center; font-size:1em;
+  div.banner {
+    border-radius: 0.1em 0.1em 0em 0em; margin: -10px 0px 0px 15px; padding: 8px 16px 6px 16px; position:absolute; display:inline; overflow:hidden; white-space: nowrap; color:#fff; background-color:#20609f; text-align: center; font-size:0.6em; noletter-spacing: 0.5px;
+  }
+  div.statusbutton_wrapper_first {
+    border-radius: 0.1em; margin: 22px 6px 12px 6px; padding: 20px 0 10px 0; background-color:#fff; text-align: center; font-size:0.6em;
   }
   div.statusbutton_wrapper {
     border-radius: 0.1em; margin: 0px 6px 12px 6px; padding: 20px 0 10px 0; background-color:#fff; text-align: center; font-size:0.6em;
+  }
+  div.prompt_wrapper {
+    border-radius: 0.1em; margin: 12px 6px 12px 6px; padding: 20px 16px 20px 16px; background-color:#fff; text-align: center;
   }
 
   button.statusbutton_undecided, button.statusbutton_attending, button.statusbutton_refused {
@@ -536,11 +568,14 @@ function check_mobile()
 <div id="bigscreen" class="bigscreen">
   <div id="under_mobile" class="under_mobile" display="none"></div>
   <div id="mobile" class="mobile">
-    <div id="mobile_head" class="head"></div>
-    <div id="mobile_options" class="options"></div>
-    <div id="mobile_admin" class="admin"></div>
-    <div id="mobile_main" class="main"></div>
-    <div id="mobile_footer" class="footer"></div>
+    <div id="mobile_prompt" class="mobile_prompt"></div>
+    <div id="mobile_inner" class="mobile_inner">
+      <div id="mobile_head" class="head"></div>
+      <div id="mobile_options" class="options"></div>
+      <div id="mobile_admin" class="admin"></div>
+      <div id="mobile_main" class="main"></div>
+      <div id="mobile_footer" class="footer"></div>
+    </div>
   </div>
 </div>
 <!--<audio id="audio" no_controls="" no_autoplay><source src="sounds/smb_kick.wav" type="audio/wav">audio not supported</audio><button onclick=document.getElementById("audio").play()>play audio</button>-->
