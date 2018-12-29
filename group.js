@@ -276,7 +276,7 @@ function auth(str,hash) {
   return ( (typeof hash === 'undefined') || (hash === crypt(str)) );
 }
 
-function safe_text(text) {return unescape(text).replace(/[^\w\s\däüöÄÜÖß\.,'!\@#$^&%*()\+=\-\[\]\/{}\|:\?]/g,'').slice(0,256)}
+function safe_text(text) {return unescape(text).replace(/[^\w\s\däüöÄÜÖß\.,'!\@#$^&%*()\+=\-\[\]\/{}\|:\?]/g,'').trim().slice(0,140)}
 function issafe(text) {return text==safe_text(text)}
 function safe_id(id) {return unescape(id).replace(/\W/g,'').slice(0,16)}
 function issafe_id(id) {return id==safe_id(id)&&id.length>2}

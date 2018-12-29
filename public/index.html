@@ -81,32 +81,33 @@ function updateView(json) {
   mobile_head.innerHTML="<div class='head_wrapper'><button onclick=toggleView('mobile_options'); style=float:right>"+svg_menu+"</button><a href=/ style=text-decoration:none;font-weight:bold>wissenwerkommt</a><br><div style=font-size:0.7em>Startseite</div></div>";
   mobile_footer.innerHTML="<div id='footer_wrapper' class='footer_wrapper'><div style=font-size:0.7em;text-align:center>Immer besser zu <a href=/>wissenwerkommt</a>.</div></div>";
 
+  var show_name_prompt_button='<button onclick="show_cookie_prompt(\'name\');">'+(getCookie("name",true)||"Name")+'</button>';
+  var show_token_prompt_button='<button onclick="show_cookie_prompt(\'token\');">'+(getCookie("token",true)||"Token")+'</button>';
+
   if (!team) {
  
     // MAIN-page if no team is requested
     var admin_options_button='';
-    serverRequest('getUserLevel',{'token':getCookie('token',true)},function (userlevel){
-      if (userlevel>1) {admin_options_button=' <button onclick=\'toggleView("mobile_options","none");setAdminMode()\'>toggle Admin-Options</button>'} else {adminMode=false; setAdminMode(adminMode);}
-      mobile_options.innerHTML='<div class="options_wrapper"><button onclick=\'toggleView("mobile_options","none");askCookie("name");\'>'+(getCookie("name",true)||"Name")+'</button> <button onclick=\'toggleView("mobile_options","none");askCookie("token")\'>'+(getCookie("token",true)||"Token")+'</button>'+admin_options_button+'</div>';
+    serverRequest('getUserLevel',{'token':getCookie('token',true)},function (userlevel) {
+      if (userlevel>2) {admin_options_button='<button onclick=\'setAdminMode()\'>Admin-Options</button>'} else {adminMode=false; setAdminMode(adminMode);}
+      //mobile_options.innerHTML='<div class="options_wrapper">'+show_name_prompt_button+show_token_prompt_button+admin_options_button+'</div>';
     });
     mobile_main.innerHTML='<div class="new_team_wrapper"><input type="text" id="name" value="" placeholder="name of your team" autocomplete="off"><br>'+weekday_selection+'<br>'+hour_selection+' '+minute_selection +'<br><input type="text" id="teamid" value="'+window.location.pathname.substr(1)+'" placeholder="team id" autocomplete="off"><br><input type="text" id="admintoken" value="'+(team.admintoken||'')+'" placeholder="admin token" autocomplete="off"><input type="hidden" id="teamtoken" value="'+(team.teamtoken||'')+'" autocomplete="off"><br><button onclick=addTeam()>create Team</button></div>';
-    mobile_admin.innerHTML='ADMIN: <button onclick=load()>load</button> <button onclick=save()>save</button> <button onclick=dump()>dump</button>'
+    mobile_admin.innerHTML='<button onclick=load()>load</button><button onclick=save()>save</button><button onclick=dump()>dump</button>'
     mobile_footer.innerHTML="<div id='footer_wrapper' class='footer_wrapper'>Teams: </div>";
     serverRequest('getListOfTeamIDs',{},function (r){r=JSON.parse(r); r.forEach(function (t){document.getElementById('footer_wrapper').innerHTML+='<a href=/'+t+'>'+t+'</a> '})});
-    // serverRequest('stats',{},function (r){mobile_main.innerHTML+="<br>Here are some stats: "+r});
+    //serverRequest('stats',{},function (r){mobile_main.innerHTML+="<br>Here are some stats: "+r});
  
   } else {
  
     // TEAM-page
-    var show_prompt_button=' <button onclick=\'show_prompt();\'>show prompt</button>';
-
     var admin_options_button='';
-    if (team.userlevel>1) {admin_options_button=' <button onclick=\'toggleView("mobile_options","none");setAdminMode()\'>toggle Admin-Options</button>'} else {adminMode=false}
-    mobile_options.innerHTML='<div class="options_wrapper"><button onclick=\'toggleView("mobile_options","none");askCookie("name");\'>'+(getCookie("name",true)||"Name")+'</button><button onclick=\'toggleView("mobile_options","none");askCookie("token")\'>'+(getCookie("token",true)||"Token")+'</button>'+admin_options_button+show_prompt_button+'</div>';
-    
+    if (team.userlevel>1) {admin_options_button='<button onclick=\'setAdminMode()\'>Admin-Options</button>'} else {adminMode=false; setAdminMode(adminMode);}
+    //mobile_options.innerHTML='<div class="options_wrapper">'+show_name_prompt_button+show_token_prompt_button+admin_options_button+'</div>';
+
     if (team.error) {
       debug('ERROR: The server answered: '+JSON.stringify(team))
-      mobile_main.innerHTML='<div class="error_wrapper">'+team.error+'<br><br>Maybe you need to <a href="/'+window.location.pathname.substr(1)+'" onclick=askCookie(\'token\')>set a(nother) token</a>?</div>';
+      mobile_main.innerHTML='<div class="error_wrapper">'+team.error+'<br><br>Maybe you need to <a href="/'+window.location.pathname.substr(1)+'" onclick=show_cookie_prompt(\'token\')>set a(nother) token</a>?</div>';
       //getCookie('token');
     } else {
  
@@ -127,7 +128,27 @@ function updateView(json) {
         var peoples_list='';
         if (e.attendees) {e.attendees.forEach(function (att) {peoples_list+='<div class="attendee_item">'+att+'</div>'});}
         if (e.refusals) {e.refusals.forEach(function (ref) {peoples_list+='<div class="refusal_item">'+ref+'</div>'});}
-        var attendees_counter=(e.attendees?'<div class="attendeescount_wrapper">'+(e.attendees?e.attendees.length:0)+' Teilnehmer</div>':'');
+        
+        // calculate time to go till event starts
+        var time_to_go_till_event_starts='';
+        var minutes_to_go=Math.floor((new Date(e.datetime)-new Date())/60000)+1;
+        if (minutes_to_go<1) {time_to_go_till_event_starts='gestartet'}
+        else if (minutes_to_go<5) {time_to_go_till_event_starts='startet gleich'}
+        else if (minutes_to_go<60) {time_to_go_till_event_starts='startet in '+minutes_to_go+' Minuten'}
+        else {
+          var hours_to_go=Math.floor(minutes_to_go/60);
+          if (hours_to_go<12) {time_to_go_till_event_starts='noch '+hours_to_go+':'+minutes_to_go%60+' Stunden'}
+          else if (hours_to_go<24) {time_to_go_till_event_starts='noch '+Math.round(minutes_to_go/60)+' Stunden'}
+          else {
+            var days_to_go=Math.floor((new Date(e.datetime)-new Date().setHours(0,0,0,0))/86400000);
+            if (days_to_go==1) {time_to_go_till_event_starts='startet morgen'} else {
+              time_to_go_till_event_starts='noch '+days_to_go+' Tage';
+            }
+          }
+        }
+        if (time_to_go_till_event_starts!='') {time_to_go_till_event_starts=' | '+time_to_go_till_event_starts}
+
+        var attendees_counter=(e.attendees?'<div class="attendeescount_wrapper">'+(e.attendees?e.attendees.length:0)+' Teilnehmer'+time_to_go_till_event_starts+'</div>':'');
         var peoples_list_container='<div id="peoples_list_container_'+event_counter+'">'+peoples_list+'</div>';
         var day=['So','Mo','Di','Mi','Do','Fr','Sa'][new Date(e.datetime).getDay()]+' '+e.datetime.substring(8,10)+'.'+e.datetime.substring(5,7)+'. '+e.datetime.substring(11,16)+' Uhr';
 
@@ -157,6 +178,7 @@ function updateView(json) {
       debug('Team-JSON: '+JSON.stringify(team));
     }    
   }
+  mobile_options.innerHTML='<div class="options_wrapper">'+show_name_prompt_button+show_token_prompt_button+admin_options_button+'</div>';
   display_hour_selection();
   setAdminMode(adminMode);
 }
@@ -215,7 +237,13 @@ function getTeam(teamid) {
 }
 
 function changeStatus(status,datetime) {
-  serverRequest(status,{token:getCookie('token',!team.teamtoken),teamid:window.location.pathname.substr(1),datetime:datetime,name:getCookie('name')},function (r){updateStatus(r);});
+  // prompt for name if name is not set
+  // since this DOM-client-prompt-fake does not have a callback-option, recall this function via js-injection
+  if (!getCookie('name',true)) {
+    show_cookie_prompt('name','changeStatus(\''+status+'\',\''+datetime+'\');');
+  } else {
+    serverRequest(status,{token:getCookie('token',!team.teamtoken),teamid:window.location.pathname.substr(1),datetime:datetime,name:getCookie('name')},function (r){updateStatus(r);});
+  }
 }
 
 function addTeam() {
@@ -296,6 +324,19 @@ function askCookie(cname) {
   var preval=getCookie(cname,true);
   var val = prompt("Please enter "+cname, preval);
   return setCookie(cname, val, 365); //-1 = sessioncookie
+  //show_cookie_prompt(cname);
+}
+function show_cookie_prompt(cname,str_functionToCall) {
+  var text='???';
+  var placeholder='';
+  var preval=(getCookie(cname,true)||'');
+  if (cname=='name') {text='Bitte gib deinen <b>Namen</b> ein:'; placeholder='Name';}
+  else if (cname=='token') {text='Bitte gib deinen <b>Token</b> ein:'; placeholder='Token';}
+  var e=document.getElementById('mobile_prompt');
+  e.innerHTML='<div class="prompt_wrapper"><div style="font-size:0.7em;width:100%;text-align:left;padding:0px 10px 10px 10px;">'+text+'</div><input type="text" id="cinput" value="'+preval+'" placeholder="'+placeholder+'" autocomplete="off"><button class="button_ok" onclick="setCookie(\''+cname+'\',document.getElementById(\'cinput\').value,365);hide_prompt();'+(str_functionToCall||'')+'">ok</button><div style=clear:both></div><div style="font-size:0.7em;width:100%;text-align:left;padding:10px 10px 10px 10px;">Diese Information wird als Cookie in deinem Browser gespeichert.<br><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
+  document.getElementById('mobile_inner').style.display='none';
+  e.style.display='block';
+  document.getElementById('cinput').focus();
 }
 
 function setCookie(cname, cvalue, exdays) {
@@ -362,15 +403,6 @@ function check_mobile()
     document.querySelector("meta[name=viewport]").setAttribute('content','width=1024,initial-scale=1');
   }
   if (old_mobile_status!=is_mobile) {}
-}
-
-function show_prompt(text,preval) {
-  var e=document.getElementById('mobile_prompt');
-  e.style.display='block';
-  var cookie_name=getCookie('name',true);
-  e.innerHTML='<div class="prompt_wrapper"><div style="font-size:0.7em;width:100%;text-align:left;padding:0px 10px 10px 10px;">Bitte gib deinen <b>Namen</b> ein:</div><input type="text" id="cookie_name" value="'+(cookie_name?cookie_name:"")+'" placeholder="Name" autocomplete="off"><button class="button_ok" onclick="setCookie(\'name\',document.getElementById(\'cookie_name\').value,365);hide_prompt();">ok</button><div style=clear:both></div><div style="font-size:0.7em;width:100%;text-align:left;padding:10px 10px 10px 10px;">Deine Eingabe wird als Cookie auf deinem Rechner gespeichert.<br><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
-  document.getElementById('cookie_name').focus();
-  document.getElementById('mobile_inner').style.display='none';
 }
 
 function hide_prompt(text,preval) {
@@ -444,14 +476,11 @@ function hide_prompt(text,preval) {
   }
   .mobile_inner {padding: 3px}
     .head {}
-    .main {}
+    .main {overflow:hidden; overflow-wrap:break-word;}
     .options {display:none;}
     .admin {display:none}
     .footer {}
 
-  #mobile_admin {background-color: #c2c2c2; padding:0.8%;}
-  #svg_menu {fill:#000;}
-  /*#svg_menu:hover {fill:#ff0000;}*/
   a {color:inherit}
   a:hover {color:rgb(0,0,0); nobackground-color:rgb(245,0,0); notext-decoration:none; nopadding: 0 0.5em 0 0.5em; noborder-radius: 0.2em;}
   select, input, button {font-family: 'Roboto', serif; font-size: 1em; padding: 0 0.5em 0 0.5em; border-style: none; border-radius: 0.1em; background-color:rgb(235,235,235); outline:0; height:50px; margin:0 0 0.5em 0;}
