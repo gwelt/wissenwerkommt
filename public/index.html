@@ -87,7 +87,7 @@ function updateView(json) {
     var admin_options_button='';
     serverRequest('getUserLevel',{'token':getCookie('token',true)},function (userlevel){
       if (userlevel>1) {admin_options_button=' <button onclick=\'toggleView("mobile_options","none");setAdminMode()\'>toggle Admin-Options</button>'} else {adminMode=false; setAdminMode(adminMode);}
-      mobile_options.innerHTML='<div class="options_wrapper"><button onclick=\'toggleView("mobile_options","none");askCookie("name");\'>'+(getCookie("name",true)||"your name")+'</button> <button onclick=\'toggleView("mobile_options","none");askCookie("token")\'>'+(getCookie("token",true)||"set token")+'</button>'+admin_options_button+'</div>';
+      mobile_options.innerHTML='<div class="options_wrapper"><button onclick=\'toggleView("mobile_options","none");askCookie("name");\'>'+(getCookie("name",true)||"Name")+'</button> <button onclick=\'toggleView("mobile_options","none");askCookie("token")\'>'+(getCookie("token",true)||"Token")+'</button>'+admin_options_button+'</div>';
     });
     mobile_main.innerHTML='<div class="new_team_wrapper"><input type="text" id="name" value="" placeholder="name of your team" autocomplete="off"><br>'+weekday_selection+'<br>'+hour_selection+' '+minute_selection +'<br><input type="text" id="teamid" value="'+window.location.pathname.substr(1)+'" placeholder="team id" autocomplete="off"><br><input type="text" id="admintoken" value="'+(team.admintoken||'')+'" placeholder="admin token" autocomplete="off"><input type="hidden" id="teamtoken" value="'+(team.teamtoken||'')+'" autocomplete="off"><br><button onclick=addTeam()>create Team</button></div>';
     mobile_admin.innerHTML='ADMIN: <button onclick=load()>load</button> <button onclick=save()>save</button> <button onclick=dump()>dump</button>'
@@ -102,7 +102,7 @@ function updateView(json) {
 
     var admin_options_button='';
     if (team.userlevel>1) {admin_options_button=' <button onclick=\'toggleView("mobile_options","none");setAdminMode()\'>toggle Admin-Options</button>'} else {adminMode=false}
-    mobile_options.innerHTML='<div class="options_wrapper"><button onclick=\'toggleView("mobile_options","none");askCookie("name");\'>'+(getCookie("name",true)||"your name")+'</button><button onclick=\'toggleView("mobile_options","none");askCookie("token")\'>'+(getCookie("token",true)||"set token")+'</button>'+admin_options_button+show_prompt_button+'</div>';
+    mobile_options.innerHTML='<div class="options_wrapper"><button onclick=\'toggleView("mobile_options","none");askCookie("name");\'>'+(getCookie("name",true)||"Name")+'</button><button onclick=\'toggleView("mobile_options","none");askCookie("token")\'>'+(getCookie("token",true)||"Token")+'</button>'+admin_options_button+show_prompt_button+'</div>';
     
     if (team.error) {
       debug('ERROR: The server answered: '+JSON.stringify(team))
@@ -367,7 +367,8 @@ function check_mobile()
 function show_prompt(text,preval) {
   var e=document.getElementById('mobile_prompt');
   e.style.display='block';
-  e.innerHTML='<div class="prompt_wrapper"><div style="width:100%;text-align:left;padding:0px 10px 10px 10px;">Wie ist dein Name?</div><input type="text" id="cookie_name" value='+getCookie('name',true)+' placeholder="your name" autocomplete="off"><button style=min-width:45%; onclick="hide_prompt();">Abbrechen</button><button style=min-width:45%; onclick="setCookie(\'name\',document.getElementById(\'cookie_name\').value,365);hide_prompt();">ok</button></div>';
+  var cookie_name=getCookie('name',true);
+  e.innerHTML='<div class="prompt_wrapper"><div style="font-size:0.7em;width:100%;text-align:left;padding:0px 10px 10px 10px;">Bitte gib deinen <b>Namen</b> ein:</div><input type="text" id="cookie_name" value="'+(cookie_name?cookie_name:"")+'" placeholder="Name" autocomplete="off"><button class="button_ok" onclick="setCookie(\'name\',document.getElementById(\'cookie_name\').value,365);hide_prompt();">ok</button><div style=clear:both></div><div style="font-size:0.7em;width:100%;text-align:left;padding:10px 10px 10px 10px;">Deine Eingabe wird als Cookie auf deinem Rechner gespeichert.<br><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
   document.getElementById('cookie_name').focus();
   document.getElementById('mobile_inner').style.display='none';
 }
@@ -526,6 +527,9 @@ function hide_prompt(text,preval) {
   button.statusbutton_undecided {background-color:#ffbf00; background-image:linear-gradient(#ffbf00 84%,#efaf00 0%);}
   button.statusbutton_attending {background-color:#1DA416; background-image:linear-gradient(#1DB416 84%,#1DA416 0%);}
   button.statusbutton_refused   {background-color:#C81B20; background-image:linear-gradient(#E81B20 84%,#D81B20 0%);}
+
+  //button.button_cancel {float:left; color:#808080; background-image:linear-gradient(#f0f0f0 80%, #f0f0f0 0%);}
+  button.button_ok {float:right; margin-right:0px; width:100%; nobackground-image:linear-gradient(#1DB416 84%,#1DA416 0%);}
 
   div.statusbutton_wrapper_attendees_first {padding:8px;}
   div.statusbutton_wrapper_attendees_following {background-color: #fff; padding:8px 8px 0px 8px;}
