@@ -107,7 +107,7 @@ function updateView(json) {
 
     if (team.error) {
       debug('ERROR: The server answered: '+JSON.stringify(team))
-      mobile_main.innerHTML='<div class="error_wrapper">'+team.error+'<br><br>Maybe you need to <a href="/'+window.location.pathname.substr(1)+'" onclick=show_cookie_prompt(\'token\')>set a(nother) token</a>?</div>';
+      mobile_main.innerHTML='<div class="error_wrapper">'+team.error+'<br><br>Maybe you need to <a href=# onclick=show_cookie_prompt(\'token\')>set a(nother) token</span>?</div>';
       //getCookie('token');
     } else {
  
