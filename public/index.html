@@ -134,6 +134,8 @@ function updateView(json) {
     admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamPreference_prompt(\'Admin-Token\',\'admintoken\',\''+(team.admintoken?team.admintoken:'')+'\');"></button><div class="option_text">Admin-Token:<br><b>'+team.admintoken+'</b></div></div>';
     //ADMIN_MENU:DELETE TEAM
     admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamDeleteTeam_prompt()"></button><div class="option_text">Team löschen</div></div>';
+    //ADMIN_MENU:NEW EVENT
+    admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamAddEvent_prompt()"></button><div class="option_text">neuen Termin anlegen</div></div>';
 
     // TEAM-page
     //var admin_options_button='';
@@ -182,7 +184,7 @@ function updateView(json) {
         if (time_to_go_till_event_starts!='') {time_to_go_till_event_starts=' | '+time_to_go_till_event_starts}
 
         var attendees_counter=(e.attendees?'<div class="attendeescount_wrapper">'+(e.attendees?e.attendees.length:0)+' Teilnehmer'+time_to_go_till_event_starts+'</div>':'');
-        var peoples_list_container='<div id="peoples_list_container_'+event_counter+'">'+peoples_list+'</div>';
+        var peoples_list_container='<div onclick="show_teamCommentEdit_prompt(\''+e.datetime+'\',\''+(e.comment?e.comment:'')+'\')" id="peoples_list_container_'+event_counter+'">'+peoples_list+'</div>';
         var day=['So','Mo','Di','Mi','Do','Fr','Sa'][new Date(e.datetime).getDay()]+' '+e.datetime.substring(8,10)+'.'+e.datetime.substring(5,7)+'. '+e.datetime.substring(11,16)+' Uhr';
 
         // show content
@@ -232,11 +234,26 @@ function show_teamPreferenceDatetime_prompt() {
 }
 function show_teamDeleteTeam_prompt() {
   var e=document.getElementById('mobile_prompt');
-  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">Möchtest du das Team unwiederruflich löschen?</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><button class="button_ok" onclick="deleteTeam();hide_prompt();">Team löschen</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
+  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">Möchtest du das Team unwiderruflich löschen?</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><button class="button_ok" onclick="deleteTeam();hide_prompt();">Team löschen</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
   document.getElementById('mobile_inner').style.display='none';
   e.style.display='block';
   display_hour_selection();
 }
+function show_teamAddEvent_prompt() {
+  var e=document.getElementById('mobile_prompt');
+  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">Neuen Termin anlegen</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><input type="text" id="datetime" value="'+getDateString()+'T00:00" placeholder="datetime" autocomplete="off"><input type="text" id="comment" value="Einzeltermin" placeholder="comment" autocomplete="off"><button class="button_ok" onclick="addEvent();hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
+  document.getElementById('mobile_inner').style.display='none';
+  e.style.display='block';
+  display_hour_selection();
+}
+function show_teamCommentEdit_prompt(datetime,preval) {
+  var e=document.getElementById('mobile_prompt');
+  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">Kommentar</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><input type="text" id="comment'+datetime+'" value="'+preval+'" placeholder="comment" autocomplete="off"><button class="button_ok" onclick="commentEvent(\''+datetime+'\');hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
+  document.getElementById('mobile_inner').style.display='none';
+  e.style.display='block';
+  display_hour_selection();
+}
+
 
 function display_hour_selection() {
 	var viewstate='inline';
