@@ -82,7 +82,7 @@ function updateView(json) {
   // HEAD
   var svg_menu='<svg xmlns="http://www.w3.org/2000/svg" id="svg_menu" fill="#000" width="24px" height="18px" viewBox="0 0 24 24"><path d="M24 6h-24v-4h24v4zm0 4h-24v4h24v-4zm0 8h-24v4h24v-4z"/></svg>';
 
-  mobile_head.innerHTML="<div class='head_wrapper'><button class='option_button' onclick=toggleView('mobile_options');toggleView('mobile_main');toggleView('mobile_footer');>"+svg_menu+"</button><a href=/ style=text-decoration:none;font-weight:bold>wissenwerkommt</a><br><div style=font-size:0.7em>Startseite</div></div>";
+  mobile_head.innerHTML="<div class='head_wrapper'><button class='option_button' onclick=toggleView('mobile_options');toggleView('mobile_main');>"+svg_menu+"</button><a href=/ style=text-decoration:none;font-weight:bold>wissenwerkommt</a><br><div style=font-size:0.7em>Startseite</div></div>";
   mobile_footer.innerHTML="<div id='footer_wrapper' class='footer_wrapper'><div style=font-size:0.7em;text-align:center>Immer besser zu <a href=/>wissenwerkommt</a>.</div></div>";
 
   // MENU
@@ -124,18 +124,20 @@ function updateView(json) {
  
   } else {
  
+    admin_menu+='<div class="divider">Termine</div>';
+    // ADMIN_MENU:DATETIME
+    admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamPreferenceDatetime_prompt()"></button><div class="option_text">Terminserie:<br><b>'+(teams_weekday_time!=' '?teams_weekday_time:'keine (unregelmäßig)')+'</b></div></div>';
+    //ADMIN_MENU:NEW EVENT
+    admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamAddEvent_prompt()"></button><div class="option_text">Termin hinzufügen</div></div>';
+    admin_menu+='<div class="divider">Team</div>';
     // ADMIN_MENU:TEAM-NAME
     admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamPreference_prompt(\'Name des Teams\',\'name\',\''+(team.name?team.name:'')+'\');"></button><div class="option_text">Name des Teams:<br><b>'+team.name+'</b></div></div>';
-    // ADMIN_MENU:DATETIME
-    admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamPreferenceDatetime_prompt()"></button><div class="option_text">Termin:<br><b>'+teams_weekday_time+'</b></div></div>';
     // ADMIN_MENU:TEAM-TOKEN
     admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamPreference_prompt(\'Team-Token\',\'teamtoken\',\''+(team.teamtoken?team.teamtoken:'')+'\');"></button><div class="option_text">Team-Token:<br><b>'+team.teamtoken+'</b></div></div>';
     // ADMIN_MENU:ADMIN-TOKEN
     admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamPreference_prompt(\'Admin-Token\',\'admintoken\',\''+(team.admintoken?team.admintoken:'')+'\');"></button><div class="option_text">Admin-Token:<br><b>'+team.admintoken+'</b></div></div>';
     //ADMIN_MENU:DELETE TEAM
     admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamDeleteTeam_prompt()"></button><div class="option_text">Team löschen</div></div>';
-    //ADMIN_MENU:NEW EVENT
-    admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamAddEvent_prompt()"></button><div class="option_text">neuen Termin anlegen</div></div>';
 
     // TEAM-page
     //var admin_options_button='';
@@ -146,7 +148,7 @@ function updateView(json) {
       mobile_main.innerHTML='<div class="error_wrapper">'+team.error+'<br><br>Maybe you need to <a href=# onclick=show_cookie_prompt(\'token\')>set a(nother) token</span>?</div>';
     } else {
  
-      mobile_head.innerHTML="<div class='head_wrapper'><button class='option_button' onclick=toggleView('mobile_options');toggleView('mobile_main');toggleView('mobile_footer');>"+svg_menu+"</button><a href=/"+team.teamid+" style=text-decoration:none;font-weight:bold>"+(!!team.name?team.name:'')+"</a><br><div style=font-size:0.7em>"+teams_weekday_time+"</div></div>";
+      mobile_head.innerHTML="<div class='head_wrapper'><button class='option_button' onclick=toggleView('mobile_options');toggleView('mobile_main');>"+svg_menu+"</button><a href=/"+team.teamid+" style=text-decoration:none;font-weight:bold>"+(!!team.name?team.name:'')+"</a><br><div style=font-size:0.7em>"+teams_weekday_time+"</div></div>";
       var name=getCookie('name',true);
       mobile_main.innerHTML='';
 
@@ -172,7 +174,7 @@ function updateView(json) {
         else if (minutes_to_go<60) {time_to_go_till_event_starts='startet in '+minutes_to_go+' Minuten'}
         else {
           var hours_to_go=Math.floor(minutes_to_go/60);
-          if (hours_to_go<12) {time_to_go_till_event_starts='noch '+hours_to_go+':'+minutes_to_go%60+' Stunden'}
+          if (hours_to_go<12) {time_to_go_till_event_starts='noch '+hours_to_go+':'+((minutes_to_go%60>9)?minutes_to_go%60:'0'+minutes_to_go%60)+' Stunden'}
           else if (hours_to_go<24) {time_to_go_till_event_starts='noch '+Math.round(minutes_to_go/60)+' Stunden'}
           else {
             var days_to_go=Math.floor((new Date(e.datetime)-new Date().setHours(0,0,0,0))/86400000);
@@ -213,7 +215,7 @@ function updateView(json) {
     }    
   }
   if ((!team.userlevel)||(team.userlevel<2)) {admin_menu=''}
-  mobile_options.innerHTML='<div class="options_wrapper">'+menu+'<div style=height:10px></div>'+admin_menu+'</div>'; //+admin_options_button
+  mobile_options.innerHTML='<div class="options_wrapper">'+menu+admin_menu+'</div>'; //+admin_options_button
   display_hour_selection();
   //setAdminMode(adminMode);
 }
@@ -227,7 +229,7 @@ function show_teamPreference_prompt(text,param,preval) {
 }
 function show_teamPreferenceDatetime_prompt() {
   var e=document.getElementById('mobile_prompt');
-  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">Termin</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off">'+team_datetime_selection+'<button class="button_ok" onclick="editTeam();hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
+  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">Wochentag und Uhrzeit</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off">'+team_datetime_selection+'<button class="button_ok" onclick="editTeam();hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
   document.getElementById('mobile_inner').style.display='none';
   e.style.display='block';
   display_hour_selection();
@@ -241,14 +243,14 @@ function show_teamDeleteTeam_prompt() {
 }
 function show_teamAddEvent_prompt() {
   var e=document.getElementById('mobile_prompt');
-  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">Neuen Termin anlegen</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><input type="text" id="datetime" value="'+getDateString()+'T00:00" placeholder="datetime" autocomplete="off"><input type="text" id="comment" value="Einzeltermin" placeholder="comment" autocomplete="off"><button class="button_ok" onclick="addEvent();hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
+  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">Neuen Termin anlegen</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><input type="text" id="datetime" value="'+getDateString()+'T00:00" placeholder="datetime" autocomplete="off"><input type="text" id="comment" value="Einzeltermin" placeholder="" autocomplete="off"><button class="button_ok" onclick="addEvent();hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
   document.getElementById('mobile_inner').style.display='none';
   e.style.display='block';
   display_hour_selection();
 }
 function show_teamCommentEdit_prompt(datetime,preval) {
   var e=document.getElementById('mobile_prompt');
-  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">Kommentar</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><input type="text" id="comment'+datetime+'" value="'+preval+'" placeholder="comment" autocomplete="off"><button class="button_ok" onclick="commentEvent(\''+datetime+'\');hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
+  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">Kommentar</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><input type="text" id="comment'+datetime+'" value="'+preval+'" placeholder="" autocomplete="off"><button class="button_ok" onclick="commentEvent(\''+datetime+'\');hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
   document.getElementById('mobile_inner').style.display='none';
   e.style.display='block';
   display_hour_selection();
@@ -605,6 +607,9 @@ function hide_prompt(text,preval) {
   }
   button.option_button {
     float:right; margin:0px 0px 0px 8px; height: 50px; width: 50px;
+  }
+  div.divider {
+    border-radius: 0.1em; margin:0px 0px 0px 0px; padding: 12px 10px 9px 11px; nobackground-color: #fff; min-height:10px; overflow: wrap; font-size: 0.7em;
   }
   div.admin_wrapper {
     border-radius: 0.1em; margin: 0px 6px 12px 6px; padding: 0px 6px 0px 9px; nobackground-color:#ddd; text-align: left;
