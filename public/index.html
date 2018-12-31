@@ -29,15 +29,16 @@ if ('serviceWorker' in navigator) {
 */
 
 var team=false;
-var adminMode=false;
+//var adminMode=false;
+var team_datetime_selection='';
 
 function updateView(json) {  
   team=json?JSON.parse(json):false;
-  if (team.userlevel<2) {adminMode=false}
+  //if (team.userlevel<2) {adminMode=false}
   var mobile_head=document.getElementById('mobile_head');
   var mobile_main=document.getElementById('mobile_main');
   var mobile_options=document.getElementById('mobile_options');
-  var mobile_admin=document.getElementById('mobile_admin');
+  //var mobile_admin=document.getElementById('mobile_admin');
   var mobile_footer=document.getElementById('mobile_footer');
   var selected='';
 
@@ -72,46 +73,78 @@ function updateView(json) {
   }
   minute_selection+='</select>';
 
+  team_datetime_selection=weekday_selection+'<br>'+hour_selection+' '+minute_selection;
+
   var teams_hour=(team.recurrence)&&(team.recurrence[0].time)?team.recurrence[0].time.slice(0,2):'';
   var teams_minute=(team.recurrence)&&(team.recurrence[0].time)?team.recurrence[0].time.slice(3,5):'';
   var teams_weekday_time=(teams_weekday!='unregelmäßig'?teams_weekday:'')+" "+((teams_hour)?teams_hour+':'+teams_minute:'');
 
   // HEAD
   var svg_menu='<svg xmlns="http://www.w3.org/2000/svg" id="svg_menu" fill="#000" width="24px" height="18px" viewBox="0 0 24 24"><path d="M24 6h-24v-4h24v4zm0 4h-24v4h24v-4zm0 8h-24v4h24v-4z"/></svg>';
-  mobile_head.innerHTML="<div class='head_wrapper'><button onclick=toggleView('mobile_options'); style=float:right>"+svg_menu+"</button><a href=/ style=text-decoration:none;font-weight:bold>wissenwerkommt</a><br><div style=font-size:0.7em>Startseite</div></div>";
+
+  mobile_head.innerHTML="<div class='head_wrapper'><button class='option_button' onclick=toggleView('mobile_options');toggleView('mobile_main');toggleView('mobile_footer');>"+svg_menu+"</button><a href=/ style=text-decoration:none;font-weight:bold>wissenwerkommt</a><br><div style=font-size:0.7em>Startseite</div></div>";
   mobile_footer.innerHTML="<div id='footer_wrapper' class='footer_wrapper'><div style=font-size:0.7em;text-align:center>Immer besser zu <a href=/>wissenwerkommt</a>.</div></div>";
 
-  var show_name_prompt_button='<button onclick="show_cookie_prompt(\'name\');">'+(getCookie("name",true)||"Name")+'</button>';
-  var show_token_prompt_button='<button onclick="show_cookie_prompt(\'token\');">'+(getCookie("token",true)||"Token")+'</button>';
+  // MENU
+  var text='';
+  var cookie=undefined;
+  var svg='';
+  var menu='';
+  var admin_menu='';
+
+  // MENU:NAME
+  text='Mit welchem Namen möchtest du dich anmelden?';
+  cookie=getCookie("name",true);
+  if (cookie) {text='Hallo <b>'+cookie+'</b>.<br>Schön, dass du da bist.'}
+  svg='';//<svg xmlns="http://www.w3.org/2000/svg" id="svg_menu" fill="#000" width="24px" height="18px" viewBox="0 0 24 24"><path d="M24 6h-24v-4h24v4zm0 4h-24v4h24v-4zm0 8h-24v4h24v-4z"/></svg>';
+  menu+='<div class="options_option"><button class="option_button" onclick="show_cookie_prompt(\'name\');">'+svg+'</button><div class="option_text">'+text+'</div></div>';
+
+  // MENU:TOKEN
+  cookie=getCookie("token",true);
+  text='Für den Zugriff kann die Eingabe eines Token notwendig sein.';
+  if (cookie) {text='Dein Token:<br><b>'+cookie+'</b>'}
+  svg='';//<svg xmlns="http://www.w3.org/2000/svg" id="svg_menu" fill="#000" width="24px" height="18px" viewBox="0 0 24 24"><path d="M24 6h-24v-4h24v4zm0 4h-24v4h24v-4zm0 8h-24v4h24v-4z"/></svg>';
+  menu+='<div class="options_option"><button class="option_button" onclick="show_cookie_prompt(\'token\');">'+svg+'</button><div class="option_text">'+text+'</div></div>';
 
   if (!team) {
  
     // MAIN-page if no team is requested
-    var admin_options_button='';
+    
+    //var admin_options_button='';
+    /*
     serverRequest('getUserLevel',{'token':getCookie('token',true)},function (userlevel) {
       if (userlevel>2) {admin_options_button='<button onclick=\'setAdminMode()\'>Admin-Options</button>'} else {adminMode=false; setAdminMode(adminMode);}
-      //mobile_options.innerHTML='<div class="options_wrapper">'+show_name_prompt_button+show_token_prompt_button+admin_options_button+'</div>';
     });
-    mobile_main.innerHTML='<div class="new_team_wrapper"><input type="text" id="name" value="" placeholder="name of your team" autocomplete="off"><br>'+weekday_selection+'<br>'+hour_selection+' '+minute_selection +'<br><input type="text" id="teamid" value="'+window.location.pathname.substr(1)+'" placeholder="team id" autocomplete="off"><br><input type="text" id="admintoken" value="'+(team.admintoken||'')+'" placeholder="admin token" autocomplete="off"><input type="hidden" id="teamtoken" value="'+(team.teamtoken||'')+'" autocomplete="off"><br><button onclick=addTeam()>create Team</button></div>';
-    mobile_admin.innerHTML='<button onclick=load()>load</button><button onclick=save()>save</button><button onclick=dump()>dump</button>'
-    mobile_footer.innerHTML="<div id='footer_wrapper' class='footer_wrapper'>Teams: </div>";
-    serverRequest('getListOfTeamIDs',{},function (r){r=JSON.parse(r); r.forEach(function (t){document.getElementById('footer_wrapper').innerHTML+='<a href=/'+t+'>'+t+'</a> '})});
+    */
+    mobile_main.innerHTML='<div class="new_team_wrapper"><input type="text" id="name" value="" placeholder="name of your team" autocomplete="off"><br>'+weekday_selection+'<br>'+hour_selection+' '+minute_selection +'<br><input type="text" id="teamid" value="'+window.location.pathname.substr(1)+'" placeholder="team id" autocomplete="off"><br><input type="text" id="admintoken" value="'+(team.admintoken||'')+'" placeholder="admin token" autocomplete="off"><input type="hidden" id="teamtoken" value="'+(team.teamtoken||'')+'" autocomplete="off"><br><button onclick=addTeam()>create Team</button></div><div class="teamlist_wrapper" id="teamlist"><br>Teams: </div>';
+    //mobile_admin.innerHTML='<button onclick=load()>load</button><button onclick=save()>save</button><button onclick=dump()>dump</button>'
+    mobile_footer.innerHTML="";//<div id='footer_wrapper' class='footer_wrapper'>Teams: </div>";
+    serverRequest('getListOfTeamIDs',{},function (r){r=JSON.parse(r); r.forEach(function (t){document.getElementById('teamlist').innerHTML+='<a href=/'+t+'>'+t+'</a> '})});
     //serverRequest('stats',{},function (r){mobile_main.innerHTML+="<br>Here are some stats: "+r});
  
   } else {
  
+    // ADMIN_MENU:TEAM-NAME
+    admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamPreference_prompt(\'Name des Teams\',\'name\',\''+(team.name?team.name:'')+'\');"></button><div class="option_text">Name des Teams:<br><b>'+team.name+'</b></div></div>';
+    // ADMIN_MENU:DATETIME
+    admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamPreferenceDatetime_prompt()"></button><div class="option_text">Termin:<br><b>'+teams_weekday_time+'</b></div></div>';
+    // ADMIN_MENU:TEAM-TOKEN
+    admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamPreference_prompt(\'Team-Token\',\'teamtoken\',\''+(team.teamtoken?team.teamtoken:'')+'\');"></button><div class="option_text">Team-Token:<br><b>'+team.teamtoken+'</b></div></div>';
+    // ADMIN_MENU:ADMIN-TOKEN
+    admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamPreference_prompt(\'Admin-Token\',\'admintoken\',\''+(team.admintoken?team.admintoken:'')+'\');"></button><div class="option_text">Admin-Token:<br><b>'+team.admintoken+'</b></div></div>';
+    //ADMIN_MENU:DELETE TEAM
+    admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamDeleteTeam_prompt()"></button><div class="option_text">Team löschen</div></div>';
+
     // TEAM-page
-    var admin_options_button='';
-    if (team.userlevel>1) {admin_options_button='<button onclick=\'setAdminMode()\'>Admin-Options</button>'} else {adminMode=false; setAdminMode(adminMode);}
-    //mobile_options.innerHTML='<div class="options_wrapper">'+show_name_prompt_button+show_token_prompt_button+admin_options_button+'</div>';
+    //var admin_options_button='';
+    //if (team.userlevel>1) {admin_options_button='<button onclick=\'setAdminMode()\'>Admin-Options</button>'} else {adminMode=false; setAdminMode(adminMode);}
 
     if (team.error) {
       debug('ERROR: The server answered: '+JSON.stringify(team))
       mobile_main.innerHTML='<div class="error_wrapper">'+team.error+'<br><br>Maybe you need to <a href=# onclick=show_cookie_prompt(\'token\')>set a(nother) token</span>?</div>';
-      //getCookie('token');
     } else {
  
-      mobile_head.innerHTML="<div class='head_wrapper'><button onclick=toggleView('mobile_options'); style=float:right>"+svg_menu+"</button><a href=/"+team.teamid+" style=text-decoration:none;font-weight:bold>"+(!!team.name?team.name:'')+"</a><br><div style=font-size:0.7em>"+teams_weekday_time+"</div></div>";
+      mobile_head.innerHTML="<div class='head_wrapper'><button class='option_button' onclick=toggleView('mobile_options');toggleView('mobile_main');toggleView('mobile_footer');>"+svg_menu+"</button><a href=/"+team.teamid+" style=text-decoration:none;font-weight:bold>"+(!!team.name?team.name:'')+"</a><br><div style=font-size:0.7em>"+teams_weekday_time+"</div></div>";
       var name=getCookie('name',true);
       mobile_main.innerHTML='';
 
@@ -160,7 +193,6 @@ function updateView(json) {
           if (e.attendees&&e.attendees.includes(name)) {banner_text='Du bist dabei!'}
           else if (e.refusals&&e.refusals.includes(name)) {banner_text='Schade!'} 
           banner='<div class="banner">'+banner_text+'</div><div class="statusbutton_wrapper_first">';
-        } else {
         }
 
         // events
@@ -173,14 +205,37 @@ function updateView(json) {
 
       }):false;
 
-      mobile_admin.innerHTML='<div class="admin_wrapper"><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><input type="text" id="name" value="'+(team.name||'')+'" placeholder="name of the team" autocomplete="off"><br><input type="text" id="teamtoken" value="'+(team.teamtoken||'')+'" placeholder="team token" autocomplete="off"><br><input type="text" id="admintoken" value="'+(team.admintoken||'')+'" placeholder="admin token" autocomplete="off"><br>'+weekday_selection+' '+hour_selection+' '+minute_selection +'<br><button onclick=editTeam()>update Team</button> <button onclick=deleteTeam()>delete Team</button><br><br><input type="text" id="datetime" value="'+getDateString()+'T00:00" placeholder="datetime" autocomplete="off"><br><input type="text" id="comment" value="Einzeltermin" placeholder="comment" autocomplete="off"><br><button onclick=addEvent()>add Event</button></div>';
+      //mobile_admin.innerHTML='<div class="admin_wrapper"><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><input type="text" id="name" value="'+(team.name||'')+'" placeholder="name of the team" autocomplete="off"><br><input type="text" id="teamtoken" value="'+(team.teamtoken||'')+'" placeholder="team token" autocomplete="off"><br><input type="text" id="admintoken" value="'+(team.admintoken||'')+'" placeholder="admin token" autocomplete="off"><br>'+weekday_selection+' '+hour_selection+' '+minute_selection +'<br><button onclick=editTeam()>update Team</button> <button onclick=deleteTeam()>delete Team</button><br><br><input type="text" id="datetime" value="'+getDateString()+'T00:00" placeholder="datetime" autocomplete="off"><br><input type="text" id="comment" value="Einzeltermin" placeholder="comment" autocomplete="off"><br><button onclick=addEvent()>add Event</button></div>';
 
       debug('Team-JSON: '+JSON.stringify(team));
     }    
   }
-  mobile_options.innerHTML='<div class="options_wrapper">'+show_name_prompt_button+show_token_prompt_button+admin_options_button+'</div>';
+  if ((!team.userlevel)||(team.userlevel<2)) {admin_menu=''}
+  mobile_options.innerHTML='<div class="options_wrapper">'+menu+'<div style=height:10px></div>'+admin_menu+'</div>'; //+admin_options_button
   display_hour_selection();
-  setAdminMode(adminMode);
+  //setAdminMode(adminMode);
+}
+
+function show_teamPreference_prompt(text,param,preval) {
+  var e=document.getElementById('mobile_prompt');
+  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">'+text+'</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><input type="text" id="'+param+'" value="'+preval+'" placeholder="" autocomplete="off"><button class="button_ok" onclick="editTeam();hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
+  document.getElementById('mobile_inner').style.display='none';
+  e.style.display='block';
+  document.getElementById(param).focus();
+}
+function show_teamPreferenceDatetime_prompt() {
+  var e=document.getElementById('mobile_prompt');
+  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">Termin</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off">'+team_datetime_selection+'<button class="button_ok" onclick="editTeam();hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
+  document.getElementById('mobile_inner').style.display='none';
+  e.style.display='block';
+  display_hour_selection();
+}
+function show_teamDeleteTeam_prompt() {
+  var e=document.getElementById('mobile_prompt');
+  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">Möchtest du das Team unwiederruflich löschen?</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><button class="button_ok" onclick="deleteTeam();hide_prompt();">Team löschen</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
+  document.getElementById('mobile_inner').style.display='none';
+  e.style.display='block';
+  display_hour_selection();
 }
 
 function display_hour_selection() {
@@ -194,6 +249,7 @@ function display_hour_selection() {
 }
 
 // set/toggle view of admin-options
+/*
 function setAdminMode(state) {
   if (state==undefined) {adminMode=!adminMode} else {adminMode=state}
   if (adminMode) {
@@ -202,6 +258,7 @@ function setAdminMode(state) {
     [].forEach.call(document.getElementsByClassName('admin'), function (c) {c.style.display='none'});
   }
 }
+*/
 
 function toggleStatus(datetime) {
   var e=findEvent(team,datetime);
@@ -251,7 +308,7 @@ function addTeam() {
 }
 
 function editTeam() {
-  serverRequest('editTeam',{token:getCookie('token',true),teamid:document.getElementById('teamid').value,name:document.getElementById('name').value,teamtoken:document.getElementById('teamtoken').value,admintoken:document.getElementById('admintoken').value,recurrence:[{weekday:document.getElementById('weekday').value,time:document.getElementById('hour').value+':'+document.getElementById('minute').value}]},function (r){updateStatus(r);});
+  serverRequest('editTeam',{token:getCookie('token',true),teamid:document.getElementById('teamid')?document.getElementById('teamid').value:undefined,name:document.getElementById('name')?document.getElementById('name').value:undefined,teamtoken:document.getElementById('teamtoken')?document.getElementById('teamtoken').value:undefined,admintoken:document.getElementById('admintoken')?document.getElementById('admintoken').value:undefined,recurrence:document.getElementById('weekday')&&document.getElementById('hour')&&document.getElementById('minute')?[{weekday:document.getElementById('weekday').value,time:document.getElementById('hour').value+':'+document.getElementById('minute').value}]:undefined},function (r){updateStatus(r);});
 }
 
 function deleteTeam() {
@@ -333,7 +390,7 @@ function show_cookie_prompt(cname,str_functionToCall) {
   if (cname=='name') {text='Bitte gib deinen <b>Namen</b> ein:'; placeholder='Name';}
   else if (cname=='token') {text='Bitte gib deinen <b>Token</b> ein:'; placeholder='Token';}
   var e=document.getElementById('mobile_prompt');
-  e.innerHTML='<div class="prompt_wrapper"><div style="font-size:0.7em;width:100%;text-align:left;padding:0px 10px 10px 10px;">'+text+'</div><input type="text" id="cinput" value="'+preval+'" placeholder="'+placeholder+'" autocomplete="off"><button class="button_ok" onclick="setCookie(\''+cname+'\',document.getElementById(\'cinput\').value,365);hide_prompt();'+(str_functionToCall||'')+'">ok</button><div style=clear:both></div><div style="font-size:0.7em;width:100%;text-align:left;padding:10px 10px 10px 10px;">Diese Information wird als Cookie in deinem Browser gespeichert.<br><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
+  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">'+text+'</div><input type="text" id="cinput" value="'+preval+'" placeholder="'+placeholder+'" autocomplete="off"><button class="button_ok" onclick="setCookie(\''+cname+'\',document.getElementById(\'cinput\').value,365);hide_prompt();'+(str_functionToCall||'')+'">ok</button><div style=clear:both></div><div class="prompt_text_bottom">Diese Information wird als Cookie in deinem Browser gespeichert.<br><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
   document.getElementById('mobile_inner').style.display='none';
   e.style.display='block';
   document.getElementById('cinput').focus();
@@ -354,11 +411,6 @@ function setCookie(cname, cvalue, exdays) {
 
 function debug(text) {
   console.log(text);
-}
-
-function checkSize() {
-  var width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
-  debug('clientWidth: '+width);
 }
 
 is_mobile=1;
@@ -483,7 +535,7 @@ function hide_prompt(text,preval) {
 
   a {color:inherit}
   a:hover {color:rgb(0,0,0); nobackground-color:rgb(245,0,0); notext-decoration:none; nopadding: 0 0.5em 0 0.5em; noborder-radius: 0.2em;}
-  select, input, button {font-family: 'Roboto', serif; font-size: 1em; padding: 0 0.5em 0 0.5em; border-style: none; border-radius: 0.1em; background-color:rgb(235,235,235); outline:0; height:50px; margin:0 0 0.5em 0;}
+  select, input, button {font-family: 'Roboto', serif; font-size: 1em; padding: 0 0.5em 0 0.5em; border-style: none; border-radius: 0.1em; background-color:rgb(235,235,235); outline:0; height:50px; margin:0 0 0.4em 0;}
  
   input {display:inline; width:100%}
 
@@ -491,7 +543,7 @@ function hide_prompt(text,preval) {
     border-radius: 0.1em;
     position: relative; overflow: hidden; display:inline-block; cursor: pointer; 
     background-color:#A2A2A2; background-image:linear-gradient(#A2A2A2 84%,#A2A2A2 0%);
-    margin: 0 5px 5px 0;
+    margin: 0 0px 0px 0;
     height:50px; letter-spacing: -0.9px; notext-transform: uppercase; text-align: center;
     box-shadow: 0 1px 1px rgba(0, 0, 0, 0.16), 0 1px 1px rgba(0, 0, 0, 0.1);
   }
@@ -514,16 +566,28 @@ function hide_prompt(text,preval) {
   }
 
   div.head_wrapper {
-    border-radius: 0.1em; margin: 6px 1px 0px 6px; padding: 9px 6px 12px 9px; nobackground-color:#fff; text-align: left; min-height:72px;
+    border-radius: 0.1em; margin: 6px 6px 0px 6px; padding: 9px 9px 0px 9px; nobackground-color:#fff; text-align: left; min-height:72px;
   }
   div.new_team_wrapper {
-    border-radius: 0.1em; margin: 0px 6px 0px 6px; padding: 0px 6px 0px 9px; nobackground-color:#fff; text-align: left;
+    border-radius: 0.1em; margin: 6px 6px 0px 6px; padding: 0px 9px 0px 9px; nobackground-color:#fff; text-align: left;
+  }
+  div.teamlist_wrapper {
+    border-radius: 0.1em; margin: 6px 6px 0px 6px; padding: 0px 9px 0px 9px; nobackground-color:#fff; text-align: left; font-size: 0.7em;
   }
   div.error_wrapper {
     border-radius: 0.1em; margin: 0px 6px 6px 6px; padding:18px 6px; background-color:#fff; text-align: center;
   }
   div.options_wrapper {
-    border-radius: 0.1em; margin: 0px 6px 6px 6px; padding: 0px 6px 20px 9px; nobackground-color:#fff; text-align: left;
+    border-radius: 0.1em; margin: 0px 6px 15px 6px; padding: 5px 0px 1px 0px; nobackground-color:#ccc; text-align: left;
+  }
+  div.options_option {
+    border-radius: 0.1em; margin:0px 0px 9px 0px; padding: 9px 10px 9px 11px; background-color: #fff; min-height:70px; overflow: wrap;
+  }
+  div.option_text {
+    font-size:0.7em; padding:0px 0px 4px 0px;
+  }
+  button.option_button {
+    float:right; margin:0px 0px 0px 8px; height: 50px; width: 50px;
   }
   div.admin_wrapper {
     border-radius: 0.1em; margin: 0px 6px 12px 6px; padding: 0px 6px 0px 9px; nobackground-color:#ddd; text-align: left;
@@ -548,6 +612,12 @@ function hide_prompt(text,preval) {
   }
   div.prompt_wrapper {
     border-radius: 0.1em; margin: 12px 6px 12px 6px; padding: 20px 16px 20px 16px; background-color:#fff; text-align: center;
+  }
+  div.prompt_text_top {
+    font-size:0.7em; width:100%; text-align:left; padding:0px 10px 10px 10px;
+  }
+  div.prompt_text_bottom {
+    font-size:0.7em; width:100%; text-align:left; padding:10px 10px 10px 10px;
   }
 
   button.statusbutton_undecided, button.statusbutton_attending, button.statusbutton_refused {
@@ -605,7 +675,7 @@ function hide_prompt(text,preval) {
     <div id="mobile_inner" class="mobile_inner">
       <div id="mobile_head" class="head"></div>
       <div id="mobile_options" class="options"></div>
-      <div id="mobile_admin" class="admin"></div>
+      <!--<div id="mobile_admin" class="admin"></div>-->
       <div id="mobile_main" class="main"></div>
       <div id="mobile_footer" class="footer"></div>
     </div>
