@@ -216,11 +216,26 @@ describe ('TEAM-ADMIN REST-REQUESTS', function() {
     });
   });
 
+  describe('POST /api/editTeam (new_teamid)', function() {
+    it('should change teamid of teamG20 to teamG20new', function(done) {
+      request(app)
+        .post('/api/editTeam')
+        .send({teamid:'teamG20',new_teamid:'teamG20new',token:'4321'})
+        .set('Accept', 'application/json')
+        .expect(200)
+        .end(function(err, res) {
+          if (err) throw err;
+          console.log(res.text);
+          done();
+        });
+    });
+  });
+
   describe('DELETE /api/deleteTeam', function() {
-    it('should delete teamG20', function(done) {
+    it('should delete teamG20new', function(done) {
       request(app)
         .delete('/api/deleteTeam')
-        .send({teamid:'teamG20',token:'4321'})
+        .send({teamid:'teamG20new',token:'4321'})
         .set('Accept', 'application/json')
         .expect(200)
         .end(function(err, res) {

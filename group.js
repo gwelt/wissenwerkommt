@@ -157,8 +157,20 @@ Group.prototype.editTeam = function(json) {
   if (team) {
     // check for each property, if json-key (!) is not undefined
     // that way, a string with no length ('') can delete/undefine a current string
+
     // exceptional case: do not delete/undefine admintoken, if it's left blank
     if (json['admintoken']=='') {json['admintoken']=undefined};
+
+    // exceptional case: new_teamid changes existing teamid (only, if new_teamid does not exist yet)
+    if (json['new_teamid']!==undefined) {
+      // generate temporary team with new_teamid to check validity and availability of new teamid
+      let temp_team=new Team({'teamid':json['new_teamid']});
+      if ( (typeof temp_team.teamid !== 'undefined') && (!this.findTeam(temp_team.teamid)) ) {
+        editTeam.teamid=temp_team.teamid;
+      }
+      json['new_teamid']=undefined;
+    }
+
     for (let key of Object.keys(editTeam)) {if (json[key]!==undefined) {team[key]=editTeam[key]}};
     return team;
   } else {
