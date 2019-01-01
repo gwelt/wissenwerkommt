@@ -125,19 +125,19 @@ function updateView(json) {
   } else {
  
     admin_menu+='<div class="divider">Termine</div>';
-    // ADMIN_MENU:DATETIME
-    admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamPreferenceDatetime_prompt()"></button><div class="option_text">Terminserie:<br><b>'+(teams_weekday_time!=' '?teams_weekday_time:'keine (unregelmäßig)')+'</b></div></div>';
     //ADMIN_MENU:NEW EVENT
     admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamAddEvent_prompt()"></button><div class="option_text">Termin hinzufügen</div></div>';
+    // ADMIN_MENU:DATETIME
+    admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamPreferenceDatetime_prompt()"></button><div class="option_text">Terminserie:<br><b>'+(teams_weekday_time!=' '?teams_weekday_time:'keine (unregelmäßig)')+'</b></div></div>';
     admin_menu+='<div class="divider">Team</div>';
     // ADMIN_MENU:TEAM-NAME
     admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamPreference_prompt(\'Name des Teams\',\'name\',\''+(team.name?team.name:'')+'\');"></button><div class="option_text">Name des Teams:<br><b>'+team.name+'</b></div></div>';
     // ADMIN_MENU:TEAM-ID
     admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamPreference_prompt(\'ID des Teams\',\'new_teamid\',\''+(team.teamid?team.teamid:'')+'\');"></button><div class="option_text">ID des Teams:<br><b>'+team.teamid+'</b></div></div>';
-    // ADMIN_MENU:TEAM-TOKEN
-    admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamPreference_prompt(\'Team-Token\',\'teamtoken\',\''+(team.teamtoken?team.teamtoken:'')+'\');"></button><div class="option_text">Team-Token:<br><b>'+team.teamtoken+'</b></div></div>';
     // ADMIN_MENU:ADMIN-TOKEN
     admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamPreference_prompt(\'Admin-Token\',\'admintoken\',\''+(team.admintoken?team.admintoken:'')+'\');"></button><div class="option_text">Admin-Token:<br><b>'+team.admintoken+'</b></div></div>';
+    // ADMIN_MENU:TEAM-TOKEN
+    admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamPreference_prompt(\'Team-Token\',\'teamtoken\',\''+(team.teamtoken?team.teamtoken:'')+'\');"></button><div class="option_text">Team-Token:<br><b>'+team.teamtoken+'</b></div></div>';
     //ADMIN_MENU:DELETE TEAM
     admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamDeleteTeam_prompt()"></button><div class="option_text">Team löschen</div></div>';
 
