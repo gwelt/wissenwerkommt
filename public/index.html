@@ -29,12 +29,10 @@ if ('serviceWorker' in navigator) {
 */
 
 var team=false;
-//var adminMode=false;
 var team_datetime_selection='';
 
 function updateView(json) {  
   team=json?JSON.parse(json):false;
-  //if (team.userlevel<2) {adminMode=false}
   var mobile_head=document.getElementById('mobile_head');
   var mobile_main=document.getElementById('mobile_main');
   var mobile_options=document.getElementById('mobile_options');
@@ -45,7 +43,7 @@ function updateView(json) {
   // prepare weekday-selection
   var weekdays=[[1,'montags'],[2,'dienstags'],[3,'mittwochs'],[4,'donnerstags'],[5,'freitags'],[6,'samstags'],[0,'sonntags'],[7,'täglich'],[8,'unregelmäßig']];
   var preset_weekday=(team.recurrence)&&(team.recurrence[0].weekday)?team.recurrence[0].weekday:new Date().getDay();
-  var weekday_selection='<select id="weekday" onchange="display_hour_selection()">';
+  var weekday_selection='<select style="width:100%" id="weekday" onchange="display_hour_selection()">';
   var teams_weekday='';
   var i=-1;
   while (++i<weekdays.length) {
@@ -109,11 +107,9 @@ function updateView(json) {
   if (!team) {
  
     // MAIN-page if no team is requested
-    
-    //var admin_options_button='';
     /*
     serverRequest('getUserLevel',{'token':getCookie('token',true)},function (userlevel) {
-      if (userlevel>2) {admin_options_button='<button onclick=\'setAdminMode()\'>Admin-Options</button>'} else {adminMode=false; setAdminMode(adminMode);}
+      if (userlevel>2) {} else {}
     });
     */
     mobile_main.innerHTML='<div class="new_team_wrapper"><input type="text" id="name" value="" placeholder="name of your team" autocomplete="off"><br>'+weekday_selection+'<br>'+hour_selection+' '+minute_selection +'<br><input type="text" id="teamid" value="'+window.location.pathname.substr(1)+'" placeholder="team id" autocomplete="off"><br><input type="text" id="admintoken" value="'+(team.admintoken||'')+'" placeholder="admin token" autocomplete="off"><input type="hidden" id="teamtoken" value="'+(team.teamtoken||'')+'" autocomplete="off"><br><button onclick=addTeam()>create Team</button></div><div class="teamlist_wrapper" id="teamlist"><br>Teams: </div>';
@@ -125,31 +121,30 @@ function updateView(json) {
   } else {
  
     admin_menu+='<div class="divider">Termine</div>';
-    //ADMIN_MENU:NEW EVENT
+    // ADMIN_MENU:NEW EVENT
     admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamAddEvent_prompt()"></button><div class="option_text">Termin hinzufügen</div></div>';
     // ADMIN_MENU:DATETIME
     admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamPreferenceDatetime_prompt()"></button><div class="option_text">Terminserie:<br><b>'+(teams_weekday_time!=' '?teams_weekday_time:'keine (unregelmäßig)')+'</b></div></div>';
     admin_menu+='<div class="divider">Team</div>';
     // ADMIN_MENU:TEAM-NAME
-    admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamPreference_prompt(\'Name des Teams\',\'name\',\''+(team.name?team.name:'')+'\');"></button><div class="option_text">Name des Teams:<br><b>'+team.name+'</b></div></div>';
+    admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamPreference_prompt(\'<b>Name</b> des Teams:\',\'name\',\''+(team.name?team.name:'')+'\',\'\');"></button><div class="option_text">Name des Teams:<br><b>'+team.name+'</b></div></div>';
     // ADMIN_MENU:TEAM-ID
-    admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamPreference_prompt(\'ID des Teams\',\'new_teamid\',\''+(team.teamid?team.teamid:'')+'\');"></button><div class="option_text">ID des Teams:<br><b>'+team.teamid+'</b></div></div>';
+    admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamPreference_prompt(\'<b>Team-ID</b> / Aufruf-URL:\',\'new_teamid\',\''+(team.teamid?team.teamid:'')+'\',\'Achtung! Mit der Team-ID veränderst du auch den Aufruf-Link (URL) für dein Team!\');"></button><div class="option_text">ID des Teams:<br><b>'+team.teamid+'</b></div></div>';
     // ADMIN_MENU:ADMIN-TOKEN
-    admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamPreference_prompt(\'Admin-Token\',\'admintoken\',\''+(team.admintoken?team.admintoken:'')+'\');"></button><div class="option_text">Admin-Token:<br><b>'+team.admintoken+'</b></div></div>';
+    admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamPreference_prompt(\'<b>Admin-Token</b>:\',\'admintoken\',\''+(team.admintoken?team.admintoken:'')+'\',\'Achtung! Wenn du den Admin-Token veränderst, wirst du gleich selbst nicht mehr Admin sein. Du musst den Token dann erst selbst neu angeben!\');"></button><div class="option_text">Admin-Token:<br><b>'+team.admintoken+'</b></div></div>';
     // ADMIN_MENU:TEAM-TOKEN
-    admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamPreference_prompt(\'Team-Token\',\'teamtoken\',\''+(team.teamtoken?team.teamtoken:'')+'\');"></button><div class="option_text">Team-Token:<br><b>'+team.teamtoken+'</b></div></div>';
-    //ADMIN_MENU:DELETE TEAM
+    admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamPreference_prompt(\'<b>Team-Token</b>:\',\'teamtoken\',\''+(team.teamtoken?team.teamtoken:'')+'\',\'Vergiss nicht, deinem Team den neuen Team-Token mitzuteilen!\');"></button><div class="option_text">Team-Token:<br><b>'+team.teamtoken+'</b></div></div>';
+    // ADMIN_MENU:DELETE TEAM
     admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamDeleteTeam_prompt()"></button><div class="option_text">Team löschen</div></div>';
 
-    // TEAM-page
-    //var admin_options_button='';
-    //if (team.userlevel>1) {admin_options_button='<button onclick=\'setAdminMode()\'>Admin-Options</button>'} else {adminMode=false; setAdminMode(adminMode);}
-
     if (team.error) {
+      // MAIN-page if a team is requested but not found or not allowed
       debug('ERROR: The server answered: '+JSON.stringify(team))
-      mobile_main.innerHTML='<div class="error_wrapper">'+team.error+'<br><br>Maybe you need to <a href=# onclick=show_cookie_prompt(\'token\')>set a(nother) token</span>?</div>';
+      mobile_head.innerHTML="<div class='head_wrapper'><button class='option_button' onclick=toggleView('mobile_options');toggleView('mobile_main');>"+svg_menu+"</button><a href=/ style=text-decoration:none;font-weight:bold>wissenwerkommt</a><br><div style=font-size:0.7em>/<a href=/"+window.location.pathname.substr(1)+">"+window.location.pathname.substr(1)+"</a></div></div>";
+      mobile_main.innerHTML='<div class="error_wrapper"><div class="error_text">Der Zugriff ist geschützt.<br>Das Team hat einen Code vereinbart:<br><br></div><button style="width:100%" onclick=show_cookie_prompt(\'token\')>Token eingeben</button></div>';
     } else {
  
+      // MAIN-page if a team is requested
       mobile_head.innerHTML="<div class='head_wrapper'><button class='option_button' onclick=toggleView('mobile_options');toggleView('mobile_main');>"+svg_menu+"</button><a href=/"+team.teamid+" style=text-decoration:none;font-weight:bold>"+(!!team.name?team.name:'')+"</a><br><div style=font-size:0.7em>"+teams_weekday_time+"</div></div>";
       var name=getCookie('name',true);
       mobile_main.innerHTML='';
@@ -194,11 +189,11 @@ function updateView(json) {
         // show content
         var banner='<div class="statusbutton_wrapper">';
         if ( (event_counter==-1) && (e.attendees&&e.attendees.includes(name)) ) {
-          // Teaser / coming up next..
+          // Teaser / coming up next...
           banner_text='Sei dabei!';
           if (e.attendees&&e.attendees.includes(name)) {banner_text='Du bist dabei!'}
           else if (e.refusals&&e.refusals.includes(name)) {banner_text='Schade!'} 
-          banner='<div class="banner">'+banner_text+'</div><div class="statusbutton_wrapper_first">';
+          banner='<div class="banner">'+banner_text+'</div><div class="statusbutton_wrapper_after_banner">';
         }
 
         // events
@@ -211,43 +206,38 @@ function updateView(json) {
 
       }):false;
 
-      //mobile_admin.innerHTML='<div class="admin_wrapper"><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><input type="text" id="name" value="'+(team.name||'')+'" placeholder="name of the team" autocomplete="off"><br><input type="text" id="teamtoken" value="'+(team.teamtoken||'')+'" placeholder="team token" autocomplete="off"><br><input type="text" id="admintoken" value="'+(team.admintoken||'')+'" placeholder="admin token" autocomplete="off"><br>'+weekday_selection+' '+hour_selection+' '+minute_selection +'<br><button onclick=editTeam()>update Team</button> <button onclick=deleteTeam()>delete Team</button><br><br><input type="text" id="datetime" value="'+getDateString()+'T00:00" placeholder="datetime" autocomplete="off"><br><input type="text" id="comment" value="Einzeltermin" placeholder="comment" autocomplete="off"><br><button onclick=addEvent()>add Event</button></div>';
-
       debug('Team-JSON: '+JSON.stringify(team));
     }    
   }
   if ((!team.userlevel)||(team.userlevel<2)) {admin_menu=''}
   mobile_options.innerHTML='<div class="options_wrapper">'+menu+admin_menu+'</div>'; //+admin_options_button
   display_hour_selection();
-  //setAdminMode(adminMode);
 }
 
-function show_teamPreference_prompt(text,param,preval) {
+function show_teamPreference_prompt(text,param,preval,subline) {
   var e=document.getElementById('mobile_prompt');
-  var changeLocation='';
-  if (param=='new_teamid') {changeLocation="window.location.href=window.location.href.split('/')[0]+document.getElementById('"+param+"').value;"}
-  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">'+text+'</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><input type="text" id="'+param+'" value="'+preval+'" placeholder="" autocomplete="off"><button class="button_ok" onclick="editTeam();hide_prompt();'+changeLocation+'">ok</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
+  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">'+text+'</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><input type="text" id="'+param+'" value="'+preval+'" placeholder="" autocomplete="off"><button class="button_ok" onclick="editTeam();hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom">'+(subline?subline+'<br>':'')+'<br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
   document.getElementById('mobile_inner').style.display='none';
   e.style.display='block';
   document.getElementById(param).focus();
 }
 function show_teamPreferenceDatetime_prompt() {
   var e=document.getElementById('mobile_prompt');
-  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">Wochentag und Uhrzeit</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off">'+team_datetime_selection+'<button class="button_ok" onclick="editTeam();hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
+  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top"><b>Wann</b> findet der Termin statt?</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off">'+team_datetime_selection+'<button class="button_ok" onclick="editTeam();hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
   document.getElementById('mobile_inner').style.display='none';
   e.style.display='block';
   display_hour_selection();
 }
 function show_teamDeleteTeam_prompt() {
   var e=document.getElementById('mobile_prompt');
-  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">Möchtest du das Team unwiderruflich löschen?</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><button class="button_ok" onclick="deleteTeam();hide_prompt();">Team löschen</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
+  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">Möchtest du das Team <i>'+team.name+'</i> unwiderruflich <b>löschen</b>?</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><button class="button_ok" onclick="deleteTeam();hide_prompt();">Team löschen</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
   document.getElementById('mobile_inner').style.display='none';
   e.style.display='block';
   display_hour_selection();
 }
 function show_teamAddEvent_prompt() {
   var e=document.getElementById('mobile_prompt');
-  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">Neuen Termin anlegen</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><input type="text" id="datetime" value="'+getDateString()+'T00:00" placeholder="datetime" autocomplete="off"><input type="text" id="comment" value="Einzeltermin" placeholder="" autocomplete="off"><button class="button_ok" onclick="addEvent();hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
+  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top"><b>Wann</b> findet der Termin statt?</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><input type="text" id="datetime" value="'+getDateString()+'T00:00" placeholder="datetime" autocomplete="off"><div class="prompt_text_top"><b>Hinweis</b> zum Termin:</div><input type="text" id="comment" value="Einzeltermin" placeholder="Angabe erforderlich" autocomplete="off"><button class="button_ok" onclick="addEvent();hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
   document.getElementById('mobile_inner').style.display='none';
   e.style.display='block';
   display_hour_selection();
@@ -260,7 +250,6 @@ function show_teamCommentEdit_prompt(datetime,preval) {
   display_hour_selection();
 }
 
-
 function display_hour_selection() {
 	var viewstate='inline';
   var element_weekday=document.getElementById('weekday');
@@ -270,18 +259,6 @@ function display_hour_selection() {
     document.getElementById('minute').style.display=viewstate;    
   }
 }
-
-// set/toggle view of admin-options
-/*
-function setAdminMode(state) {
-  if (state==undefined) {adminMode=!adminMode} else {adminMode=state}
-  if (adminMode) {
-    [].forEach.call(document.getElementsByClassName('admin'), function (c) {c.style.display='block'});
-  } else {
-    [].forEach.call(document.getElementsByClassName('admin'), function (c) {c.style.display='none'});
-  }
-}
-*/
 
 function toggleStatus(datetime) {
   var e=findEvent(team,datetime);
@@ -305,14 +282,21 @@ function findEvent(team,datetime) {
 
 function updateStatus(json) {
   debug('The server answered: '+json);
-  //var o=JSON.parse(json);
-  getTeam();
+  var o=JSON.parse(json);
+  getTeam(o.teamid?o.teamid:'');
 }
 
 function getTeam(teamid) {
   if (!teamid) {teamid=window.location.pathname.substr(1)}
   if (teamid) {
-    serverRequest('getTeam',{token:getCookie('token',true),teamid:teamid},function (r){updateView(r)});
+    // check if current URL matches with requested teamid
+    if (teamid!=window.location.pathname.substr(1)) {
+      // if not, relocate
+      window.location.href=window.location.href.split('/')[0]+teamid;
+    } else {
+      // else, request team-data
+      serverRequest('getTeam',{token:getCookie('token',true),teamid:teamid},function (r){updateView(r)});
+    }
   } else {updateView()}
 }
 
@@ -335,7 +319,7 @@ function editTeam() {
 }
 
 function deleteTeam() {
-  serverRequest('deleteTeam',{token:getCookie('token',true),teamid:document.getElementById('teamid').value},function (r){updateStatus(r);});
+  serverRequest('deleteTeam',{token:getCookie('token',true),teamid:document.getElementById('teamid').value},function (r){updateStatus(r);toggleView('mobile_options','none');toggleView('mobile_main','block');});
 }
 
 function addEvent() {
@@ -595,13 +579,19 @@ function hide_prompt(text,preval) {
     border-radius: 0.1em; margin: 6px 6px 0px 6px; padding: 0px 9px 0px 9px; nobackground-color:#fff; text-align: left;
   }
   div.teamlist_wrapper {
-    border-radius: 0.1em; margin: 6px 6px 0px 6px; padding: 0px 9px 0px 9px; nobackground-color:#fff; text-align: left; font-size: 0.7em;
+    border-radius: 0.1em; margin: 6px 6px 20px 6px; padding: 9px 9px 9px 9px; nobackground-color:#fff; text-align: left; font-size: 0.7em;
   }
   div.error_wrapper {
-    border-radius: 0.1em; margin: 0px 6px 6px 6px; padding:18px 6px; background-color:#fff; text-align: center;
+    border-radius: 0.1em; border-style:solid; border-width:0px; border-color:#9E090D; margin: 5px 6px 6px 6px; padding:28px 22px 42px 22px; background-color:#fff; text-align: center;
+  }
+  div.error_text {
+    nobackground-color:#9E090D; font-size: 0.7em;
+  }
+  div.error_code {
+    font-family: monospace; font-size: 0.7em;
   }
   div.options_wrapper {
-    border-radius: 0.1em; margin: 0px 6px 15px 6px; padding: 5px 0px 1px 0px; nobackground-color:#ccc; text-align: left;
+    border-radius: 0.1em; margin: 5px 6px 6px 6px; padding: 0px 0px 0px 0px; nobackground-color:#ccc; text-align: left;
   }
   div.options_option {
     border-radius: 0.1em; margin:0px 0px 9px 0px; padding: 9px 10px 9px 11px; background-color: #fff; min-height:70px; overflow: wrap;
@@ -625,16 +615,16 @@ function hide_prompt(text,preval) {
     background-color: #fff; margin: 0px 0px 10px 0px; padding: 0px; text-align: center; display:inline-block; width:80%; 
   }
   div.footer_wrapper {
-    border-radius: 0.1em; margin: 6px 6px 20px 6px; padding: 9px 6px 0px 9px; nobackground-color:#fff; text-align: left;
+    border-radius: 0.1em; margin: 6px 6px 20px 6px; padding: 9px 9px 9px 9px; nobackground-color:#fff; text-align: left;
   }
   div.banner {
     border-radius: 0.1em 0.1em 0em 0em; margin: -10px 0px 0px 15px; padding: 8px 16px 6px 16px; position:absolute; display:inline; overflow:hidden; white-space: nowrap; color:#fff; background-color:#20609f; text-align: center; font-size:0.6em; noletter-spacing: 0.5px;
   }
-  div.statusbutton_wrapper_first {
+  div.statusbutton_wrapper_after_banner {
     border-radius: 0.1em; margin: 22px 6px 12px 6px; padding: 20px 0 10px 0; background-color:#fff; text-align: center; font-size:0.6em;
   }
   div.statusbutton_wrapper {
-    border-radius: 0.1em; margin: 0px 6px 12px 6px; padding: 20px 0 10px 0; background-color:#fff; text-align: center; font-size:0.6em;
+    border-radius: 0.1em; margin: 5px 6px 12px 6px; padding: 20px 0 10px 0; background-color:#fff; text-align: center; font-size:0.6em;
   }
   div.prompt_wrapper {
     border-radius: 0.1em; margin: 12px 6px 12px 6px; padding: 20px 16px 20px 16px; background-color:#fff; text-align: center;
