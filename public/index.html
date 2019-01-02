@@ -187,8 +187,8 @@ function updateView(json) {
         var day=['So','Mo','Di','Mi','Do','Fr','Sa'][new Date(e.datetime).getDay()]+' '+e.datetime.substring(8,10)+'.'+e.datetime.substring(5,7)+'. '+e.datetime.substring(11,16)+' Uhr';
 
         // show content
-        var ondblclick=" ondblclick=\"show_teamCommentEdit_prompt(\'"+e.datetime+"\',\'"+(e.comment?e.comment:'')+"\')\"";
-        if ((!team.userlevel)||(team.userlevel<2)) {admin_menu=''; ondblclick='';}
+        var ondblclick='';
+        if ((team.userlevel)&&(team.userlevel>1)) {ondblclick=" ondblclick=\"show_teamCommentEdit_prompt(\'"+e.datetime+"\',\'"+(e.comment?e.comment:'')+"\')\"";}
         
         var banner='<div id="div'+e.datetime+'" class="statusbutton_wrapper"'+ondblclick+'>';
         if ( (event_counter==-1) && (e.attendees&&e.attendees.includes(name)) ) {
@@ -213,6 +213,7 @@ function updateView(json) {
     }    
   }
 
+  if ((!team.userlevel)||(team.userlevel<2)) {admin_menu=''}
   mobile_options.innerHTML='<div class="options_wrapper">'+menu+admin_menu+'</div>'; //+admin_options_button
 }
 
