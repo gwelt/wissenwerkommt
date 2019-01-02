@@ -183,11 +183,14 @@ function updateView(json) {
         if (time_to_go_till_event_starts!='') {time_to_go_till_event_starts=' | '+time_to_go_till_event_starts}
 
         var attendees_counter=(e.attendees?'<div class="attendeescount_wrapper">'+(e.attendees?e.attendees.length:0)+' Teilnehmer'+time_to_go_till_event_starts+'</div>':'');
-        var peoples_list_container='<div onclick="show_teamCommentEdit_prompt(\''+e.datetime+'\',\''+(e.comment?e.comment:'')+'\')" id="peoples_list_container_'+event_counter+'">'+peoples_list+'</div>';
+        var peoples_list_container='<div id="peoples_list_container_'+event_counter+'">'+peoples_list+'</div>';
         var day=['So','Mo','Di','Mi','Do','Fr','Sa'][new Date(e.datetime).getDay()]+' '+e.datetime.substring(8,10)+'.'+e.datetime.substring(5,7)+'. '+e.datetime.substring(11,16)+' Uhr';
 
         // show content
-        var banner='<div class="statusbutton_wrapper">';
+        var ondblclick=" ondblclick=\"show_teamCommentEdit_prompt(\'"+e.datetime+"\',\'"+(e.comment?e.comment:'')+"\')\"";
+        if ((!team.userlevel)||(team.userlevel<2)) {admin_menu=''; ondblclick='';}
+        
+        var banner='<div id="div'+e.datetime+'" class="statusbutton_wrapper"'+ondblclick+'>';
         if ( (event_counter==-1) && (e.attendees&&e.attendees.includes(name)) ) {
           // Teaser / coming up next...
           banner_text='Sei dabei!';
@@ -197,7 +200,7 @@ function updateView(json) {
         }
 
         // events
-        mobile_main.innerHTML+=banner+'<button id="status'+e.datetime+'" onclick=toggleStatus("'+e.datetime+'")>'+day+'</button><br>'+comment_inline+comment+peoples_list_container+attendees_counter+'</div>';
+        mobile_main.innerHTML+=banner+'<button ondblclick="alert(this)" id="status'+e.datetime+'" onclick=toggleStatus("'+e.datetime+'")>'+day+'</button><br>'+comment_inline+comment+peoples_list_container+attendees_counter+'</div>';
         document.getElementById('peoples_list_container_'+event_counter).className='statusbutton_wrapper_attendees_following';
         // set button-attributes to represent the state of attendence
         if (e.attendees&&e.attendees.includes(name)) {document.getElementById('status'+e.datetime).className='statusbutton_attending'}
@@ -209,9 +212,8 @@ function updateView(json) {
       debug('Team-JSON: '+JSON.stringify(team));
     }    
   }
-  if ((!team.userlevel)||(team.userlevel<2)) {admin_menu=''}
+
   mobile_options.innerHTML='<div class="options_wrapper">'+menu+admin_menu+'</div>'; //+admin_options_button
-  display_hour_selection();
 }
 
 function show_teamPreference_prompt(text,param,preval,subline) {
@@ -226,28 +228,24 @@ function show_teamPreferenceDatetime_prompt() {
   e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top"><b>Wann</b> findet der Termin statt?</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off">'+team_datetime_selection+'<button class="button_ok" onclick="editTeam();hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
   document.getElementById('mobile_inner').style.display='none';
   e.style.display='block';
-  display_hour_selection();
 }
 function show_teamDeleteTeam_prompt() {
   var e=document.getElementById('mobile_prompt');
   e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">Möchtest du das Team <i>'+team.name+'</i> unwiderruflich <b>löschen</b>?</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><button class="button_ok" onclick="deleteTeam();hide_prompt();">Team löschen</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
   document.getElementById('mobile_inner').style.display='none';
   e.style.display='block';
-  display_hour_selection();
 }
 function show_teamAddEvent_prompt() {
   var e=document.getElementById('mobile_prompt');
   e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top"><b>Wann</b> findet der Termin statt?</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><input type="text" id="datetime" value="'+getDateString()+'T00:00" placeholder="datetime" autocomplete="off"><div class="prompt_text_top"><b>Hinweis</b> zum Termin:</div><input type="text" id="comment" value="Einzeltermin" placeholder="Angabe erforderlich" autocomplete="off"><button class="button_ok" onclick="addEvent();hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
   document.getElementById('mobile_inner').style.display='none';
   e.style.display='block';
-  display_hour_selection();
 }
 function show_teamCommentEdit_prompt(datetime,preval) {
   var e=document.getElementById('mobile_prompt');
-  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">Kommentar</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><input type="text" id="comment'+datetime+'" value="'+preval+'" placeholder="" autocomplete="off"><button class="button_ok" onclick="commentEvent(\''+datetime+'\');hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
+  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top"><b>Hinweis</b> zum Termin:</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><input type="text" id="comment'+datetime+'" value="'+preval+'" placeholder="" autocomplete="off"><button class="button_ok" onclick="commentEvent(\''+datetime+'\');hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
   document.getElementById('mobile_inner').style.display='none';
   e.style.display='block';
-  display_hour_selection();
 }
 
 function display_hour_selection() {
