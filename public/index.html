@@ -200,7 +200,7 @@ function updateView(json) {
         }
 
         // events
-        mobile_main.innerHTML+=banner+'<button ondblclick="alert(this)" id="status'+e.datetime+'" onclick=toggleStatus("'+e.datetime+'")>'+day+'</button><br>'+comment_inline+comment+peoples_list_container+attendees_counter+'</div>';
+        mobile_main.innerHTML+=banner+'<button id="status'+e.datetime+'" onclick=toggleStatus("'+e.datetime+'")>'+day+'</button><br>'+comment_inline+comment+peoples_list_container+attendees_counter+'</div>';
         document.getElementById('peoples_list_container_'+event_counter).className='statusbutton_wrapper_attendees_following';
         // set button-attributes to represent the state of attendence
         if (e.attendees&&e.attendees.includes(name)) {document.getElementById('status'+e.datetime).className='statusbutton_attending'}
