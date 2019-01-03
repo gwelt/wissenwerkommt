@@ -81,7 +81,7 @@ function updateView(json) {
   var svg_menu='<svg xmlns="http://www.w3.org/2000/svg" id="svg_menu" fill="#000" width="24px" height="18px" viewBox="0 0 24 24"><path d="M24 6h-24v-4h24v4zm0 4h-24v4h24v-4zm0 8h-24v4h24v-4z"/></svg>';
 
   mobile_head.innerHTML="<div class='head_wrapper'><button class='option_button' onclick=toggleView('mobile_options');toggleView('mobile_main');>"+svg_menu+"</button><a href=/ style=text-decoration:none;font-weight:bold>wissenwerkommt</a><br><div style=font-size:0.7em>Startseite</div></div>";
-  mobile_footer.innerHTML="<div id='footer_wrapper' class='footer_wrapper'><div style=font-size:0.7em;text-align:center>Immer besser zu <a href=/>wissenwerkommt</a>.</div></div>";
+  mobile_footer.innerHTML="<div id='footer_wrapper' class='footer_wrapper'><div style=font-size:0.7em;text-align:center>Immer besser zu <a href=/>wissenwerkommt</a>.<div style=height:8px></div><div style=font-size:0.7em;text-align:center>Direktlink: <a href="+window.location+">"+window.location+"</a></div></div></div>";
 
   // MENU
   var text='';
@@ -188,7 +188,7 @@ function updateView(json) {
 
         // show content
         var ondblclick='';
-        if ((team.userlevel)&&(team.userlevel>1)) {ondblclick=" ondblclick=\"show_teamCommentEdit_prompt(\'"+e.datetime+"\',\'"+(e.comment?e.comment:'')+"\')\"";}
+        if ((team.userlevel)&&(team.userlevel>1)) {ondblclick=" ondblclick=\"show_teamCommentEdit_prompt(\'"+e.datetime+"\',\'"+(e.comment?e.comment:'')+"\',"+(e.cancelled?true:false)+")\"";}
         
         var banner='<div id="div'+e.datetime+'" class="statusbutton_wrapper"'+ondblclick+'>';
         if ( (event_counter==-1) && (e.attendees&&e.attendees.includes(name)) ) {
@@ -229,10 +229,11 @@ function show_teamPreferenceDatetime_prompt() {
   e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top"><b>Wann</b> findet der Termin statt?</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off">'+team_datetime_selection+'<button class="button_ok" onclick="editTeam();hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
   document.getElementById('mobile_inner').style.display='none';
   e.style.display='block';
+  display_hour_selection();
 }
 function show_teamDeleteTeam_prompt() {
   var e=document.getElementById('mobile_prompt');
-  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">Möchtest du das Team <i>'+team.name+'</i> unwiderruflich <b>löschen</b>?</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><button class="button_ok" onclick="deleteTeam();hide_prompt();">Team löschen</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
+  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">Möchtest du dieses Team unwiderruflich <b>löschen</b>?<br><br><i>'+team.name+'</i></div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><button class="button_ok" onclick="deleteTeam();hide_prompt();">Team löschen</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
   document.getElementById('mobile_inner').style.display='none';
   e.style.display='block';
 }
@@ -241,12 +242,14 @@ function show_teamAddEvent_prompt() {
   e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top"><b>Wann</b> findet der Termin statt?</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><input type="text" id="datetime" value="'+getDateString()+'T00:00" placeholder="datetime" autocomplete="off"><div class="prompt_text_top"><b>Hinweis</b> zum Termin:</div><input type="text" id="comment" value="Einzeltermin" placeholder="Angabe erforderlich" autocomplete="off"><button class="button_ok" onclick="addEvent();hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
   document.getElementById('mobile_inner').style.display='none';
   e.style.display='block';
+  document.getElementById('datetime').focus();
 }
-function show_teamCommentEdit_prompt(datetime,preval) {
+function show_teamCommentEdit_prompt(datetime,preval_comment,cancelled) {
   var e=document.getElementById('mobile_prompt');
-  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top"><b>Hinweis</b> zum Termin:</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><input type="text" id="comment'+datetime+'" value="'+preval+'" placeholder="" autocomplete="off"><button class="button_ok" onclick="commentEvent(\''+datetime+'\');hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
+  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top"><b>Hinweis</b> zum Termin:</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><input type="text" id="comment'+datetime+'" value="'+preval_comment+'" placeholder="" autocomplete="off"><input type="checkbox" id="cancelled'+datetime+'"'+(cancelled?' checked':'')+' onclick="cancelORreviveEvent(\''+datetime+'\');"><label for="cancelled'+datetime+'" style="font-size:0.7em;line-height:2em">Termin findet nicht statt</label><button class="button_ok" onclick="commentEvent(\''+datetime+'\');hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
   document.getElementById('mobile_inner').style.display='none';
   e.style.display='block';
+  document.getElementById('comment'+datetime).focus();
 }
 
 function display_hour_selection() {
@@ -323,6 +326,11 @@ function deleteTeam() {
 
 function addEvent() {
   serverRequest('addEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:document.getElementById('datetime').value,comment:document.getElementById('comment').value},function (r){updateStatus(r);});
+}
+
+function cancelORreviveEvent(datetime) {
+  //console.log(document.getElementById('cancelled'+datetime).checked);
+  if (document.getElementById('cancelled'+datetime).checked) {cancelEvent(datetime)} else {reviveEvent(datetime)}
 }
 
 function cancelEvent(datetime) {
@@ -544,7 +552,8 @@ function hide_prompt(text,preval) {
   select, input, button {font-family: 'Roboto', serif; font-size: 1em; padding: 0 0.5em 0 0.5em; border-style: none; border-radius: 0.1em; background-color:rgb(235,235,235); outline:0; height:50px; margin:0 0 0.4em 0;}
  
   input {display:inline; width:100%}
-
+  input[type='checkbox'] {width:1em; height:1em; margin:0 9px 0.4em 9px;}
+  
   button {
     border-radius: 0.1em;
     position: relative; overflow: hidden; display:inline-block; cursor: pointer; 
@@ -593,7 +602,7 @@ function hide_prompt(text,preval) {
     border-radius: 0.1em; margin: 5px 6px 6px 6px; padding: 0px 0px 0px 0px; nobackground-color:#ccc; text-align: left;
   }
   div.options_option {
-    border-radius: 0.1em; margin:0px 0px 9px 0px; padding: 9px 10px 9px 11px; background-color: #fff; min-height:70px; overflow: wrap;
+    border-radius: 0.1em; margin:0px 0px 9px 0px; padding: 9px 9px 9px 9px; background-color: #fff; min-height:68px; overflow: wrap;
   }
   div.option_text {
     font-size:0.7em; padding:0px 0px 4px 0px;
@@ -602,7 +611,7 @@ function hide_prompt(text,preval) {
     float:right; margin:0px 0px 0px 8px; height: 50px; width: 50px;
   }
   div.divider {
-    border-radius: 0.1em; margin:0px 0px 0px 0px; padding: 12px 10px 9px 11px; nobackground-color: #fff; min-height:10px; overflow: wrap; font-size: 0.7em;
+    border-radius: 0.1em; margin:0px 0px 0px 0px; padding: 9px 9px 9px 9px; nobackground-color: #fff; min-height:10px; overflow: wrap; font-size: 0.7em;
   }
   div.admin_wrapper {
     border-radius: 0.1em; margin: 0px 6px 12px 6px; padding: 0px 6px 0px 9px; nobackground-color:#ddd; text-align: left;
@@ -626,7 +635,7 @@ function hide_prompt(text,preval) {
     border-radius: 0.1em; margin: 5px 6px 12px 6px; padding: 20px 0 10px 0; background-color:#fff; text-align: center; font-size:0.6em;
   }
   div.prompt_wrapper {
-    border-radius: 0.1em; margin: 12px 6px 12px 6px; padding: 20px 16px 20px 16px; background-color:#fff; text-align: center;
+    border-radius: 0.1em; margin: 12px 6px 12px 6px; padding: 20px 16px 20px 16px; background-color:#fff; text-align: left;
   }
   div.prompt_text_top {
     font-size:0.7em; width:100%; text-align:left; padding:0px 10px 10px 10px;
@@ -638,9 +647,9 @@ function hide_prompt(text,preval) {
   button.statusbutton_undecided, button.statusbutton_attending, button.statusbutton_refused {
     cursor: pointer; width:80%; margin:0px 0px 8px 0px; font-size:1.6em;
   }
-  button.statusbutton_undecided {background-color:#ffbf00; background-image:linear-gradient(#ffbf00 84%,#efaf00 0%);}
-  button.statusbutton_attending {background-color:#1DA416; background-image:linear-gradient(#1DB416 84%,#1DA416 0%);}
-  button.statusbutton_refused   {background-color:#C81B20; background-image:linear-gradient(#E81B20 84%,#D81B20 0%);}
+  button.statusbutton_undecided {color:#000; background-color:#ffbf00; background-image:linear-gradient(#ffbf00 84%,#efaf00 0%);}
+  button.statusbutton_attending {color:#000; background-color:#1DA416; background-image:linear-gradient(#1DB416 84%,#1DA416 0%);}
+  button.statusbutton_refused   {color:#000; background-color:#C81B20; background-image:linear-gradient(#E81B20 84%,#D81B20 0%);}
 
   //button.button_cancel {float:left; color:#808080; background-image:linear-gradient(#f0f0f0 80%, #f0f0f0 0%);}
   button.button_ok {float:right; margin-right:0px; width:100%; nobackground-image:linear-gradient(#1DB416 84%,#1DA416 0%);}
