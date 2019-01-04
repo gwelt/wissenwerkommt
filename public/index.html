@@ -81,7 +81,7 @@ function updateView(json) {
   var svg_menu='<svg xmlns="http://www.w3.org/2000/svg" id="svg_menu" fill="#000" width="24px" height="18px" viewBox="0 0 24 24"><path d="M24 6h-24v-4h24v4zm0 4h-24v4h24v-4zm0 8h-24v4h24v-4z"/></svg>';
 
   mobile_head.innerHTML="<div class='head_wrapper'><button class='option_button' onclick=toggleView('mobile_options');toggleView('mobile_main');>"+svg_menu+"</button><a href=/ style=text-decoration:none;font-weight:bold>wissenwerkommt</a><br><div style=font-size:0.7em>Startseite</div></div>";
-  mobile_footer.innerHTML="<div id='footer_wrapper' class='footer_wrapper'><div style=font-size:0.7em;text-align:center>Immer besser zu <a href=/>wissenwerkommt</a>.<div style=height:8px></div><div style=font-size:0.7em;text-align:center>Direktlink: <a href="+window.location+">"+window.location+"</a></div></div></div>";
+  mobile_footer.innerHTML="<div id='footer_wrapper' class='footer_wrapper'><div style=font-size:0.7em;text-align:center>Immer besser zu <a href=/>wissenwerkommt</a>.<div style=height:8px></div><a href="+window.location+">"+window.location+"</a></div></div>";
 
   // MENU
   var text='';
@@ -154,9 +154,10 @@ function updateView(json) {
       team.events?team.events.forEach(function (e) {
         event_counter++;
 
-        var comment='<div class="admin" style="display:none;font-size:1.6em"> <input type="text" id="comment'+e.datetime+'" value="'+(e.comment||'')+'" autocomplete="off"> <button onclick=commentEvent("'+e.datetime+'")>comment event</button></div>';
         var comment_inline='';
         if (e.comment) {comment_inline='<div class="comment_wrapper">'+(e.comment?e.comment:'')+'</div>';}
+        var comment_important='';
+        if (e.cancelled) {comment_important='<div class=comment_important>TERMIN FÄLLT AUS</div>';}
 
         // prepare content
         var peoples_list='';
@@ -200,7 +201,7 @@ function updateView(json) {
         }
 
         // events
-        mobile_main.innerHTML+=banner+'<button id="status'+e.datetime+'" onclick=toggleStatus("'+e.datetime+'")>'+day+'</button><br>'+comment_inline+comment+peoples_list_container+attendees_counter+'</div>';
+        mobile_main.innerHTML+=banner+'<button id="status'+e.datetime+'" onclick=toggleStatus("'+e.datetime+'")>'+day+'</button><br>'+comment_important+comment_inline+peoples_list_container+attendees_counter+'</div>';
         document.getElementById('peoples_list_container_'+event_counter).className='statusbutton_wrapper_attendees_following';
         // set button-attributes to represent the state of attendence
         if (e.attendees&&e.attendees.includes(name)) {document.getElementById('status'+e.datetime).className='statusbutton_attending'}
@@ -246,7 +247,7 @@ function show_teamAddEvent_prompt() {
 }
 function show_teamCommentEdit_prompt(datetime,preval_comment,cancelled) {
   var e=document.getElementById('mobile_prompt');
-  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top"><b>Hinweis</b> zum Termin:</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><input type="text" id="comment'+datetime+'" value="'+preval_comment+'" placeholder="" autocomplete="off"><input type="checkbox" id="cancelled'+datetime+'"'+(cancelled?' checked':'')+' onclick="cancelORreviveEvent(\''+datetime+'\');"><label for="cancelled'+datetime+'" style="font-size:0.7em;line-height:2em">Termin findet nicht statt</label><button class="button_ok" onclick="commentEvent(\''+datetime+'\');hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
+  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top"><b>Hinweis</b> zum Termin:</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><input type="text" id="comment'+datetime+'" value="'+preval_comment+'" placeholder="" autocomplete="off"><button class="button_ok" onclick="commentEvent(\''+datetime+'\');hide_prompt();">ok</button><div style=clear:both></div><div style="bgcolor:#f0f;padding-top:20px"><input type="checkbox" id="cancelled'+datetime+'"'+(cancelled?' checked':'')+' onclick="cancelORreviveEvent(\''+datetime+'\');" style="float:left"><div style="font-size:0.7em;margin-top:2px">TERMIN FÄLLT AUS</div></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
   document.getElementById('mobile_inner').style.display='none';
   e.style.display='block';
   document.getElementById('comment'+datetime).focus();
@@ -620,7 +621,10 @@ function hide_prompt(text,preval) {
     padding: 6px 6px; text-align: center; font-size:1em;
   }
   div.comment_wrapper {
-    background-color: #fff; margin: 0px 0px 10px 0px; padding: 0px; text-align: center; display:inline-block; width:80%; 
+    background-color: #fff; margin: 0px 0px 6px 0px; padding: 0px; text-align: center; display:inline-block; width:90%; 
+  }
+  div.comment_important {
+    border-radius: 0.1em; background-color:#E81B20; color:#fff; margin: 0px 0px 6px 0px; padding: 5px; text-align: center; display:inline-block; width:80%; 
   }
   div.footer_wrapper {
     border-radius: 0.1em; margin: 6px 6px 20px 6px; padding: 9px 9px 9px 9px; nobackground-color:#fff; text-align: left;
@@ -629,10 +633,10 @@ function hide_prompt(text,preval) {
     border-radius: 0.1em 0.1em 0em 0em; margin: -10px 0px 0px 15px; padding: 8px 16px 6px 16px; position:absolute; display:inline; overflow:hidden; white-space: nowrap; color:#fff; background-color:#20609f; text-align: center; font-size:0.6em; noletter-spacing: 0.5px;
   }
   div.statusbutton_wrapper_after_banner {
-    border-radius: 0.1em; margin: 22px 6px 12px 6px; padding: 20px 0 10px 0; background-color:#fff; text-align: center; font-size:0.6em;
+    border-radius: 0.1em; margin: 22px 6px 12px 6px; padding: 20px 0 10px 0; background-color:#fff; text-align: center; font-size:0.7em;
   }
   div.statusbutton_wrapper {
-    border-radius: 0.1em; margin: 5px 6px 12px 6px; padding: 20px 0 10px 0; background-color:#fff; text-align: center; font-size:0.6em;
+    border-radius: 0.1em; margin: 5px 6px 12px 6px; padding: 20px 0 10px 0; background-color:#fff; text-align: center; font-size:0.7em;
   }
   div.prompt_wrapper {
     border-radius: 0.1em; margin: 12px 6px 12px 6px; padding: 20px 16px 20px 16px; background-color:#fff; text-align: left;
@@ -645,7 +649,7 @@ function hide_prompt(text,preval) {
   }
 
   button.statusbutton_undecided, button.statusbutton_attending, button.statusbutton_refused {
-    cursor: pointer; width:80%; margin:0px 0px 8px 0px; font-size:1.6em;
+    cursor: pointer; width:80%; margin:0px 0px 8px 0px; font-size:1.4em; noletter-spacing: 0.2px;
   }
   button.statusbutton_undecided {color:#000; background-color:#ffbf00; background-image:linear-gradient(#ffbf00 84%,#efaf00 0%);}
   button.statusbutton_attending {color:#000; background-color:#1DA416; background-image:linear-gradient(#1DB416 84%,#1DA416 0%);}
