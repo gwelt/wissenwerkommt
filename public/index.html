@@ -81,7 +81,7 @@ function updateView(json) {
   var svg_menu='<svg xmlns="http://www.w3.org/2000/svg" id="svg_menu" fill="#000" width="24px" height="18px" viewBox="0 0 24 24"><path d="M24 6h-24v-4h24v4zm0 4h-24v4h24v-4zm0 8h-24v4h24v-4z"/></svg>';
 
   mobile_head.innerHTML="<div class='head_wrapper'><button class='option_button' onclick=toggleView('mobile_options');toggleView('mobile_main');>"+svg_menu+"</button><a href=/ style=text-decoration:none;font-weight:bold>wissenwerkommt</a><br><div style=font-size:0.7em>Startseite</div></div>";
-  mobile_footer.innerHTML="<div id='footer_wrapper' class='footer_wrapper'><div style=font-size:0.7em;text-align:center>Immer besser zu <a href=/>wissenwerkommt</a>.<div style=height:8px></div><a href="+window.location+">"+window.location+"</a></div></div>";
+  mobile_footer.innerHTML="<div id='footer_wrapper' class='footer_wrapper'><div style=font-size:0.7em;text-align:center>Immer besser zu <a href=/>wissenwerkommt</a>.</div></div>"; //<div style=height:8px></div><a href="+window.location+">"+window.location+"</a>
 
   // MENU
   var text='';
