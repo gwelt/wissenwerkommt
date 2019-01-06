@@ -27,55 +27,24 @@ if ('serviceWorker' in navigator) {
     });
 }
 */
-
 var team=false;
-var team_datetime_selection='';
 
 function updateView(json) {  
   team=json?JSON.parse(json):false;
   var mobile_head=document.getElementById('mobile_head');
   var mobile_main=document.getElementById('mobile_main');
   var mobile_options=document.getElementById('mobile_options');
-  //var mobile_admin=document.getElementById('mobile_admin');
   var mobile_footer=document.getElementById('mobile_footer');
-  var selected='';
 
-  // prepare weekday-selection
   var weekdays=[[1,'montags'],[2,'dienstags'],[3,'mittwochs'],[4,'donnerstags'],[5,'freitags'],[6,'samstags'],[0,'sonntags'],[7,'täglich'],[8,'unregelmäßig']];
-  var preset_weekday=(team.recurrence)&&(team.recurrence[0].weekday)?team.recurrence[0].weekday:new Date().getDay();
-  var weekday_selection='<select style="width:100%" id="weekday" onchange="display_hour_selection()">';
-  var teams_weekday='';
-  var i=-1;
-  while (++i<weekdays.length) {
-    if (preset_weekday==weekdays[i][0]) {selected=' selected'; teams_weekday=weekdays[i][1]} else {selected=''}
-    weekday_selection+='<option value="'+weekdays[i][0]+'"'+selected+'>'+weekdays[i][1]+'</option>';
-  }
-  weekday_selection+='</select>';
 
-  // prepare time-selection
-  var preset_hour=(team.recurrence)&&(team.recurrence[0].time)?team.recurrence[0].time.slice(0,2):new Date().getHours();
-  var hour_selection='<select id="hour">';
-  var hour=-1; while (++hour<24) {
-    hour<10?hour='0'+hour:true;
-    if (hour==preset_hour) {selected=' selected'} else {selected=''}
-    hour_selection+='<option value="'+hour+'"'+selected+'>'+hour+'</option>';
-  }
-  hour_selection+='</select>';
-  var preset_minute=(team.recurrence)&&(team.recurrence[0].time)?team.recurrence[0].time.slice(3,5):(Math.floor(new Date().getMinutes()/5)*5);
-  var minute_selection='<select id="minute">';
-  var minute=0; while (minute<60) {
-    minute<10?minute='0'+minute:true;
-    if (minute==preset_minute) {selected=' selected'} else {selected=''}
-    minute_selection+='<option value="'+minute+'"'+selected+'>'+minute+'</option>';
-    minute=minute*1+5;
-  }
-  minute_selection+='</select>';
-
-  team_datetime_selection=weekday_selection+'<br>'+hour_selection+' '+minute_selection;
-
+  var teams_weekday=(team.recurrence)&&(team.recurrence[0].weekday)?team.recurrence[0].weekday:'';
+  var i=-1; while (++i<weekdays.length) {if (teams_weekday==weekdays[i][0]) {teams_weekday=weekdays[i][1]}};
   var teams_hour=(team.recurrence)&&(team.recurrence[0].time)?team.recurrence[0].time.slice(0,2):'';
   var teams_minute=(team.recurrence)&&(team.recurrence[0].time)?team.recurrence[0].time.slice(3,5):'';
   var teams_weekday_time=(teams_weekday!='unregelmäßig'?teams_weekday:'')+" "+((teams_hour)?teams_hour+':'+teams_minute:'');
+
+  //var team_datetime_selection+=get_team_weekdaytime_selection(team,counter);
 
   // HEAD
   var svg_menu='<svg xmlns="http://www.w3.org/2000/svg" id="svg_menu" fill="#000" width="24px" height="18px" viewBox="0 0 24 24"><path d="M24 6h-24v-4h24v4zm0 4h-24v4h24v-4zm0 8h-24v4h24v-4z"/></svg>';
@@ -112,11 +81,10 @@ function updateView(json) {
       if (userlevel>2) {} else {}
     });
     */
-    mobile_main.innerHTML='<div class="new_team_wrapper"><input type="text" id="name" value="" placeholder="name of your team" autocomplete="off"><br>'+weekday_selection+'<br>'+hour_selection+' '+minute_selection +'<br><input type="text" id="teamid" value="'+window.location.pathname.substr(1)+'" placeholder="team id" autocomplete="off"><br><input type="text" id="admintoken" value="'+(team.admintoken||'')+'" placeholder="admin token" autocomplete="off"><input type="hidden" id="teamtoken" value="'+(team.teamtoken||'')+'" autocomplete="off"><br><button onclick=addTeam()>create Team</button></div><div class="teamlist_wrapper" id="teamlist"><br>Teams: </div>';
-    //mobile_admin.innerHTML='<button onclick=load()>load</button><button onclick=save()>save</button><button onclick=dump()>dump</button>'
-    mobile_footer.innerHTML="";//<div id='footer_wrapper' class='footer_wrapper'>Teams: </div>";
+    mobile_main.innerHTML='<div class="new_team_wrapper"><input type="text" id="name" value="" placeholder="Name deines Teams" autocomplete="off"><br>'+get_team_weekdaytime_selection(team)+'<br><input type="text" id="teamid" value="'+window.location.pathname.substr(1)+'" placeholder="Team-ID *" autocomplete="off"><br><input type="text" id="admintoken" value="'+(team.admintoken||'')+'" placeholder="Admin-Token" autocomplete="off"><input type="hidden" id="teamtoken" value="'+(team.teamtoken||'')+'" autocomplete="off"><br><button onclick=addTeam()>create Team</button></div><div class="teamlist_wrapper" id="teamlist"><br>Teams: </div>';
+    mobile_footer.innerHTML="";
     serverRequest('getListOfTeamIDs',{},function (r){r=JSON.parse(r); r.forEach(function (t){document.getElementById('teamlist').innerHTML+='<a href=/'+t+'>'+t+'</a> '})});
-    //serverRequest('stats',{},function (r){mobile_main.innerHTML+="<br>Here are some stats: "+r});
+    serverRequest('stats',{},function (r){document.getElementById('teamlist').innerHTML+="<br>"+r});
  
   } else {
  
@@ -124,7 +92,7 @@ function updateView(json) {
     // ADMIN_MENU:NEW EVENT
     admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamAddEvent_prompt()"></button><div class="option_text">Termin hinzufügen</div></div>';
     // ADMIN_MENU:DATETIME
-    admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamPreferenceDatetime_prompt()"></button><div class="option_text">Terminserie:<br><b>'+(teams_weekday_time!=' '?teams_weekday_time:'keine (unregelmäßig)')+'</b></div></div>';
+    admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamPreferenceWeekdayTime_prompt(team)"></button><div class="option_text">Terminserie:<br><b>'+(teams_weekday_time!=' '?teams_weekday_time:'keine (unregelmäßig)')+'</b></div></div>';
     admin_menu+='<div class="divider">Team</div>';
     // ADMIN_MENU:TEAM-NAME
     admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamPreference_prompt(\'<b>Name</b> des Teams:\',\'name\',\''+(team.name?team.name:'')+'\',\'\');"></button><div class="option_text">Name des Teams:<br><b>'+team.name+'</b></div></div>';
@@ -218,6 +186,45 @@ function updateView(json) {
   mobile_options.innerHTML='<div class="options_wrapper">'+menu+admin_menu+'</div>'; //+admin_options_button
 }
 
+function get_team_weekdaytime_selection(team,blockNumber) {
+  if (!blockNumber) {blockNumber=''}
+  var selected='';
+  // prepare weekday-selection
+  var weekdays=[[1,'montags'],[2,'dienstags'],[3,'mittwochs'],[4,'donnerstags'],[5,'freitags'],[6,'samstags'],[0,'sonntags'],[7,'täglich'],[8,'unregelmäßig']];
+  var preset_weekday=(team.recurrence)&&(team.recurrence[0].weekday)?team.recurrence[0].weekday:new Date().getDay();
+  var weekday_selection='<select id="weekday'+blockNumber+'" style="width:100%" onchange="display_hour_selection(\''+blockNumber+'\')">';
+  var teams_weekday='';
+  var i=-1;
+  while (++i<weekdays.length) {
+    if (preset_weekday==weekdays[i][0]) {selected=' selected'; teams_weekday=weekdays[i][1]} else {selected=''}
+    weekday_selection+='<option value="'+weekdays[i][0]+'"'+selected+'>'+weekdays[i][1]+'</option>';
+  }
+  weekday_selection+='</select>';
+
+  var doNotDisplay='';
+  if (preset_weekday==8) {doNotDisplay=' style=display:none'}
+  // prepare time-selection
+  var preset_hour=(team.recurrence)&&(team.recurrence[0].time)?team.recurrence[0].time.slice(0,2):new Date().getHours();
+  var hour_selection='<select id="hour'+blockNumber+'"'+doNotDisplay+'>';
+  var hour=-1; while (++hour<24) {
+    hour<10?hour='0'+hour:true;
+    if (hour==preset_hour) {selected=' selected'} else {selected=''}
+    hour_selection+='<option value="'+hour+'"'+selected+'>'+hour+'</option>';
+  }
+  hour_selection+='</select>';
+  var preset_minute=(team.recurrence)&&(team.recurrence[0].time)?team.recurrence[0].time.slice(3,5):(Math.floor(new Date().getMinutes()/5)*5);
+  var minute_selection='<select id="minute'+blockNumber+'"'+doNotDisplay+'>';
+  var minute=0; while (minute<60) {
+    minute<10?minute='0'+minute:true;
+    if (minute==preset_minute) {selected=' selected'} else {selected=''}
+    minute_selection+='<option value="'+minute+'"'+selected+'>'+minute+'</option>';
+    minute=minute*1+5;
+  }
+  minute_selection+='</select>';
+
+  return weekday_selection+hour_selection+' '+minute_selection;
+}
+
 function show_teamPreference_prompt(text,param,preval,subline) {
   var e=document.getElementById('mobile_prompt');
   e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">'+text+'</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><input type="text" id="'+param+'" value="'+preval+'" placeholder="" autocomplete="off"><button class="button_ok" onclick="editTeam();hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom">'+(subline?subline+'<br>':'')+'<br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
@@ -225,12 +232,12 @@ function show_teamPreference_prompt(text,param,preval,subline) {
   e.style.display='block';
   document.getElementById(param).focus();
 }
-function show_teamPreferenceDatetime_prompt() {
+function show_teamPreferenceWeekdayTime_prompt(team) {
+  var weekdaytime_selection=get_team_weekdaytime_selection(team,''); // TODO:create multiple selections and modify recurrence-block in editTeam and addTeam accordingly
   var e=document.getElementById('mobile_prompt');
-  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top"><b>Wann</b> findet der Termin statt?</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off">'+team_datetime_selection+'<button class="button_ok" onclick="editTeam();hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
+  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top"><b>Wann</b> findet der Termin statt?</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off">'+weekdaytime_selection+'<button class="button_ok" onclick="editTeam();hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
   document.getElementById('mobile_inner').style.display='none';
   e.style.display='block';
-  display_hour_selection();
 }
 function show_teamDeleteTeam_prompt() {
   var e=document.getElementById('mobile_prompt');
@@ -253,13 +260,14 @@ function show_teamCommentEdit_prompt(datetime,preval_comment,cancelled) {
   document.getElementById('comment'+datetime).focus();
 }
 
-function display_hour_selection() {
-	var viewstate='inline';
-  var element_weekday=document.getElementById('weekday');
+function display_hour_selection(blockNumber) {
+	if (!blockNumber) {blockNumber=''}
+  var viewstate='inline';
+  var element_weekday=document.getElementById('weekday'+blockNumber);
   if (element_weekday) {
     if (element_weekday.value==8) {viewstate='none'}
-    document.getElementById('hour').style.display=viewstate;
-    document.getElementById('minute').style.display=viewstate;    
+    document.getElementById('hour'+blockNumber).style.display=viewstate;
+    document.getElementById('minute'+blockNumber).style.display=viewstate;    
   }
 }
 
@@ -501,7 +509,7 @@ function hide_prompt(text,preval) {
   font-family: 'Roboto';
   font-style: normal;
   font-weight: 400;
-  font-display: block; //fallback
+  font-display: block;
   src: url('/fonts/roboto-v18-latin-ext-regular.eot'); /* IE9 Compat Modes */
   src: local('Roboto'), local('Roboto-Regular'),
        url('/fonts/roboto-v18-latin-ext-regular.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
@@ -600,7 +608,7 @@ function hide_prompt(text,preval) {
     font-family: monospace; font-size: 0.7em;
   }
   div.options_wrapper {
-    border-radius: 0.1em; margin: 5px 6px 6px 6px; padding: 0px 0px 0px 0px; nobackground-color:#ccc; text-align: left;
+    border-radius: 0.1em; margin: 5px 6px 18px 6px; padding: 0px 0px 0px 0px; nobackground-color:#ccc; text-align: left;
   }
   div.options_option {
     border-radius: 0.1em; margin:0px 0px 9px 0px; padding: 9px 9px 9px 9px; background-color: #fff; min-height:68px; overflow: wrap;
@@ -703,7 +711,6 @@ function hide_prompt(text,preval) {
     <div id="mobile_inner" class="mobile_inner">
       <div id="mobile_head" class="head"></div>
       <div id="mobile_options" class="options"></div>
-      <!--<div id="mobile_admin" class="admin"></div>-->
       <div id="mobile_main" class="main"></div>
       <div id="mobile_footer" class="footer"></div>
     </div>
