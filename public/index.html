@@ -37,14 +37,23 @@ function updateView(json) {
   var mobile_footer=document.getElementById('mobile_footer');
 
   var weekdays=[[1,'montags'],[2,'dienstags'],[3,'mittwochs'],[4,'donnerstags'],[5,'freitags'],[6,'samstags'],[0,'sonntags'],[7,'täglich'],[8,'unregelmäßig']];
+  var weekdays_short=[[1,'MO'],[2,'DI'],[3,'MI'],[4,'DO'],[5,'FR'],[6,'SA'],[0,'SO'],[7,'täglich'],[8,'unregelmäßig']];
 
-  var teams_weekday=(team.recurrence)&&(team.recurrence[0].weekday)?team.recurrence[0].weekday:'';
-  var i=-1; while (++i<weekdays.length) {if (teams_weekday==weekdays[i][0]) {teams_weekday=weekdays[i][1]}};
-  var teams_hour=(team.recurrence)&&(team.recurrence[0].time)?team.recurrence[0].time.slice(0,2):'';
-  var teams_minute=(team.recurrence)&&(team.recurrence[0].time)?team.recurrence[0].time.slice(3,5):'';
-  var teams_weekday_time=(teams_weekday!='unregelmäßig'?teams_weekday:'')+" "+((teams_hour)?teams_hour+':'+teams_minute:'');
+  // TODO:loop
+  var teams_weekday_time=[];
 
-  //var team_datetime_selection+=get_team_weekdaytime_selection(team,counter);
+  if (team.recurrence) {
+    var i=-1;
+    while (++i<team.recurrence.length) {
+      var teams_weekday='';
+      var j=-1; while (++j<weekdays.length) {if (team.recurrence[i].weekday==weekdays[j][0]) {
+        teams_weekday=team.recurrence.length>1?weekdays_short[j][1]:weekdays[j][1]}
+      };
+      var teams_hour=(team.recurrence[i].time)?team.recurrence[i].time.slice(0,2):'';
+      var teams_minute=(team.recurrence[i].time)?team.recurrence[i].time.slice(3,5):'';
+      teams_weekday_time.push(" "+teams_weekday+" "+((teams_hour)?teams_hour+':'+teams_minute:''));
+    }
+  }
 
   // HEAD
   var svg_menu='<svg xmlns="http://www.w3.org/2000/svg" id="svg_menu" fill="#000" width="24px" height="18px" viewBox="0 0 24 24"><path d="M24 6h-24v-4h24v4zm0 4h-24v4h24v-4zm0 8h-24v4h24v-4z"/></svg>';
@@ -186,12 +195,14 @@ function updateView(json) {
   mobile_options.innerHTML='<div class="options_wrapper">'+menu+admin_menu+'</div>'; //+admin_options_button
 }
 
-function get_team_weekdaytime_selection(team,blockNumber) {
-  if (!blockNumber) {blockNumber=''}
+function get_team_weekdaytime_selection(team,blockNumber,hidden) {
+  // special case: blockNumber is not defined in case of a "create a new team"-form - current weekday and time will be preset in this case
+  var preset=8;
+  if (blockNumber===undefined) {blockNumber=0; preset=new Date().getDay()}
   var selected='';
   // prepare weekday-selection
   var weekdays=[[1,'montags'],[2,'dienstags'],[3,'mittwochs'],[4,'donnerstags'],[5,'freitags'],[6,'samstags'],[0,'sonntags'],[7,'täglich'],[8,'unregelmäßig']];
-  var preset_weekday=(team.recurrence)&&(team.recurrence[0].weekday)?team.recurrence[0].weekday:new Date().getDay();
+  var preset_weekday=(team.recurrence)&&(team.recurrence[blockNumber])&&(team.recurrence[blockNumber].weekday)?team.recurrence[blockNumber].weekday:preset;
   var weekday_selection='<select id="weekday'+blockNumber+'" style="width:100%" onchange="display_hour_selection(\''+blockNumber+'\')">';
   var teams_weekday='';
   var i=-1;
@@ -204,7 +215,7 @@ function get_team_weekdaytime_selection(team,blockNumber) {
   var doNotDisplay='';
   if (preset_weekday==8) {doNotDisplay=' style=display:none'}
   // prepare time-selection
-  var preset_hour=(team.recurrence)&&(team.recurrence[0].time)?team.recurrence[0].time.slice(0,2):new Date().getHours();
+  var preset_hour=(team.recurrence)&&(team.recurrence[blockNumber])&&(team.recurrence[blockNumber].time)?team.recurrence[blockNumber].time.slice(0,2):new Date().getHours();
   var hour_selection='<select id="hour'+blockNumber+'"'+doNotDisplay+'>';
   var hour=-1; while (++hour<24) {
     hour<10?hour='0'+hour:true;
@@ -212,7 +223,7 @@ function get_team_weekdaytime_selection(team,blockNumber) {
     hour_selection+='<option value="'+hour+'"'+selected+'>'+hour+'</option>';
   }
   hour_selection+='</select>';
-  var preset_minute=(team.recurrence)&&(team.recurrence[0].time)?team.recurrence[0].time.slice(3,5):(Math.floor(new Date().getMinutes()/5)*5);
+  var preset_minute=(team.recurrence)&&(team.recurrence[blockNumber])&&(team.recurrence[blockNumber].time)?team.recurrence[blockNumber].time.slice(3,5):(Math.floor(new Date().getMinutes()/5)*5);
   var minute_selection='<select id="minute'+blockNumber+'"'+doNotDisplay+'>';
   var minute=0; while (minute<60) {
     minute<10?minute='0'+minute:true;
@@ -222,22 +233,36 @@ function get_team_weekdaytime_selection(team,blockNumber) {
   }
   minute_selection+='</select>';
 
-  return weekday_selection+hour_selection+' '+minute_selection;
+  if (hidden) {
+    return '<div id="addRecurrence'+blockNumber+'" style="display:none">'+weekday_selection+hour_selection+' '+minute_selection+'</div><div class="prompt_text_top" id="link'+blockNumber+'"><span style=text-decoration:underline;cursor:pointer; onclick=document.getElementById(\'addRecurrence'+blockNumber+'\').style.display=\'block\';document.getElementById(\'link'+blockNumber+'\').style.display=\'none\';>Wochentag hinzufügen</span></div>';
+  } else {
+    return weekday_selection+hour_selection+' '+minute_selection;
+  }
 }
 
+function show_teamPreferenceWeekdayTime_prompt(team) {
+  var e=document.getElementById('mobile_prompt');
+  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top"><b>Wann</b> findet der Termin statt?</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><div id=weekdaytime_selection></div><button class="button_ok" onclick="editTeam();hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
+
+  // create multiple selections according to team recurrences
+  var i=0;
+  document.getElementById('weekdaytime_selection').innerHTML+=get_team_weekdaytime_selection(team,i);
+  if (team.recurrence) {
+    while (++i<team.recurrence.length) {
+      document.getElementById('weekdaytime_selection').innerHTML+=get_team_weekdaytime_selection(team,i);
+    }
+    document.getElementById('weekdaytime_selection').innerHTML+=get_team_weekdaytime_selection(team,i,true);
+  }
+
+  document.getElementById('mobile_inner').style.display='none';
+  e.style.display='block';
+}
 function show_teamPreference_prompt(text,param,preval,subline) {
   var e=document.getElementById('mobile_prompt');
   e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">'+text+'</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><input type="text" id="'+param+'" value="'+preval+'" placeholder="" autocomplete="off"><button class="button_ok" onclick="editTeam();hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom">'+(subline?subline+'<br>':'')+'<br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
   document.getElementById('mobile_inner').style.display='none';
   e.style.display='block';
   document.getElementById(param).focus();
-}
-function show_teamPreferenceWeekdayTime_prompt(team) {
-  var weekdaytime_selection=get_team_weekdaytime_selection(team,''); // TODO:create multiple selections and modify recurrence-block in editTeam and addTeam accordingly
-  var e=document.getElementById('mobile_prompt');
-  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top"><b>Wann</b> findet der Termin statt?</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off">'+weekdaytime_selection+'<button class="button_ok" onclick="editTeam();hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
-  document.getElementById('mobile_inner').style.display='none';
-  e.style.display='block';
 }
 function show_teamDeleteTeam_prompt() {
   var e=document.getElementById('mobile_prompt');
@@ -322,11 +347,22 @@ function changeStatus(status,datetime) {
 }
 
 function addTeam() {
-  serverRequest('addTeam',{teamid:document.getElementById('teamid').value,name:document.getElementById('name').value,teamtoken:document.getElementById('teamtoken').value,admintoken:document.getElementById('admintoken').value,recurrence:[{weekday:document.getElementById('weekday').value,time:document.getElementById('hour').value+':'+document.getElementById('minute').value}]},function (r){if (JSON.parse(r).hasOwnProperty('teamid')) {window.location.href = '/'+document.getElementById('teamid').value;} else {debug(r)}});
+  serverRequest('addTeam',{teamid:document.getElementById('teamid').value,name:document.getElementById('name').value,teamtoken:document.getElementById('teamtoken').value,admintoken:document.getElementById('admintoken').value,recurrence:[{weekday:document.getElementById('weekday0').value,time:document.getElementById('hour0').value+':'+document.getElementById('minute0').value}]},function (r){if (JSON.parse(r).hasOwnProperty('teamid')) {window.location.href = '/'+document.getElementById('teamid').value;} else {debug(r)}});
 }
 
 function editTeam() {
-  serverRequest('editTeam',{token:getCookie('token',true),teamid:document.getElementById('teamid')?document.getElementById('teamid').value:undefined,new_teamid:document.getElementById('new_teamid')?document.getElementById('new_teamid').value:undefined,name:document.getElementById('name')?document.getElementById('name').value:undefined,teamtoken:document.getElementById('teamtoken')?document.getElementById('teamtoken').value:undefined,admintoken:document.getElementById('admintoken')?document.getElementById('admintoken').value:undefined,recurrence:document.getElementById('weekday')&&document.getElementById('hour')&&document.getElementById('minute')?[{weekday:document.getElementById('weekday').value,time:document.getElementById('hour').value+':'+document.getElementById('minute').value}]:undefined},function (r){updateStatus(r);});
+  var recurrences=[];
+  var i=-1;
+  while (i++<6) {
+    var wd='weekday'+i; var hr='hour'+i; var min='minute'+i; 
+    if (document.getElementById(wd)&&document.getElementById(hr)&&document.getElementById(min)) {
+      // do not save weekday:8 (unregelmäßig), because it doesn't matter
+      if (document.getElementById(wd).value!=8) {
+        recurrences.push({weekday:document.getElementById(wd).value,time:document.getElementById(hr).value+':'+document.getElementById(min).value});
+      }
+    }
+  }
+  serverRequest('editTeam',{token:getCookie('token',true),teamid:document.getElementById('teamid')?document.getElementById('teamid').value:undefined,new_teamid:document.getElementById('new_teamid')?document.getElementById('new_teamid').value:undefined,name:document.getElementById('name')?document.getElementById('name').value:undefined,teamtoken:document.getElementById('teamtoken')?document.getElementById('teamtoken').value:undefined,admintoken:document.getElementById('admintoken')?document.getElementById('admintoken').value:undefined,recurrence:recurrences},function (r){updateStatus(r);});
 }
 
 function deleteTeam() {
@@ -338,7 +374,6 @@ function addEvent() {
 }
 
 function cancelORreviveEvent(datetime) {
-  //console.log(document.getElementById('cancelled'+datetime).checked);
   if (document.getElementById('cancelled'+datetime).checked) {cancelEvent(datetime)} else {reviveEvent(datetime)}
 }
 

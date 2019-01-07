@@ -13,12 +13,9 @@ function Team(json) {
   if (json.recurrence instanceof Array) {
     this.recurrence=[];
     json.recurrence.forEach((rc)=>{
-      // undefine time if there is no recurrence set (preparation)
-      if (rc.weekday==8) {rc.time=undefined} 
-      // undefine time if there is no recurrence set
-      if ((rc.hasOwnProperty('weekday'))&&(!rc.hasOwnProperty('time'))) {this.recurrence.push({"weekday":rc.weekday})}
-      // regular case
-      if ((rc.hasOwnProperty('weekday'))&&(rc.hasOwnProperty('time'))) {this.recurrence.push({"weekday":rc.weekday,"time":rc.time})}
+      if ((rc.hasOwnProperty('weekday'))&&(rc.weekday<=7)&&(rc.hasOwnProperty('time'))) {
+        this.recurrence.push({"weekday":rc.weekday,"time":rc.time});
+      } 
     });
     if (!this.recurrence.length) {this.recurrence=undefined}
   } else {this.recurrence=undefined}
@@ -104,7 +101,7 @@ function getNextDaysWithWeekday(weekday,count) {
   res=[];
   let i=0;
   // 8 is set, if the event has no recurrence
-  if (weekday==8) {i=9999};
+  // if (weekday>7) {i=9999}; // will not occur anymore
   while (++i<=(count||4)) {res.push(getDateString(new Date(d.valueOf()+offset*86400000))); offset+=step;}
   return res;
 }
