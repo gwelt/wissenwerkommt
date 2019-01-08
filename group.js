@@ -85,6 +85,8 @@ function getDateString(d) {
 Team.prototype.generateNextRecurringEvents = function(count) {
   if (this.recurrence instanceof Array) {
     this.recurrence.forEach((rc)=>{
+      // reduce amount of backfilled/generated events
+      if (!count) {count=Math.ceil(4/this.recurrence.length)}
       getNextDaysWithWeekday(rc.weekday,count).forEach((d)=>{this.addEvent({"datetime":d+'T'+(rc.time||'00:00')})});
     });
   }
