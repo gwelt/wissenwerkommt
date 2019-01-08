@@ -351,11 +351,12 @@ function addTeam() {
 }
 
 function editTeam() {
-  var recurrences=[];
+  var recurrences=undefined;
   var i=-1;
   while (i++<6) {
     var wd='weekday'+i; var hr='hour'+i; var min='minute'+i; 
     if (document.getElementById(wd)&&document.getElementById(hr)&&document.getElementById(min)) {
+      if (!recurrences) {recurrences=[]}
       // do not save weekday:8 (unregelmäßig), because it doesn't matter
       if (document.getElementById(wd).value!=8) {
         recurrences.push({weekday:document.getElementById(wd).value,time:document.getElementById(hr).value+':'+document.getElementById(min).value});
