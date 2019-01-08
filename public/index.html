@@ -36,25 +36,47 @@ function updateView(json) {
   var mobile_options=document.getElementById('mobile_options');
   var mobile_footer=document.getElementById('mobile_footer');
 
-  var weekdays=[[1,'montags'],[2,'dienstags'],[3,'mittwochs'],[4,'donnerstags'],[5,'freitags'],[6,'samstags'],[0,'sonntags'],[7,'täglich'],[8,'unregelmäßig']];
-  var weekdays_short=[[1,'MO'],[2,'DI'],[3,'MI'],[4,'DO'],[5,'FR'],[6,'SA'],[0,'SO'],[7,'täglich'],[8,'unregelmäßig']];
-
-  // TODO:loop
+  // create readable string for recurrence of events
   var teams_weekday_time=[];
-
   if (team.recurrence) {
+    // order items by weekday
+    team.recurrence.sort(function(a,b){return a.weekday-b.weekday});
+    
+    var last_time=undefined;
     var i=-1;
     while (++i<team.recurrence.length) {
-      var teams_weekday='';
-      var j=-1; while (++j<weekdays.length) {if (team.recurrence[i].weekday==weekdays[j][0]) {
-        teams_weekday=team.recurrence.length>1?weekdays_short[j][1]:weekdays[j][1]}
-      };
-      var teams_hour=(team.recurrence[i].time)?team.recurrence[i].time.slice(0,2):'';
-      var teams_minute=(team.recurrence[i].time)?team.recurrence[i].time.slice(3,5):'';
-      teams_weekday_time.push(" "+teams_weekday+" "+((teams_hour)?teams_hour+':'+teams_minute:''));
+      var teams_weekday=translate(team.recurrence[i].weekday);
+
+      // if time is the same like previous item and the previous item is one weekday before, display-"merge" them and replace previous one
+      // precondition: items have to be ordered by weekday (see above)
+      if (team.recurrence[i].time==last_time) {
+        var first_of_equal_items=i;
+        while ((team.recurrence[first_of_equal_items-1]) // previous item exists   
+          &&(team.recurrence[first_of_equal_items-1].time==team.recurrence[i].time) // time of current item is the same like previous item
+          &&(team.recurrence[i-1].weekday==team.recurrence[i].weekday-1)) // previous item is one weekday before current item
+        {
+          first_of_equal_items--; // try previous of this previous one next
+        }
+        teams_weekday_time.pop(); // delete previous one
+        teams_weekday=translate(team.recurrence[first_of_equal_items].weekday)+'-'+translate(team.recurrence[i].weekday); // "merge" them (display range from first to last item)
+      }
+
+      last_time=team.recurrence[i].time;
+      teams_weekday_time.push(" "+teams_weekday+" "+((team.recurrence[i].time)?team.recurrence[i].time:''));
+
+      function translate(wd) {
+        var weekdays=[[1,'montags'],[2,'dienstags'],[3,'mittwochs'],[4,'donnerstags'],[5,'freitags'],[6,'samstags'],[0,'sonntags'],[7,'täglich'],[8,'unregelmäßig']];
+        var weekdays_short=[[1,'MO'],[2,'DI'],[3,'MI'],[4,'DO'],[5,'FR'],[6,'SA'],[0,'SO'],[7,'täglich'],[8,'unregelmäßig']];
+        var j=-1; while (++j<weekdays.length) {
+          if (wd==weekdays[j][0]) {
+            return team.recurrence.length>1?weekdays_short[j][1]:weekdays[j][1];
+          }
+        };
+      }
+
     }
   }
-
+  
   // HEAD
   var svg_menu='<svg xmlns="http://www.w3.org/2000/svg" id="svg_menu" fill="#000" width="24px" height="18px" viewBox="0 0 24 24"><path d="M24 6h-24v-4h24v4zm0 4h-24v4h24v-4zm0 8h-24v4h24v-4z"/></svg>';
 
@@ -101,7 +123,7 @@ function updateView(json) {
     // ADMIN_MENU:NEW EVENT
     admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamAddEvent_prompt()"></button><div class="option_text">Termin hinzufügen</div></div>';
     // ADMIN_MENU:DATETIME
-    admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamPreferenceWeekdayTime_prompt(team)"></button><div class="option_text">Terminserie:<br><b>'+(teams_weekday_time!=' '?teams_weekday_time:'keine (unregelmäßig)')+'</b></div></div>';
+    admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamPreferenceWeekdayTime_prompt(team)"></button><div class="option_text">Terminserie:<br><b>'+(teams_weekday_time.length?teams_weekday_time:'keine (unregelmäßig)')+'</b></div></div>';
     admin_menu+='<div class="divider">Team</div>';
     // ADMIN_MENU:TEAM-NAME
     admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamPreference_prompt(\'<b>Name</b> des Teams:\',\'name\',\''+(team.name?team.name:'')+'\',\'\');"></button><div class="option_text">Name des Teams:<br><b>'+team.name+'</b></div></div>';
