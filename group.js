@@ -7,13 +7,13 @@ function Group() {
 
 function Team(json) {
   this.teamid=((json.hasOwnProperty('teamid'))&&(json.teamid.length)&&(isValidTeamID(json.teamid)))?json.teamid.toLowerCase():undefined;
-  this.admintoken=(json.hasOwnProperty('admintoken')&&(json.admintoken.trim().length)&&(issafe(json.admintoken.trim())))?json.admintoken.trim():undefined;
-  this.teamtoken=(json.hasOwnProperty('teamtoken')&&(json.teamtoken.trim().length)&&(issafe(json.teamtoken.trim())))?json.teamtoken.trim():undefined;
-  this.name=(json.hasOwnProperty('name')&&(json.name.trim().length)&&(issafe(json.name.trim())))?json.name.trim():undefined;
+  this.admintoken=(json.hasOwnProperty('admintoken')&&(json.admintoken.trim().length)&&(issafe(json.admintoken.trim(),16)))?json.admintoken.trim():undefined;
+  this.teamtoken=(json.hasOwnProperty('teamtoken')&&(json.teamtoken.trim().length)&&(issafe(json.teamtoken.trim(),16)))?json.teamtoken.trim():undefined;
+  this.name=(json.hasOwnProperty('name')&&(json.name.trim().length)&&(issafe(json.name.trim(),32)))?json.name.trim():undefined;
   if (json.recurrence instanceof Array) {
     this.recurrence=[];
     json.recurrence.forEach((rc)=>{
-      if ((rc.hasOwnProperty('weekday'))&&(rc.weekday<=7)&&(rc.hasOwnProperty('time'))) {
+      if ((this.recurrence.length<7)&&(rc.hasOwnProperty('weekday'))&&(rc.weekday<=7)&&(/^\d$/i.test(rc.weekday))&&(rc.hasOwnProperty('time'))&&(/^\d{2}:\d{2}$/i.test(rc.time))) {
         this.recurrence.push({"weekday":rc.weekday,"time":rc.time});
       } 
     });
@@ -23,11 +23,17 @@ function Team(json) {
 
 function Event(json) {
   this.datetime=(json.hasOwnProperty('datetime')&&(isValidDate(json.datetime)))?json.datetime:undefined;
-  //todo: stealthen
-  this.attendees=(json.attendees instanceof Array)?json.attendees:undefined;
-  this.refusals=(json.refusals instanceof Array)?json.refusals:undefined;
-  this.cancelled=json.hasOwnProperty('cancelled')?json.cancelled:undefined;
-  this.comment=(json.hasOwnProperty('comment')&&(json.comment.length))?json.comment:undefined;
+  this.attendees=json.hasOwnProperty('attendees')?convertToListOfValidNames(json.attendees):undefined;
+  this.refusals=json.hasOwnProperty('refusals')?convertToListOfValidNames(json.refusals):undefined;
+  this.cancelled=json.hasOwnProperty('cancelled')&&(json.cancelled===true)?json.cancelled:undefined;
+  this.comment=(json.hasOwnProperty('comment')&&(json.comment.length)&&(issafe(json.comment,140)))?json.comment:undefined;
+}
+
+function convertToListOfValidNames(list) {
+  if (list instanceof Array) {
+    return list.map(name=>safe_text(name,32));
+  } 
+  return undefined;
 }
 
 Group.prototype.getListOfTeamIDs = function() {
@@ -109,8 +115,7 @@ function getNextDaysWithWeekday(weekday,count) {
 }
 
 Event.prototype.attend = function(name) {
-  //todo: stealthen
-  if (issafe(name)) {
+  if (issafe(name,32)) {
     if (!(this.attendees instanceof Array)) {this.attendees=[]};  
     if (!this.attendees.includes(name)) {this.attendees.push(name)};
     if (this.refusals instanceof Array) {this.refusals=this.refusals.filter(r=>r!==name); if (!this.refusals.length) {this.refusals=undefined};};
@@ -119,8 +124,7 @@ Event.prototype.attend = function(name) {
 }
 
 Event.prototype.refuse = function(name) {
-  //todo: stealthen
-  if (issafe(name)) {
+  if (issafe(name,32)) {
     if (!(this.refusals instanceof Array)) {this.refusals=[]};
     if (!this.refusals.includes(name)) {this.refusals.push(name)};
     if (this.attendees instanceof Array) {this.attendees=this.attendees.filter(a=>a!==name); if (!this.attendees.length) {this.attendees=undefined};};
@@ -129,8 +133,7 @@ Event.prototype.refuse = function(name) {
 }
 
 Event.prototype.undecided = function(name) {
-  //todo: stealthen
-  if (issafe(name)) {
+  if (issafe(name,32)) {
     if (this.attendees instanceof Array) {this.attendees=this.attendees.filter(a=>a!==name); if (!this.attendees.length) {this.attendees=undefined};};
     if (this.refusals instanceof Array) {this.refusals=this.refusals.filter(r=>r!==name); if (!this.refusals.length) {this.refusals=undefined};};
     return this;
@@ -142,7 +145,7 @@ Group.prototype.addTeam = function(json) {
   if ( (typeof team.teamid !== 'undefined') && (!this.findTeam(team.teamid)) )
   {
     if (!(this.teams instanceof Array)) {this.teams=[]};
-    this.teams.push(team);
+    if (this.teams.length<250) {this.teams.push(team)} else {return false}
     return team;
   } else {
     return false;
@@ -158,7 +161,7 @@ Group.prototype.editTeam = function(json) {
     // that way, a string with no length ('') can delete/undefine a current string
 
     // exceptional case: do not delete/undefine admintoken, if it's left blank
-    if (json['admintoken']=='') {json['admintoken']=undefined};
+    // if (json['admintoken']=='') {json['admintoken']=undefined};
 
     // exceptional case: new_teamid changes existing teamid (only, if new_teamid does not exist yet)
     if (json['new_teamid']!==undefined) {
@@ -190,7 +193,7 @@ Team.prototype.addEvent = function(json) {
   if ( (typeof event.datetime !== 'undefined') && (!this.findEvent(event.datetime)) )
   {
     if (!(this.events instanceof Array)) {this.events=[]};
-    this.events.push(event);
+    if (this.events.length<100) {this.events.push(event)} else {return false}
     return event;
   } else {
     return false;
@@ -199,7 +202,7 @@ Team.prototype.addEvent = function(json) {
 
 Event.prototype.commentEvent = function(comment) {
   //todo: stealthen
-  if (issafe(comment)) {
+  if (issafe(comment,140)) {
     this.comment=comment;
     if ((this.hasOwnProperty('comment'))&&(!this.comment.length)) {this.comment=undefined}
     return this;
@@ -323,8 +326,8 @@ function auth(str,hash) {
   return ( (typeof hash === 'undefined') || (hash === crypt(str)) );
 }
 
-function safe_text(text) {return unescape(text).replace(/[^\w\s\däüöÄÜÖß\.,'!\@#$^&%*()\+=\-\[\]\/{}\|:\?]/g,'').trim().slice(0,140)}
-function issafe(text) {return text==safe_text(text)}
+function safe_text(text,maxlength) {return unescape(text).replace(/[^\w\s\däüöÄÜÖß\.,'!\@#$^&%*()\+=\-\[\]\/{}\|:\?]/g,'').trim().slice(0,maxlength||140)}
+function issafe(text,maxlength) {return text==safe_text(text,maxlength)}
 function safe_id(id) {return unescape(id).replace(/\W/g,'').slice(0,16)}
 function issafe_id(id) {return id==safe_id(id)&&id.length>2}
 function isValidTeamID(teamid) {return teamid.trim()==teamid&&issafe_id(teamid)}

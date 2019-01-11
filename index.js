@@ -68,12 +68,12 @@ app.use('/api/:r/:t?', function (req, res) {
   
     // team admins only
     case 'editTeam':
-        if (getUserLevel(req)>1) {
+      if (getUserLevel(req)>1) {
         res.json(db.editTeam(req.body));
       } else {res.status(401).json({'error':'not sufficient rights to edit team'})}
       break;
     case 'deleteTeam':
-        if (getUserLevel(req)>1) {
+      if (getUserLevel(req)>1) {
         res.json(db.deleteTeam(req.body));
       } else {res.status(401).json({'error':'not sufficient rights to delete team'})}
       break;
