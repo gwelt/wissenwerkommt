@@ -4,6 +4,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="images/apple-touch-icon-precomposed.png">
+<title>wissenwerkommt</title>
 <script>
 // Polyfills
 if ((!Array.prototype.includes)||(!Array.prototype.find)) {loadScript('polyfills.js',afterPolyfill)}
@@ -13,7 +14,7 @@ function loadScript(src, done) {
   js.onload = function() {
     done(src+' executed');
   };
-  document.head.appendChild(js);
+  document.head.appendChild(js);  
 }
 function afterPolyfill(m) {debug(m)}
 // Service-Worker
@@ -29,7 +30,7 @@ if ('serviceWorker' in navigator) {
 */
 var team=false;
 
-function updateView(json) {  
+function updateView(json) {
   team=json?JSON.parse(json):false;
   var mobile_head=document.getElementById('mobile_head');
   var mobile_main=document.getElementById('mobile_main');
@@ -40,7 +41,7 @@ function updateView(json) {
   var teams_weekday_time=[];
   if (team.recurrence) {
     // order items by weekday
-    team.recurrence.sort(function(a,b){return a.weekday-b.weekday});
+    team.recurrence.sort(function(a,b){return (a.weekday!=0?a.weekday:7)-(b.weekday!=0?b.weekday:7)});
     
     var last_time=undefined;
     var i=-1;
@@ -48,15 +49,16 @@ function updateView(json) {
       var teams_weekday=translate(team.recurrence[i].weekday);
 
       // if time is the same like previous item and the previous item is one weekday before, display-"merge" them and replace previous one
-      // precondition: items have to be ordered by weekday (see above)
-      if (team.recurrence[i].time==last_time) {
+      // precondition: items have to be ordered by weekday with sunday (0) after saturday (6) (see above)
+      // omit weekday 7 (täglich/every day)
+      if ( (team.recurrence[i].time==last_time)&&(team.recurrence[i].weekday!=7)&&((((team.recurrence[i-1].weekday)-(team.recurrence[i].weekday-1))%7)==0) ) {
         var first_of_equal_items=i;
         while ((team.recurrence[first_of_equal_items-1]) // previous item exists   
           &&(team.recurrence[first_of_equal_items-1].time==team.recurrence[i].time) // time of current item is the same like previous item
-          &&(team.recurrence[i-1].weekday==team.recurrence[i].weekday-1)) // previous item is one weekday before current item
+          &&((((team.recurrence[i-1].weekday)-(team.recurrence[i].weekday-1))%7)==0) ) // previous item is one weekday before current item
         {
           first_of_equal_items--; // try previous of this previous one next
-        }
+        } 
         teams_weekday_time.pop(); // delete previous one
         teams_weekday=translate(team.recurrence[first_of_equal_items].weekday)+'-'+translate(team.recurrence[i].weekday); // "merge" them (display range from first to last item)
       }
@@ -93,7 +95,7 @@ function updateView(json) {
   // MENU:NAME
   text='Mit welchem Namen möchtest du dich anmelden?';
   cookie=getCookie("name",true);
-  if (cookie) {text='Hallo <b>'+cookie+'</b>.<br>Schön, dass du da bist.'}
+  if (cookie) {text='Hallo <b>'+cookie+'</b>.<br>Schön, dass du da bist.';}
   svg='';//<svg xmlns="http://www.w3.org/2000/svg" id="svg_menu" fill="#000" width="24px" height="18px" viewBox="0 0 24 24"><path d="M24 6h-24v-4h24v4zm0 4h-24v4h24v-4zm0 8h-24v4h24v-4z"/></svg>';
   menu+='<div class="options_option"><button class="option_button" onclick="show_cookie_prompt(\'name\');">'+svg+'</button><div class="option_text">'+text+'</div></div>';
 
@@ -112,10 +114,10 @@ function updateView(json) {
       if (userlevel>2) {} else {}
     });
     */
-    mobile_main.innerHTML='<div class="new_team_wrapper"><input type="text" id="name" value="" placeholder="Name deines Teams" autocomplete="off"><br>'+get_team_weekdaytime_selection(team)+'<br><input type="text" id="teamid" value="'+window.location.pathname.substr(1)+'" placeholder="Team-ID *" autocomplete="off"><br><input type="text" id="admintoken" value="'+(team.admintoken||'')+'" placeholder="Admin-Token" autocomplete="off"><input type="hidden" id="teamtoken" value="'+(team.teamtoken||'')+'" autocomplete="off"><br><button onclick=addTeam()>create Team</button></div><div class="teamlist_wrapper" id="teamlist"><br>Teams: </div>';
+    mobile_main.innerHTML='<div class="new_team_wrapper"><input type="text" id="name" value="" placeholder="Name deines Teams" autocomplete="off"><br>'+get_team_weekdaytime_selection(team)+'<br><input type="text" id="teamid" value="'+window.location.pathname.substr(1)+'" placeholder="Team-ID *" autocomplete="off"><br><input type="text" id="admintoken" value="'+(team.admintoken||'')+'" placeholder="Admin-Token" autocomplete="off"><input type="hidden" id="teamtoken" value="'+(team.teamtoken||'')+'" autocomplete="off"><br><button onclick=addTeam()>create Team</button></div><div class="teamlist_wrapper" id="teamlist"></div><div class="teamlist_wrapper" id="stats"></div>';
     mobile_footer.innerHTML="";
     serverRequest('getListOfTeamIDs',{},function (r){r=JSON.parse(r); r.forEach(function (t){document.getElementById('teamlist').innerHTML+='<a href=/'+t+'>'+t+'</a> '})});
-    serverRequest('stats',{},function (r){document.getElementById('teamlist').innerHTML+="<br>"+r});
+    serverRequest('stats',{},function (r){document.getElementById('stats').innerHTML=r});
  
   } else {
  
@@ -138,13 +140,16 @@ function updateView(json) {
 
     if (team.error) {
       // MAIN-page if a team is requested but not found or not allowed
-      debug('ERROR: The server answered: '+JSON.stringify(team))
+      debug(JSON.stringify(team)); //'The server answered: '+JSON.stringify(team))
+      //message(team.error,true);
+
       mobile_head.innerHTML="<div class='head_wrapper'><button class='option_button' onclick=toggleView('mobile_options');toggleView('mobile_main');>"+svg_menu+"</button><a href=/ style=text-decoration:none;font-weight:bold>wissenwerkommt</a><br><div style=font-size:0.7em>/<a href=/"+window.location.pathname.substr(1)+">"+window.location.pathname.substr(1)+"</a></div></div>";
-      mobile_main.innerHTML='<div class="error_wrapper"><div class="error_text">Der Zugriff ist geschützt.<br>Das Team hat einen Code vereinbart:<br><br></div><button style="width:100%" onclick=show_cookie_prompt(\'token\')>Token eingeben</button></div>';
+      mobile_main.innerHTML='<div class="error_wrapper"><div class="error_text">Der Zugriff ist geschützt.<!--<br>Das Team hat einen Code vereinbart:--><br><br></div><button style="width:100%" onclick=show_cookie_prompt(\'token\')>Token eingeben</button></div>';
     } else {
  
       // MAIN-page if a team is requested
       mobile_head.innerHTML="<div class='head_wrapper'><button class='option_button' onclick=toggleView('mobile_options');toggleView('mobile_main');>"+svg_menu+"</button><a href=/"+team.teamid+" style=text-decoration:none;font-weight:bold>"+(!!team.name?team.name:'')+"</a><br><div style=font-size:0.7em>"+teams_weekday_time+"</div></div>";
+
       var name=getCookie('name',true);
       mobile_main.innerHTML='';
 
@@ -207,9 +212,11 @@ function updateView(json) {
         else if (e.refusals&&e.refusals.includes(name)) {document.getElementById('status'+e.datetime).className='statusbutton_refused'} 
         else {document.getElementById('status'+e.datetime).className='statusbutton_undecided'}
 
+        if (!name) {message('Klicke einen Termin 1x an um deine Teilnahme mitzuteilen. Klicke erneut für eine Absage.')}
+
       }):false;
 
-      debug('Team-JSON: '+JSON.stringify(team));
+      debug(JSON.stringify(team)); //'Team-JSON: '+JSON.stringify(team));
     }    
   }
 
@@ -327,6 +334,7 @@ function toggleStatus(datetime) {
 }
 
 function toggleView(id,state) {
+  message('',false);  
   var e=document.getElementById(id);
   if (state) {e.style.display=state} 
   else if (e.currentStyle?e.currentStyle.display=='none':getComputedStyle(e, null).display=='none') {e.style.display='block'} else {e.style.display='none'}
@@ -339,7 +347,8 @@ function findEvent(team,datetime) {
 }
 
 function updateStatus(json) {
-  debug('The server answered: '+json);
+  message('',false);  
+  debug(json);
   var o=JSON.parse(json);
   getTeam(o.teamid?o.teamid:'');
 }
@@ -492,6 +501,8 @@ function setCookie(cname, cvalue, exdays) {
 
 function debug(text) {
   console.log(text);
+  if ((text=='false')||(JSON.parse(text).error)) {message('Das hat leider nicht funktioniert.')}
+  if (JSON.parse(text).error) {message('Das hat leider nicht funktioniert:<br>'+JSON.parse(text).error+'')}
 }
 
 is_mobile=1;
@@ -524,6 +535,8 @@ function check_mobile()
       img.style.bottom='10px';
       img.style.right='10px';
       img.style.width='60px';
+      img.addEventListener('click',function(e){window.open('/','_self').close();});
+      img.style.cursor='pointer'; 
       document.getElementById('under_mobile').appendChild(img);
       //<img src="/images/logout.svg" style="position:fixed;bottom:10px;right:10px;width:60px">
     }
@@ -541,6 +554,14 @@ function check_mobile()
 function hide_prompt(text,preval) {
   document.getElementById('mobile_prompt').style.display='none';
   document.getElementById('mobile_inner').style.display='block';
+}
+
+function message(msg,display) {
+  var e=document.getElementById('mobile_message');
+  if (display==false) {e.style.display='none'} else {
+    document.getElementById('message').innerHTML=msg;
+    e.style.display='block';
+  }
 }
 
 </script>
@@ -577,7 +598,7 @@ function hide_prompt(text,preval) {
        url('/fonts/roboto-v18-latin-ext-regular.svg#Roboto') format('svg'); /* Legacy iOS */
 }
   * {-webkit-box-sizing: border-box; -moz-box-sizing: border-box; box-sizing: border-box;}
-  body {padding:0; margin:0; background-color:#fff;font-family: 'Roboto', serif; font-size: 1.6em; color:#000; background-color:#c2c2c2;}
+  body {padding:0; margin:0; background-color:#fff;font-family: 'Roboto', serif; font-size: 1.6em; color:#000; background-color:#c2c2c2;word-wrap: break-word;}
   /*
     green #86E082 #5BCF55 #3BBA34 #1DA416 #0E8108
     red   #FE9395 #FD686C #E34044 #C81B20 #9E090D
@@ -591,7 +612,7 @@ function hide_prompt(text,preval) {
   .under_mobile {
     display:none;
     position:fixed;
-    z-index:-1;
+    //z-index:0;
     width:100%; height:100%;
     //background: url(images/phone.svg);
     background-repeat: no-repeat;
@@ -608,7 +629,7 @@ function hide_prompt(text,preval) {
     padding: 3px;
   }
   .mobile_inner {padding: 3px}
-    .head {}
+    .head {padding-bottom: 5px}
     .main {overflow:hidden; overflow-wrap:break-word;}
     .options {display:none;}
     .admin {display:none}
@@ -648,16 +669,16 @@ function hide_prompt(text,preval) {
   }
 
   div.head_wrapper {
-    border-radius: 0.1em; margin: 6px 6px 0px 6px; padding: 9px 9px 0px 9px; nobackground-color:#fff; text-align: left; min-height:72px;
+    border-radius: 0.1em; margin: 6px 6px 2px 6px; padding: 9px 9px 0px 9px; nobackground-color:#fff; text-align: left; min-height:72px;
   }
   div.new_team_wrapper {
-    border-radius: 0.1em; margin: 6px 6px 0px 6px; padding: 0px 9px 0px 9px; nobackground-color:#fff; text-align: left;
+    border-radius: 0.1em; margin: 6px 6px 0px 6px; padding: 0px 9px 20px 9px; nobackground-color:#fff; text-align: left;
   }
   div.teamlist_wrapper {
-    border-radius: 0.1em; margin: 6px 6px 20px 6px; padding: 9px 9px 9px 9px; nobackground-color:#fff; text-align: left; font-size: 0.7em;
+    border-radius: 0.1em; margin: 20px 6px 20px 6px; padding: 0px 9px 0px 9px; nobackground-color:#fff; text-align: left; font-size: 0.7em; 
   }
   div.error_wrapper {
-    border-radius: 0.1em; border-style:solid; border-width:0px; border-color:#9E090D; margin: 5px 6px 6px 6px; padding:28px 22px 42px 22px; background-color:#fff; text-align: center;
+    border-radius: 0.1em; border-style:solid; border-width:0px; border-color:#9E090D; margin: 5px 6px 6px 6px; padding:28px 22px 42px 22px; background-color:#fff; text-align: center; 
   }
   div.error_text {
     nobackground-color:#9E090D; font-size: 0.7em;
@@ -666,7 +687,7 @@ function hide_prompt(text,preval) {
     font-family: monospace; font-size: 0.7em;
   }
   div.options_wrapper {
-    border-radius: 0.1em; margin: 5px 6px 18px 6px; padding: 0px 0px 0px 0px; nobackground-color:#ccc; text-align: left;
+    border-radius: 0.1em; margin: 0px 6px 18px 6px; padding: 0px 0px 0px 0px; nobackground-color:#ccc; text-align: left;
   }
   div.options_option {
     border-radius: 0.1em; margin:0px 0px 9px 0px; padding: 9px 9px 9px 9px; background-color: #fff; min-height:68px; overflow: wrap;
@@ -702,7 +723,7 @@ function hide_prompt(text,preval) {
     border-radius: 0.1em; margin: 22px 6px 12px 6px; padding: 20px 0 10px 0; background-color:#fff; text-align: center; font-size:0.7em;
   }
   div.statusbutton_wrapper {
-    border-radius: 0.1em; margin: 5px 6px 12px 6px; padding: 20px 0 10px 0; background-color:#fff; text-align: center; font-size:0.7em;
+    border-radius: 0.1em; margin: 0px 6px 12px 6px; padding: 20px 0 10px 0; background-color:#fff; text-align: center; font-size:0.7em;
   }
   div.prompt_wrapper {
     border-radius: 0.1em; margin: 12px 6px 12px 6px; padding: 20px 16px 20px 16px; background-color:#fff; text-align: left;
@@ -730,6 +751,18 @@ function hide_prompt(text,preval) {
   div.attendee_item {nocolor:#1DA416;}
   div.refusal_item {color:#999; nocolor:#C81B20; text-decoration:line-through;}
   
+  div.message {
+    border-radius: 0.1em; border-style:solid; border-width:0px; border-color:#9E090D; margin: 10px 21px 25px 21px; padding:0px 22px 12px 22px; background-color:#a22; color:#fff; text-align:left; font-size: 0.7em; background-image:linear-gradient(#555 84%,#555 0%); cursor:pointer; top:-24px; display:none;
+    nobox-shadow: 1px 1px 4px rgba(0, 0, 0, 0.88); 
+  }
+  #triangle-up {
+    width: 0; height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-bottom: 12px solid #555;
+    top:-12px;
+    position:relative;
+  }
 
 /* Extra small devices (phones, 600px and down) */
 @media only screen and (max-width: 600px) {} 
@@ -744,7 +777,8 @@ function hide_prompt(text,preval) {
 @media only screen and (min-width: 1024px) {
   body {
     //background-color:#1DB416; 
-    background-image:linear-gradient(#1DB416 78%, #1DA416 0%);
+    //background-image:linear-gradient(#1DB416 78%, #1DA416 0%);
+    background-image:linear-gradient(#7F7F7F 78%, #696969 0%);
   }
   .mobile {
     border-radius: 0em;
@@ -768,6 +802,7 @@ function hide_prompt(text,preval) {
     <div id="mobile_prompt" class="mobile_prompt"></div>
     <div id="mobile_inner" class="mobile_inner">
       <div id="mobile_head" class="head"></div>
+      <div id="mobile_message" onclick="javascript:this.style.display='none'" class="message"><div id=triangle-up></div><div id="message"></div></div>
       <div id="mobile_options" class="options"></div>
       <div id="mobile_main" class="main"></div>
       <div id="mobile_footer" class="footer"></div>
@@ -775,7 +810,6 @@ function hide_prompt(text,preval) {
   </div>
 </div>
 <!--<audio id="audio" no_controls="" no_autoplay><source src="sounds/smb_kick.wav" type="audio/wav">audio not supported</audio><button onclick=document.getElementById("audio").play()>play audio</button>-->
-
 </body>
 
 </html>
