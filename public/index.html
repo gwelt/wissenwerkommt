@@ -144,7 +144,7 @@ function updateView(json) {
       //message(team.error,true);
 
       mobile_head.innerHTML="<div class='head_wrapper'><button class='option_button' onclick=toggleView('mobile_options');toggleView('mobile_main');>"+svg_menu+"</button><a href=/ style=text-decoration:none;font-weight:bold>wissenwerkommt</a><br><div style=font-size:0.7em>/<a href=/"+window.location.pathname.substr(1)+">"+window.location.pathname.substr(1)+"</a></div></div>";
-      mobile_main.innerHTML='<div class="error_wrapper"><div class="error_text">Der Zugriff ist geschützt.<!--<br>Das Team hat einen Code vereinbart:--><br><br></div><button style="width:100%" onclick=show_cookie_prompt(\'token\')>Token eingeben</button></div>';
+      mobile_main.innerHTML='<div class="error_wrapper"><div class="error_text" style=padding-bottom:12px>Das Team hat einen Code für den Zugriff vereinbart:</div><button style="width:100%" onclick=show_cookie_prompt(\'token\')>Token eingeben</button></div>';
     } else {
  
       // MAIN-page if a team is requested
@@ -502,7 +502,7 @@ function setCookie(cname, cvalue, exdays) {
 function debug(text) {
   console.log(text);
   if ((text=='false')||(JSON.parse(text).error)) {message('Das hat leider nicht funktioniert.')}
-  if (JSON.parse(text).error) {message('Das hat leider nicht funktioniert:<br>'+JSON.parse(text).error+'')}
+  if (JSON.parse(text).error) {message(''+JSON.parse(text).error+'')}
 }
 
 is_mobile=1;
@@ -678,7 +678,7 @@ function message(msg,display) {
     border-radius: 0.1em; margin: 20px 6px 20px 6px; padding: 0px 9px 0px 9px; nobackground-color:#fff; text-align: left; font-size: 0.7em; 
   }
   div.error_wrapper {
-    border-radius: 0.1em; border-style:solid; border-width:0px; border-color:#9E090D; margin: 5px 6px 6px 6px; padding:28px 22px 42px 22px; background-color:#fff; text-align: center; 
+    border-radius: 0.1em; border-style:solid; border-width:0px; border-color:#9E090D; margin: 0px 6px 12px 6px; padding:28px 22px 42px 22px; background-color:#fff; text-align: center; 
   }
   div.error_text {
     nobackground-color:#9E090D; font-size: 0.7em;
