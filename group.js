@@ -6,34 +6,33 @@ function Group() {
 }
 
 function Team(json) {
-  this.teamid=((json.hasOwnProperty('teamid'))&&(json.teamid.length)&&(isValidTeamID(json.teamid)))?json.teamid.toLowerCase():undefined;
-  this.admintoken=(json.hasOwnProperty('admintoken')&&(json.admintoken.trim().length)&&(issafe(json.admintoken.trim(),16)))?json.admintoken.trim():undefined;
-  this.teamtoken=(json.hasOwnProperty('teamtoken')&&(json.teamtoken.trim().length)&&(issafe(json.teamtoken.trim(),16)))?json.teamtoken.trim():undefined;
-  this.name=(json.hasOwnProperty('name')&&(json.name.trim().length)&&(issafe(json.name.trim(),32)))?json.name.trim():undefined;
+  let res=[];
+  this.teamid=validateString('teamid',json.teamid,res);
+  this.admintoken=validateString('admintoken',json.admintoken,res);
+  this.teamtoken=validateString('teamtoken',json.teamtoken,res);
+  this.name=validateString('name',json.name,res);
   if (json.recurrence instanceof Array) {
     this.recurrence=[];
     json.recurrence.forEach((rc)=>{
-      if ((this.recurrence.length<7)&&(rc.hasOwnProperty('weekday'))&&(rc.weekday<=7)&&(/^\d$/i.test(rc.weekday))&&(rc.hasOwnProperty('time'))&&(/^\d{2}:\d{2}$/i.test(rc.time))) {
+      rc.weekday=validateString('weekday',rc.weekday,res);
+      rc.time=validateString('time',rc.time,res);
+      if ((this.recurrence.length<7)&&(rc.weekday)&&(rc.time)) {
         this.recurrence.push({"weekday":rc.weekday,"time":rc.time});
       } 
     });
     if (!this.recurrence.length) {this.recurrence=undefined}
   } else {this.recurrence=undefined}
+  _debug('TEAM '+this.teamid+' >> '+res);
 }
 
 function Event(json) {
-  this.datetime=(json.hasOwnProperty('datetime')&&(isValidDate(json.datetime)))?json.datetime:undefined;
-  this.attendees=json.hasOwnProperty('attendees')?convertToListOfValidNames(json.attendees):undefined;
-  this.refusals=json.hasOwnProperty('refusals')?convertToListOfValidNames(json.refusals):undefined;
+  let res=[];
+  this.datetime=validateString('datetime',json.datetime);
+  this.attendees=convertToListOfValidNames(json.attendees);
+  this.refusals=convertToListOfValidNames(json.refusals);
   this.cancelled=json.hasOwnProperty('cancelled')&&(json.cancelled===true)?json.cancelled:undefined;
-  this.comment=(json.hasOwnProperty('comment')&&(json.comment.length)&&(issafe(json.comment,140)))?json.comment:undefined;
-}
-
-function convertToListOfValidNames(list) {
-  if (list instanceof Array) {
-    return list.map(name=>safe_text(name,32));
-  } 
-  return undefined;
+  this.comment=validateString('comment',json.comment);
+  _debug('EVENT '+this.datetime+' >> '+res);
 }
 
 Group.prototype.getListOfTeamIDs = function() {
@@ -115,25 +114,28 @@ function getNextDaysWithWeekday(weekday,count) {
 }
 
 Event.prototype.attend = function(name) {
-  if (issafe(name,32)) {
+  name=validateString('name',name);
+  if (typeof name=='string') {
     if (!(this.attendees instanceof Array)) {this.attendees=[]};  
-    if (!this.attendees.includes(name)) {this.attendees.push(name)};
+    if ((!this.attendees.includes(name))&&(this.attendees.length<250)) {this.attendees.push(name)};
     if (this.refusals instanceof Array) {this.refusals=this.refusals.filter(r=>r!==name); if (!this.refusals.length) {this.refusals=undefined};};
     return this;
   } else {return false}
 }
 
 Event.prototype.refuse = function(name) {
-  if (issafe(name,32)) {
+  name=validateString('name',name);
+  if (typeof name=='string') {
     if (!(this.refusals instanceof Array)) {this.refusals=[]};
-    if (!this.refusals.includes(name)) {this.refusals.push(name)};
+    if ((!this.refusals.includes(name))&&(this.refusals.length<250)) {this.refusals.push(name)};
     if (this.attendees instanceof Array) {this.attendees=this.attendees.filter(a=>a!==name); if (!this.attendees.length) {this.attendees=undefined};};
     return this;
   } else {return false}
 }
 
 Event.prototype.undecided = function(name) {
-  if (issafe(name,32)) {
+  name=validateString('name',name);
+  if (typeof name=='string') {
     if (this.attendees instanceof Array) {this.attendees=this.attendees.filter(a=>a!==name); if (!this.attendees.length) {this.attendees=undefined};};
     if (this.refusals instanceof Array) {this.refusals=this.refusals.filter(r=>r!==name); if (!this.refusals.length) {this.refusals=undefined};};
     return this;
@@ -202,7 +204,8 @@ Team.prototype.addEvent = function(json) {
 
 Event.prototype.commentEvent = function(comment) {
   //todo: stealthen
-  if (issafe(comment,140)) {
+  comment=validateString('comment',comment);
+  if (typeof comment=='string') {
     this.comment=comment;
     if ((this.hasOwnProperty('comment'))&&(!this.comment.length)) {this.comment=undefined}
     return this;
@@ -282,6 +285,85 @@ Team.prototype.findEvent = function(datetime) {
   } else {return false}
 }
 
+
+function validateString(propertyname,string,res) {
+  if (typeof res!='object') {res=[]}
+  if (typeof string!='string') {return undefined} 
+  _debug('VALIDATE >> propertyname='+propertyname+' string='+string+' ('+(typeof string)+')');
+  s=string.replace(/[^\w\s\däüöÄÜÖß\.,!\@#$^&*()\+=\-\[\]\/{}\|:\?']/g,'').trim().slice(0,140); // not allowed %; //  unescape(string) // [^\\p{L}\\p{Z}]
+  if (s!==string) {res.push(propertyname+": invalid characters removed")};
+
+  switch (propertyname) {
+    case 'teamid':
+      if (/^\w{3,16}$/i.test(s)) {
+        return s.toLowerCase();
+      } else {
+        res.push(propertyname+" has to have no other but 3 to 16 word characters (a-z, A-Z, 0-9, _)");
+      }
+      break;
+    case 'admintoken':
+    case 'teamtoken':
+      if (/^.{1,16}$/i.test(s)) {
+        return s;
+      } else {
+        res.push(propertyname+" has to have 1 to 16 characters");
+      }
+      break;
+    case 'name':
+      if (/^.{1,24}$/i.test(s)) {
+        return s;
+      } else {
+        res.push(propertyname+" has to have 1 to 24 characters");
+      }
+      break;
+    case 'weekday':
+      if ((/^\d$/i.test(s))&&(s<=7)) {
+        return s;
+      } else {
+        res.push(propertyname+" has to have value 1 to 7");
+      }
+      break;
+    case 'time':
+      if (/^\d{2}:\d{2}$/i.test(s)) {
+        return s;
+      } else {
+        res.push(propertyname+" has to have format \d{2}:\d{2}");
+      }
+      break;
+    case 'datetime':
+      var d=new Date(s);
+      if (d instanceof Date && !isNaN(d.getTime()) && d.getMonth()+1==s.substring(5,7)) {
+        return s;
+      } else {
+        res.push(propertyname+" has to have format YYYY-MM-DDTHH:MM");
+      }
+      break;
+    case 'comment':
+      if (/^.{1,140}$/i.test(s)) {
+        return s;
+      } else {
+        res.push(propertyname+" has to have 1 to 140 characters");
+      }
+      break;
+
+    default:
+      return undefined;
+  }
+
+  return undefined;
+}
+
+function convertToListOfValidNames(list) {
+  let res=[];
+  if (list instanceof Array) {
+    let names=list.map(name=>validateString('name',name,res)).filter(name=>typeof name=='string');
+    _debug('LIST OF NAMES >> '+res);
+    if (names.length) {return names}
+  } 
+  return undefined;
+}
+
+
 function memorySizeOf(obj) {
     var bytes = 0;
     function sizeOf(obj) {
@@ -326,9 +408,4 @@ function auth(str,hash) {
   return ( (typeof hash === 'undefined') || (hash === crypt(str)) );
 }
 
-function safe_text(text,maxlength) {return unescape(text).replace(/[^\w\s\däüöÄÜÖß\.,'!\@#$^&%*()\+=\-\[\]\/{}\|:\?]/g,'').trim().slice(0,maxlength||140)}
-function issafe(text,maxlength) {return text==safe_text(text,maxlength)}
-function safe_id(id) {return unescape(id).replace(/\W/g,'').slice(0,16)}
-function issafe_id(id) {return id==safe_id(id)&&id.length>2}
-function isValidTeamID(teamid) {return teamid.trim()==teamid&&issafe_id(teamid)}
-function isValidDate(datestring) {var d=new Date(datestring); return d instanceof Date && !isNaN(d.getTime()) && d.getMonth()+1==datestring.substring(5,7);}
+function _debug(m) {0?console.log(m):1};

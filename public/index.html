@@ -114,7 +114,7 @@ function updateView(json) {
       if (userlevel>2) {} else {}
     });
     */
-    mobile_main.innerHTML='<div class="new_team_wrapper"><input type="text" id="name" maxlength=32 value="" placeholder="Name deines Teams" autocomplete="off"><br>'+get_team_weekdaytime_selection(team)+'<br><input type="text" id="teamid" maxlength=16 value="'+window.location.pathname.substr(1)+'" placeholder="Team-ID *" autocomplete="off"><br><input type="text" id="admintoken" maxlength=16 value="'+(team.admintoken||'')+'" placeholder="Admin-Token" autocomplete="off"><input type="hidden" id="teamtoken" maxlength=16 value="'+(team.teamtoken||'')+'" autocomplete="off"><br><button onclick=addTeam()>create Team</button></div><div class="teamlist_wrapper" id="teamlist"></div><div class="teamlist_wrapper" id="stats"></div>';
+    mobile_main.innerHTML='<div class="new_team_wrapper"><input type="text" id="name" maxlength=24 value="" placeholder="Name deines Teams" autocomplete="off"><br>'+get_team_weekdaytime_selection(team)+'<br><input type="text" id="teamid" maxlength=16 value="'+window.location.pathname.substr(1)+'" placeholder="Team-ID *" autocomplete="off"><br><input type="text" id="admintoken" maxlength=16 value="'+(team.admintoken||'')+'" placeholder="Admin-Token" autocomplete="off"><input type="hidden" id="teamtoken" maxlength=16 value="'+(team.teamtoken||'')+'" autocomplete="off"><br><button onclick=addTeam()>create Team</button></div><div class="teamlist_wrapper" id="teamlist"></div><div class="teamlist_wrapper" id="stats"></div>';
     mobile_footer.innerHTML="";
     serverRequest('getListOfTeamIDs',{},function (r){r=JSON.parse(r); r.forEach(function (t){document.getElementById('teamlist').innerHTML+='<a href=/'+t+'>'+t+'</a> '})});
     serverRequest('stats',{},function (r){document.getElementById('stats').innerHTML=r});
@@ -288,7 +288,7 @@ function show_teamPreferenceWeekdayTime_prompt(team) {
 }
 function show_teamPreference_prompt(text,param,preval,subline) {
   var e=document.getElementById('mobile_prompt');
-  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">'+text+'</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><input type="text" id="'+param+'" maxlength=32 value="'+preval+'" placeholder="" autocomplete="off"><button class="button_ok" onclick="editTeam();hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom">'+(subline?subline+'<br>':'')+'<br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
+  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">'+text+'</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><input type="text" id="'+param+'" maxlength=24 value="'+preval+'" placeholder="" autocomplete="off"><button class="button_ok" onclick="editTeam();hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom">'+(subline?subline+'<br>':'')+'<br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
   document.getElementById('mobile_inner').style.display='none';
   e.style.display='block';
   document.getElementById(param).focus();
@@ -378,7 +378,7 @@ function changeStatus(status,datetime) {
 }
 
 function addTeam() {
-  serverRequest('addTeam',{teamid:document.getElementById('teamid').value,name:document.getElementById('name').value,teamtoken:document.getElementById('teamtoken').value,admintoken:document.getElementById('admintoken').value,recurrence:[{weekday:document.getElementById('weekday0').value,time:document.getElementById('hour0').value+':'+document.getElementById('minute0').value}]},function (r){if (JSON.parse(r).hasOwnProperty('teamid')) {window.location.href = '/'+document.getElementById('teamid').value;} else {debug(r)}});
+  serverRequest('addTeam',{teamid:document.getElementById('teamid').value,name:document.getElementById('name').value,teamtoken:document.getElementById('teamtoken').value,admintoken:document.getElementById('admintoken').value,recurrence:[{weekday:document.getElementById('weekday0').value,time:document.getElementById('hour0').value+':'+document.getElementById('minute0').value}]},function (r){if (JSON.parse(r).hasOwnProperty('teamid')) {window.location.href = '/'+JSON.parse(r).teamid;} else {debug(r)}});
 }
 
 function editTeam() {
@@ -480,7 +480,7 @@ function show_cookie_prompt(cname,str_functionToCall) {
   if (cname=='name') {text='Bitte gib deinen <b>Namen</b> ein:'; placeholder='Name';}
   else if (cname=='token') {text='Bitte gib deinen <b>Token</b> ein:'; placeholder='Token';}
   var e=document.getElementById('mobile_prompt');
-  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">'+text+'</div><input type="text" id="cinput" maxlength=32 value="'+preval+'" placeholder="'+placeholder+'" autocomplete="off"><button class="button_ok" onclick="setCookie(\''+cname+'\',document.getElementById(\'cinput\').value,365);hide_prompt();'+(str_functionToCall||'')+'">ok</button><div style=clear:both></div><div class="prompt_text_bottom">Diese Information wird als Cookie in deinem Browser gespeichert.<br><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
+  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">'+text+'</div><input type="text" id="cinput" maxlength=24 value="'+preval+'" placeholder="'+placeholder+'" autocomplete="off"><button class="button_ok" onclick="setCookie(\''+cname+'\',document.getElementById(\'cinput\').value,365);hide_prompt();'+(str_functionToCall||'')+'">ok</button><div style=clear:both></div><div class="prompt_text_bottom">Diese Information wird als Cookie in deinem Browser gespeichert.<br><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
   document.getElementById('mobile_inner').style.display='none';
   e.style.display='block';
   document.getElementById('cinput').focus();
@@ -488,6 +488,7 @@ function show_cookie_prompt(cname,str_functionToCall) {
 
 function setCookie(cname, cvalue, exdays) {
   var expires='';
+  cvalue=cvalue.replace(/[^\w\s\däüöÄÜÖß\.,!\@#$^&*()\+=\-\[\]\/{}\|:\?']/g,'').trim().slice(0,140);
   if (cvalue==""||cvalue==null) {exdays=0} //0 = delete cookie
   if (exdays>=0) {
     var d = new Date();
