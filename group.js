@@ -32,7 +32,7 @@ function Event(json) {
 
 Group.prototype.getListOfTeamIDs = function() {
   if (this.teams instanceof Array) {
-    return this.teams.map(t=>t.teamid);
+    return this.teams.map(t=>t.teamid).sort();
   } else {return false}
 }
 
@@ -166,7 +166,7 @@ Group.prototype.editTeam = function(json) {
       let temp_team=new Team({'teamid':json['new_teamid']});
       if ( (typeof temp_team.teamid !== 'undefined') && (!this.findTeam(temp_team.teamid)) ) {
         editTeam.teamid=temp_team.teamid;
-      }
+      } else {return false}
       json['new_teamid']=undefined;
     }
 
