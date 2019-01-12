@@ -18,7 +18,7 @@ function Team(json) {
       rc.time=validateString('time',rc.time,res);
       if ((this.recurrence.length<7)&&(rc.weekday)&&(rc.time)) {
         this.recurrence.push({"weekday":rc.weekday,"time":rc.time});
-      } 
+      }
     });
     if (!this.recurrence.length) {this.recurrence=undefined}
   } else {this.recurrence=undefined}
@@ -85,7 +85,7 @@ function getDateString(d) {
   if (!d) {d=new Date()};
   var tzoffset = d.getTimezoneOffset() * 60000;
   return (new Date(d-tzoffset)).toISOString().slice(0, -14);
-} 
+}
 
 Team.prototype.generateNextRecurringEvents = function(count) {
   if (this.recurrence instanceof Array) {
@@ -116,7 +116,7 @@ function getNextDaysWithWeekday(weekday,count) {
 Event.prototype.attend = function(name) {
   name=validateString('name',name);
   if (typeof name=='string') {
-    if (!(this.attendees instanceof Array)) {this.attendees=[]};  
+    if (!(this.attendees instanceof Array)) {this.attendees=[]};
     if ((!this.attendees.includes(name))&&(this.attendees.length<250)) {this.attendees.push(name)};
     if (this.refusals instanceof Array) {this.refusals=this.refusals.filter(r=>r!==name); if (!this.refusals.length) {this.refusals=undefined};};
     return this;
@@ -203,13 +203,8 @@ Team.prototype.addEvent = function(json) {
 }
 
 Event.prototype.commentEvent = function(comment) {
-  //todo: stealthen
-  comment=validateString('comment',comment);
-  if (typeof comment=='string') {
-    this.comment=comment;
-    if ((this.hasOwnProperty('comment'))&&(!this.comment.length)) {this.comment=undefined}
-    return this;
-  } else {return false}
+  this.comment=validateString('comment',comment);
+  return this;
 }
 
 Event.prototype.cancelEvent = function() {
@@ -252,7 +247,7 @@ Group.prototype.load_from_file = function(filename,callback) {
           let team=this.addTeam(t);
           if ((team)&&(t.hasOwnProperty('events'))) {
             t.events.forEach((e)=>{team.addEvent(e)});
-          } 
+          }
         });
       }
     }
@@ -288,7 +283,7 @@ Team.prototype.findEvent = function(datetime) {
 
 function validateString(propertyname,string,res) {
   if (typeof res!='object') {res=[]}
-  if (typeof string!='string') {return undefined} 
+  if (typeof string!='string') {return undefined}
   _debug('VALIDATE >> propertyname='+propertyname+' string='+string+' ('+(typeof string)+')');
   s=string.replace(/[^\w\s\däüöÄÜÖß\.,!\@#$^&*()\+=\-\[\]\/{}\|:\?']/g,'').trim().slice(0,140); // not allowed %; //  unescape(string) // [^\\p{L}\\p{Z}]
   if (s!==string) {res.push(propertyname+": invalid characters removed")};
@@ -359,7 +354,7 @@ function convertToListOfValidNames(list) {
     let names=list.map(name=>validateString('name',name,res)).filter(name=>typeof name=='string');
     _debug('LIST OF NAMES >> '+res);
     if (names.length) {return names}
-  } 
+  }
   return undefined;
 }
 
