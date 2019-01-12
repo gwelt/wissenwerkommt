@@ -1,5 +1,7 @@
 var fs = require('fs');
 module.exports = Group;
+var config = {};
+try {config=require('./config.json')} catch(err){};
 
 function Group() {
   this.teams=[];
@@ -65,6 +67,49 @@ Group.prototype.getTeam = function(teamid,userlevel) {
   return t_res;
 }
 
+Group.prototype.addTeam = function(json) {
+  let team=new Team(json);
+  if ( (typeof team.teamid !== 'undefined') && (!this.findTeam(team.teamid)) )
+  {
+    if (!(this.teams instanceof Array)) {this.teams=[]};
+    if (this.teams.length<(config.maxTeams||2)) {this.teams.push(team)} else {return false}
+    return team;
+  } else {
+    return false;
+  }
+}
+
+Group.prototype.editTeam = function(json) {
+  // create a temporary team-object to make use of data-checks in constructor
+  let editTeam=new Team(json);
+  let team=this.findTeam(editTeam.teamid);
+  if (team) {
+    // exceptional case: new_teamid changes existing teamid (only, if new_teamid does not exist yet)
+    if (json['new_teamid']!==undefined) {
+      // generate temporary team with new_teamid to check validity and availability of new teamid
+      let temp_team=new Team({'teamid':json['new_teamid']});
+      if ( (typeof temp_team.teamid !== 'undefined') && (!this.findTeam(temp_team.teamid)) ) {
+        editTeam.teamid=temp_team.teamid;
+      } else {return false}
+      json['new_teamid']=undefined;
+    }
+    // check for each property, if json-key (!) is not undefined
+    // that way, a string with no length ('') can delete/undefine a current string
+    for (let key of Object.keys(editTeam)) {if (json[key]!==undefined) {team[key]=editTeam[key]}};
+    return team;
+  } else {
+    return false;
+  }
+}
+
+Group.prototype.deleteTeam = function(json) {
+  if ( (json.hasOwnProperty('teamid')) && (this.findTeam(json.teamid)) ) {
+    this.teams=this.teams.filter(t=>t.teamid!==json.teamid);
+    //if (!this.teams.length) {this.teams=undefined; return [];};
+    return true;
+  } else {return false}
+}
+
 Group.prototype.getUserLevel = function(teamid,token) {
   let t=this.findTeam(teamid);
   let userLevel=0; // not a member
@@ -81,151 +126,7 @@ Group.prototype.getUserLevel = function(teamid,token) {
   return userLevel;
 };
 
-function getDateString(d) {
-  if (!d) {d=new Date()};
-  var tzoffset = d.getTimezoneOffset() * 60000;
-  return (new Date(d-tzoffset)).toISOString().slice(0, -14);
-}
-
-Team.prototype.generateNextRecurringEvents = function(count) {
-  if (this.recurrence instanceof Array) {
-    this.recurrence.forEach((rc)=>{
-      // reduce amount of backfilled/generated events
-      if (!count) {count=Math.ceil(4/this.recurrence.length)}
-      getNextDaysWithWeekday(rc.weekday,count).forEach((d)=>{this.addEvent({"datetime":d+'T'+(rc.time||'00:00')})});
-    });
-  }
-}
-
-function getNextDaysWithWeekday(weekday,count) {
-  let d=new Date(getDateString());
-  let step=7; // step one week, if event recurs weekly
-  // calc the days it takes till the next event takes place (first offset)
-  let offset=(weekday%7)-d.getDay();
-  if (offset<0) {offset+=step};
-  // 7 is set, if the event recurs every day
-  if (weekday==7) {offset=0; step=1};
-  res=[];
-  let i=0;
-  // 8 is set, if the event has no recurrence
-  // if (weekday>7) {i=9999}; // will not occur anymore
-  while (++i<=(count||4)) {res.push(getDateString(new Date(d.valueOf()+offset*86400000))); offset+=step;}
-  return res;
-}
-
-Event.prototype.attend = function(name) {
-  name=validateString('name',name);
-  if (typeof name=='string') {
-    if (!(this.attendees instanceof Array)) {this.attendees=[]};
-    if ((!this.attendees.includes(name))&&(this.attendees.length<250)) {this.attendees.push(name)};
-    if (this.refusals instanceof Array) {this.refusals=this.refusals.filter(r=>r!==name); if (!this.refusals.length) {this.refusals=undefined};};
-    return this;
-  } else {return false}
-}
-
-Event.prototype.refuse = function(name) {
-  name=validateString('name',name);
-  if (typeof name=='string') {
-    if (!(this.refusals instanceof Array)) {this.refusals=[]};
-    if ((!this.refusals.includes(name))&&(this.refusals.length<250)) {this.refusals.push(name)};
-    if (this.attendees instanceof Array) {this.attendees=this.attendees.filter(a=>a!==name); if (!this.attendees.length) {this.attendees=undefined};};
-    return this;
-  } else {return false}
-}
-
-Event.prototype.undecided = function(name) {
-  name=validateString('name',name);
-  if (typeof name=='string') {
-    if (this.attendees instanceof Array) {this.attendees=this.attendees.filter(a=>a!==name); if (!this.attendees.length) {this.attendees=undefined};};
-    if (this.refusals instanceof Array) {this.refusals=this.refusals.filter(r=>r!==name); if (!this.refusals.length) {this.refusals=undefined};};
-    return this;
-  } else {return false}
-}
-
-Group.prototype.addTeam = function(json) {
-  let team=new Team(json);
-  if ( (typeof team.teamid !== 'undefined') && (!this.findTeam(team.teamid)) )
-  {
-    if (!(this.teams instanceof Array)) {this.teams=[]};
-    if (this.teams.length<250) {this.teams.push(team)} else {return false}
-    return team;
-  } else {
-    return false;
-  }
-}
-
-Group.prototype.editTeam = function(json) {
-  // create a temporary team-object to make use of data-checks in constructor
-  let editTeam=new Team(json);
-  let team=this.findTeam(editTeam.teamid);
-  if (team) {
-    // check for each property, if json-key (!) is not undefined
-    // that way, a string with no length ('') can delete/undefine a current string
-
-    // exceptional case: do not delete/undefine admintoken, if it's left blank
-    // if (json['admintoken']=='') {json['admintoken']=undefined};
-
-    // exceptional case: new_teamid changes existing teamid (only, if new_teamid does not exist yet)
-    if (json['new_teamid']!==undefined) {
-      // generate temporary team with new_teamid to check validity and availability of new teamid
-      let temp_team=new Team({'teamid':json['new_teamid']});
-      if ( (typeof temp_team.teamid !== 'undefined') && (!this.findTeam(temp_team.teamid)) ) {
-        editTeam.teamid=temp_team.teamid;
-      } else {return false}
-      json['new_teamid']=undefined;
-    }
-
-    for (let key of Object.keys(editTeam)) {if (json[key]!==undefined) {team[key]=editTeam[key]}};
-    return team;
-  } else {
-    return false;
-  }
-}
-
-Group.prototype.deleteTeam = function(json) {
-  if ( (json.hasOwnProperty('teamid')) && (this.findTeam(json.teamid)) ) {
-    this.teams=this.teams.filter(t=>t.teamid!==json.teamid);
-    //if (!this.teams.length) {this.teams=undefined; return [];};
-    return true;
-  } else {return false}
-}
-
-Team.prototype.addEvent = function(json) {
-  let event=new Event(json);
-  if ( (typeof event.datetime !== 'undefined') && (!this.findEvent(event.datetime)) )
-  {
-    if (!(this.events instanceof Array)) {this.events=[]};
-    if (this.events.length<100) {this.events.push(event)} else {return false}
-    return event;
-  } else {
-    return false;
-  }
-}
-
-Event.prototype.commentEvent = function(comment) {
-  this.comment=validateString('comment',comment);
-  return this;
-}
-
-Event.prototype.cancelEvent = function() {
-  this.cancelled=true;
-  return this;
-}
-
-Event.prototype.reviveEvent = function() {
-  this.cancelled=undefined;
-  return this;
-}
-
-Team.prototype.deleteEvent = function(json) {
-  if ( (json.hasOwnProperty('datetime')) && (this.findEvent(json.datetime)) ) {
-    this.events=this.events.filter(e=>e.datetime!==json.datetime);
-    if (!this.events.length) {this.events=undefined; return [];};
-    return this.events;
-  } else {return false}
-}
-
-Group.prototype.stats = function() {
+Group.prototype.getStats = function() {
   let teamCount=0;
   let eventCount=0;
   let attendCount=0;
@@ -262,7 +163,6 @@ Group.prototype.save_to_file = function(filename,callback) {
   });
 }
 
-
 Group.prototype.findTeam = function(teamid) {
   if ((typeof teamid=='string') && this.teams instanceof Array && teamid) {
     return this.teams.find(t => t.teamid==teamid.toLowerCase())||false;
@@ -274,12 +174,98 @@ Group.prototype.findEvent = function(teamid,datetime) {
   if (team) {return team.findEvent(datetime)} else {return false}
 }
 
+Team.prototype.generateNextRecurringEvents = function(count) {
+  if (this.recurrence instanceof Array) {
+    this.recurrence.forEach((rc)=>{
+      // reduce amount of backfilled/generated events
+      if (!count) {count=Math.ceil(4/this.recurrence.length)}
+      getNextDaysWithWeekday(rc.weekday,count).forEach((d)=>{this.addEvent({"datetime":d+'T'+(rc.time||'00:00')})});
+    });
+  }
+  function getNextDaysWithWeekday(weekday,count) {
+    let d=new Date(getDateString());
+    let step=7; // step one week, if event recurs weekly
+    // calc the days it takes till the next event takes place (first offset)
+    let offset=(weekday%7)-d.getDay();
+    if (offset<0) {offset+=step};
+    // 7 is set, if the event recurs every day
+    if (weekday==7) {offset=0; step=1};
+    res=[];
+    let i=0;
+    while (++i<=(count||4)) {res.push(getDateString(new Date(d.valueOf()+offset*86400000))); offset+=step;}
+    return res;
+  }
+}
+
+Team.prototype.addEvent = function(json) {
+  let event=new Event(json);
+  if ( (typeof event.datetime !== 'undefined') && (!this.findEvent(event.datetime)) )
+  {
+    if (!(this.events instanceof Array)) {this.events=[]};
+    if (this.events.length<(config.maxEvents||100)) {this.events.push(event)} else {return false}
+    return event;
+  } else {
+    return false;
+  }
+}
+
+Team.prototype.deleteEvent = function(json) {
+  if ( (json.hasOwnProperty('datetime')) && (this.findEvent(json.datetime)) ) {
+    this.events=this.events.filter(e=>e.datetime!==json.datetime);
+    if (!this.events.length) {this.events=undefined; return [];};
+    return this.events;
+  } else {return false}
+}
+
 Team.prototype.findEvent = function(datetime) {
   if (this.events instanceof Array) {
     return this.events.find(e => e.datetime==datetime)||false;
   } else {return false}
 }
 
+Event.prototype.attend = function(name) {
+  name=validateString('name',name);
+  if (typeof name=='string') {
+    if (!(this.attendees instanceof Array)) {this.attendees=[]};
+    if ((!this.attendees.includes(name))&&(this.attendees.length<(config.maxIndications||250))) {this.attendees.push(name)};
+    if (this.refusals instanceof Array) {this.refusals=this.refusals.filter(r=>r!==name); if (!this.refusals.length) {this.refusals=undefined};};
+    return this;
+  } else {return false}
+}
+
+Event.prototype.refuse = function(name) {
+  name=validateString('name',name);
+  if (typeof name=='string') {
+    if (!(this.refusals instanceof Array)) {this.refusals=[]};
+    if ((!this.refusals.includes(name))&&(this.refusals.length<(config.maxIndications||250))) {this.refusals.push(name)};
+    if (this.attendees instanceof Array) {this.attendees=this.attendees.filter(a=>a!==name); if (!this.attendees.length) {this.attendees=undefined};};
+    return this;
+  } else {return false}
+}
+
+Event.prototype.undecided = function(name) {
+  name=validateString('name',name);
+  if (typeof name=='string') {
+    if (this.attendees instanceof Array) {this.attendees=this.attendees.filter(a=>a!==name); if (!this.attendees.length) {this.attendees=undefined};};
+    if (this.refusals instanceof Array) {this.refusals=this.refusals.filter(r=>r!==name); if (!this.refusals.length) {this.refusals=undefined};};
+    return this;
+  } else {return false}
+}
+
+Event.prototype.commentEvent = function(comment) {
+  this.comment=validateString('comment',comment);
+  return this;
+}
+
+Event.prototype.cancelEvent = function() {
+  this.cancelled=true;
+  return this;
+}
+
+Event.prototype.reviveEvent = function() {
+  this.cancelled=undefined;
+  return this;
+}
 
 function validateString(propertyname,string,res) {
   if (typeof res!='object') {res=[]}
@@ -358,6 +344,11 @@ function convertToListOfValidNames(list) {
   return undefined;
 }
 
+function getDateString(d) {
+  if (!d) {d=new Date()};
+  var tzoffset = d.getTimezoneOffset() * 60000;
+  return (new Date(d-tzoffset)).toISOString().slice(0, -14);
+}
 
 function memorySizeOf(obj) {
     var bytes = 0;
@@ -394,13 +385,5 @@ function formatByteSize(bytes) {
     else if(bytes < 1073741824) return(bytes / 1048576).toFixed(3) + " MiB";
     else return(bytes / 1073741824).toFixed(3) + " GiB";
 };
-
-const crypto = require('crypto');
-function crypt(str) {
-  return crypto.createHmac('sha256','dontwanttousesalthere').update(str).digest('base64');
-}
-function auth(str,hash) {
-  return ( (typeof hash === 'undefined') || (hash === crypt(str)) );
-}
 
 function _debug(m) {0?console.log(m):1};

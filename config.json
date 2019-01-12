@@ -2,5 +2,8 @@
   "port": 3000,
   "datafile": "data.json",
   "datafilepath": "data",
-  "sysoptoken": "sysop"
+  "sysoptoken": "sysop",
+  "maxTeams": 250,
+  "maxEvents": 100,
+  "maxIndications": 250
 }

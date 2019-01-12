@@ -98,6 +98,7 @@ function updateView(json) {
   if (cookie) {text='Hallo <b>'+cookie+'</b>.<br>Schön, dass du da bist.';}
   svg='';//<svg xmlns="http://www.w3.org/2000/svg" id="svg_menu" fill="#000" width="24px" height="18px" viewBox="0 0 24 24"><path d="M24 6h-24v-4h24v4zm0 4h-24v4h24v-4zm0 8h-24v4h24v-4z"/></svg>';
   menu+='<div class="options_option"><button class="option_button" onclick="show_cookie_prompt(\'name\');">'+svg+'</button><div class="option_text">'+text+'</div></div>';
+  // 'https://api.qrserver.com/v1/create-qr-code/?data=https://wissenwerkommt.de/'+team.id
 
   // MENU:TOKEN
   cookie=getCookie("token",true);
@@ -114,7 +115,7 @@ function updateView(json) {
       if (userlevel>2) {} else {}
     });
     */
-    mobile_main.innerHTML='<div class="new_team_wrapper"><input type="text" id="name" maxlength=24 value="" placeholder="Name deines Teams" autocomplete="off"><br>'+get_team_weekdaytime_selection(team)+'<br><input type="text" id="teamid" maxlength=16 value="'+window.location.pathname.substr(1)+'" placeholder="Team-ID *" autocomplete="off"><br><input type="text" id="admintoken" maxlength=16 value="'+(team.admintoken||'')+'" placeholder="Admin-Token" autocomplete="off"><input type="hidden" id="teamtoken" maxlength=16 value="'+(team.teamtoken||'')+'" autocomplete="off"><br><button onclick=addTeam()>create Team</button></div><div class="teamlist_wrapper" id="teamlist"></div><div class="teamlist_wrapper" id="stats"></div>';
+    mobile_main.innerHTML='<div class="new_team_wrapper"><input type="text" id="name" maxlength=24 value="" placeholder="Name deines Teams" autocomplete="off"><br>'+get_team_weekdaytime_selection(team)+'<br><input type="text" id="teamid" maxlength=16 value="'+window.location.pathname.substr(1)+'" placeholder="Team-ID *" autocomplete="off"><br><input type="text" id="admintoken" maxlength=16 value="'+(team.admintoken||'')+'" placeholder="Admin-Token" autocomplete="off"><input type="hidden" id="teamtoken" maxlength=16 value="'+(team.teamtoken||'')+'" autocomplete="off"><br><button class="button_ok" onclick=addTeam()>Team erstellen</button><br></div><div class="teamlist_wrapper" id="teamlist"></div><div class="teamlist_wrapper" id="stats"></div>';
     mobile_footer.innerHTML="";
     serverRequest('getListOfTeamIDs',{},function (r){r=JSON.parse(r); r.forEach(function (t){document.getElementById('teamlist').innerHTML+='<a href=/'+t+'>'+t+'</a> '})});
     serverRequest('stats',{},function (r){document.getElementById('stats').innerHTML=r});
@@ -148,7 +149,7 @@ function updateView(json) {
     } else {
  
       // MAIN-page if a team is requested
-      mobile_head.innerHTML="<div class='head_wrapper'><button class='option_button' onclick=toggleView('mobile_options');toggleView('mobile_main');>"+svg_menu+"</button><a href=/"+team.teamid+" style=text-decoration:none;font-weight:bold>"+(!!team.name?team.name:'')+"</a><br><div style=font-size:0.7em>"+teams_weekday_time+"</div></div>";
+      mobile_head.innerHTML="<div class='head_wrapper'><button class='option_button' onclick=toggleView('mobile_options');toggleView('mobile_main');>"+svg_menu+"</button><a href=/"+team.teamid+" style=text-decoration:none;font-weight:bold>"+(!!team.name?team.name:'Team '+team.teamid)+"</a><br><div style=font-size:0.7em>"+teams_weekday_time+"</div></div>";
 
       var name=getCookie('name',true);
       mobile_main.innerHTML='';
@@ -162,6 +163,11 @@ function updateView(json) {
         if (e.comment) {comment_inline='<div class="comment_wrapper">'+(e.comment?e.comment:'')+'</div>';}
         var comment_important='';
         if (e.cancelled) {comment_important='<div class=comment_important>TERMIN FÄLLT AUS</div>';}
+        var comment_hint='';
+        // check if event is NOT a recurring event
+        if (!(team.recurrence?team.recurrence.filter(function(r){return ((r.weekday==new Date(e.datetime).getDay())&&(r.time==e.datetime.substring(11,16)))}):[1]).length) {
+          comment_hint='<div class=comment_hint>Termin außerhalb der Serie</div>';
+        }
 
         // prepare content
         var peoples_list='';
@@ -191,21 +197,14 @@ function updateView(json) {
         var peoples_list_container='<div id="peoples_list_container_'+event_counter+'">'+peoples_list+'</div>';
         var day=['So','Mo','Di','Mi','Do','Fr','Sa'][new Date(e.datetime).getDay()]+' '+e.datetime.substring(8,10)+'.'+e.datetime.substring(5,7)+'. '+e.datetime.substring(11,16)+' Uhr';
 
-        // show content
+        // prepare content
         var ondblclick='';
         if ((team.userlevel)&&(team.userlevel>1)) {ondblclick=" ondblclick=\"show_teamCommentEdit_prompt(\'"+e.datetime+"\',\'"+(e.comment?e.comment:'')+"\',"+(e.cancelled?true:false)+")\"";}
         
-        var banner='<div id="div'+e.datetime+'" class="statusbutton_wrapper"'+ondblclick+'>';
-        if ( (event_counter==-1) && (e.attendees&&e.attendees.includes(name)) ) {
-          // Teaser / coming up next...
-          banner_text='Sei dabei!';
-          if (e.attendees&&e.attendees.includes(name)) {banner_text='Du bist dabei!'}
-          else if (e.refusals&&e.refusals.includes(name)) {banner_text='Schade!'} 
-          banner='<div class="banner">'+banner_text+'</div><div class="statusbutton_wrapper_after_banner">';
-        }
-
         // events
-        mobile_main.innerHTML+=banner+'<button id="status'+e.datetime+'" onclick=toggleStatus("'+e.datetime+'")>'+day+'</button><br>'+comment_important+comment_inline+peoples_list_container+attendees_counter+'</div>';
+        var banner='<div id="div'+e.datetime+'" class="statusbutton_wrapper"'+ondblclick+'>';
+        //banner='<div class="banner">Termin außerhalb der Serie</div><div class="statusbutton_wrapper_after_banner"'+ondblclick+'>';
+        mobile_main.innerHTML+=banner+'<button id="status'+e.datetime+'" onclick=toggleStatus("'+e.datetime+'")>'+day+'</button><br>'+comment_important+comment_hint+comment_inline+peoples_list_container+attendees_counter+'</div>';
         document.getElementById('peoples_list_container_'+event_counter).className='statusbutton_wrapper_attendees_following';
         // set button-attributes to represent the state of attendence
         if (e.attendees&&e.attendees.includes(name)) {document.getElementById('status'+e.datetime).className='statusbutton_attending'}
@@ -308,7 +307,7 @@ function show_teamAddEvent_prompt() {
 }
 function show_teamCommentEdit_prompt(datetime,preval_comment,cancelled) {
   var e=document.getElementById('mobile_prompt');
-  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top"><b>Hinweis</b> zum Termin:</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><input type="text" id="comment'+datetime+'" maxlength=140 value="'+preval_comment+'" placeholder="" autocomplete="off"><button class="button_ok" onclick="commentEvent(\''+datetime+'\');hide_prompt();">ok</button><div style=clear:both></div><div style="bgcolor:#f0f;padding-top:20px"><input type="checkbox" id="cancelled'+datetime+'"'+(cancelled?' checked':'')+' onclick="cancelORreviveEvent(\''+datetime+'\');" style="float:left"><div style="font-size:0.7em;margin-top:2px">TERMIN FÄLLT AUS</div></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
+  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top"><b>Hinweis</b> zum Termin:</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><input type="text" id="comment'+datetime+'" maxlength=140 value="'+preval_comment+'" placeholder="" autocomplete="off"><button class="button_ok" onclick="commentEvent(\''+datetime+'\');hide_prompt();">ok</button><div style=clear:both></div><div style="bgcolor:#f0f;padding-top:20px"><input type="checkbox" id="cancelled'+datetime+'"'+(cancelled?' checked':'')+' onclick="cancelORreviveEvent(\''+datetime+'\');" style="float:left"><div style="font-size:0.7em;margin-top:2px">Termin fällt aus</div></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
   document.getElementById('mobile_inner').style.display='none';
   e.style.display='block';
   document.getElementById('comment'+datetime).focus();
@@ -334,7 +333,7 @@ function toggleStatus(datetime) {
 }
 
 function toggleView(id,state) {
-  message('',false);  
+  message('',false);
   var e=document.getElementById(id);
   if (state) {e.style.display=state} 
   else if (e.currentStyle?e.currentStyle.display=='none':getComputedStyle(e, null).display=='none') {e.style.display='block'} else {e.style.display='none'}
@@ -373,7 +372,12 @@ function changeStatus(status,datetime) {
   if (!getCookie('name',true)) {
     show_cookie_prompt('name','changeStatus(\''+status+'\',\''+datetime+'\');');
   } else {
-    serverRequest(status,{token:getCookie('token',!team.teamtoken),teamid:window.location.pathname.substr(1),datetime:datetime,name:getCookie('name')},function (r){updateStatus(r);});
+    var timeout=setTimeout(function() {
+      var e=document.getElementById('status'+datetime);
+      e.className='statusbutton_wait';
+      e.innerHTML='connecting ...'
+    },250);
+    serverRequest(status,{token:getCookie('token',!team.teamtoken),teamid:window.location.pathname.substr(1),datetime:datetime,name:getCookie('name')},function (r){clearTimeout(timeout); updateStatus(r);});
   }
 }
 
@@ -714,14 +718,18 @@ function message(msg,display) {
   div.comment_important {
     border-radius: 0.1em; background-color:#E81B20; color:#fff; margin: 0px 0px 6px 0px; padding: 5px; text-align: center; display:inline-block; width:80%; 
   }
+  div.comment_hint {
+    border-radius: 0.1em; background-color:#ff0; nocolor:#fff; margin: 0px 0px 6px 0px; padding: 5px; text-align: center; display:inline-block; width:80%; 
+  }
   div.footer_wrapper {
     border-radius: 0.1em; margin: 6px 6px 20px 6px; padding: 9px 9px 9px 9px; nobackground-color:#fff; text-align: left;
   }
   div.banner {
-    border-radius: 0.1em 0.1em 0em 0em; margin: -10px 0px 0px 15px; padding: 8px 16px 6px 16px; position:absolute; display:inline; overflow:hidden; white-space: nowrap; color:#fff; background-color:#20609f; text-align: center; font-size:0.6em; noletter-spacing: 0.5px;
+    border-radius: 0.1em 0.1em 0em 0em; margin: 0px 0px 0px 15px; padding: 8px 16px 6px 16px; position:absolute; display:inline; overflow:hidden; white-space: nowrap; color:#fff; background-color:#20609f; text-align: center; font-size:0.6em; noletter-spacing: 0.5px; z-index:-1;
   }
   div.statusbutton_wrapper_after_banner {
-    border-radius: 0.1em; margin: 22px 6px 12px 6px; padding: 20px 0 10px 0; background-color:#fff; text-align: center; font-size:0.7em;
+    //border-radius: 0.1em; margin: 22px 6px 12px 6px; padding: 20px 0 10px 0; background-color:#fff; text-align: center; font-size:0.7em;
+    border-radius: 0.1em; margin: 42px 6px 12px 6px; padding: 20px 0 10px 0; background-color:#fff; text-align: center; font-size:0.7em;
   }
   div.statusbutton_wrapper {
     border-radius: 0.1em; margin: 0px 6px 12px 6px; padding: 20px 0 10px 0; background-color:#fff; text-align: center; font-size:0.7em;
@@ -736,12 +744,13 @@ function message(msg,display) {
     font-size:0.7em; width:100%; text-align:left; padding:10px 10px 10px 10px;
   }
 
-  button.statusbutton_undecided, button.statusbutton_attending, button.statusbutton_refused {
+  button.statusbutton_undecided, button.statusbutton_attending, button.statusbutton_refused, button.statusbutton_wait {
     cursor: pointer; width:80%; margin:0px 0px 8px 0px; font-size:1.4em; noletter-spacing: 0.2px;
   }
   button.statusbutton_undecided {color:#000; background-color:#ffbf00; background-image:linear-gradient(#ffbf00 84%,#efaf00 0%);}
   button.statusbutton_attending {color:#000; background-color:#1DA416; background-image:linear-gradient(#1DB416 84%,#1DA416 0%);}
   button.statusbutton_refused   {color:#000; background-color:#C81B20; background-image:linear-gradient(#E81B20 84%,#D81B20 0%);}
+  button.statusbutton_wait      {color:#000; background-color:#C0C0C0; background-image:linear-gradient(#C0C0C0 84%,#A0A0A0 0%);}
 
   //button.button_cancel {float:left; color:#808080; background-image:linear-gradient(#f0f0f0 80%, #f0f0f0 0%);}
   button.button_ok {float:right; margin-right:0px; width:100%; nobackground-image:linear-gradient(#1DB416 84%,#1DA416 0%);}

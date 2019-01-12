@@ -9,8 +9,7 @@ var port = process.env.PORT || config.port || 3000;
 var Group = require('./group.js');
 var db=new Group();
 server.listen(port, function () {
-  //console.log('Server listening at port %d', port);
-  db.load_from_file(config.datafilepath+'/'+config.datafile,(group)=>{/*console.log(JSON.stringify(group))*/});
+  db.load_from_file(config.datafilepath+'/'+config.datafile,(group)=>{});
 });
 module.exports = server;
 
@@ -18,7 +17,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/api/:r/:t?', function (req, res) {
-  
   switch (req.params.r) {
 
     // open
@@ -29,7 +27,7 @@ app.use('/api/:r/:t?', function (req, res) {
       res.json(db.addTeam(req.body)||{'error':'teamid invalid or existing'});
       break;
     case 'stats':
-      res.json(db.stats());
+      res.json(db.getStats());
       break;
     case 'getUserLevel':
       res.json(getUserLevel(req));
@@ -124,24 +122,13 @@ app.use('/api/:r/:t?', function (req, res) {
 
   }
 
-})
-
-app.use(function(req, res, next){
-  res.sendFile('index.html',{root:path.join(__dirname,'public')});
 });
+app.use(function(req, res, next){res.sendFile('index.html',{root:path.join(__dirname,'public')})});
 
 function getUserLevel(req) {
   if ((req.body.token==config.sysoptoken) && (req.body.token!==undefined)) {return 3}
   return db.getUserLevel((req.params.t||req.body.teamid),req.body.token);
 }
-
-/*
-function getDateString(d) {
-  if (!d) {d=new Date()};
-  var tzoffset = d.getTimezoneOffset() * 60000;
-  return (new Date(d-tzoffset)).toISOString().slice(0, -14);
-} 
-*/
 
 process.on('SIGINT', function(){console.log('SIGINT'); db.save_to_file(config.datafilepath+'/'+config.datafile,()=>{process.exit()})});
 process.on('SIGTERM', function(){console.log('SIGTERM'); db.save_to_file(config.datafilepath+'/'+config.datafile,()=>{process.exit()})});
