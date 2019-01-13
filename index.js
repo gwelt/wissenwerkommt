@@ -35,8 +35,16 @@ app.use('/api/:r/:t?', function (req, res) {
 
     // team members only
     case 'getTeam':
-      if (getUserLevel(req)>0) {
-        res.json(db.getTeam(req.params.t||req.body.teamid,getUserLevel(req)));
+      let userlevel=getUserLevel(req);
+      if (userlevel>0) {
+        let team=db.getTeam(req.params.t||req.body.teamid);
+        if (team) {
+          // add userlevel-information to result
+          team.userlevel=userlevel;
+          // remove admin token from return-value if userlevel is < 2
+          if ((!userlevel)||(userlevel<2)) {team.admintoken=undefined;}
+        }
+        res.json(team);
       } else {res.status(401).json({'error':'not sufficient rights to get team or team does not exist'})}
       break;
     case 'attend':

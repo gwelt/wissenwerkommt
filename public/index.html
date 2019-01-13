@@ -37,6 +37,8 @@ function updateView(json) {
   var mobile_options=document.getElementById('mobile_options');
   var mobile_footer=document.getElementById('mobile_footer');
 
+  document.title='wissenwerkommt';
+  
   // create readable string for recurrence of events
   var teams_weekday_time=[];
   if (team.recurrence) {
@@ -98,7 +100,7 @@ function updateView(json) {
   if (cookie) {text='Hallo <b>'+cookie+'</b>.<br>Schön, dass du da bist.';}
   svg='';//<svg xmlns="http://www.w3.org/2000/svg" id="svg_menu" fill="#000" width="24px" height="18px" viewBox="0 0 24 24"><path d="M24 6h-24v-4h24v4zm0 4h-24v4h24v-4zm0 8h-24v4h24v-4z"/></svg>';
   menu+='<div class="options_option"><button class="option_button" onclick="show_cookie_prompt(\'name\');">'+svg+'</button><div class="option_text">'+text+'</div></div>';
-  // 'https://api.qrserver.com/v1/create-qr-code/?data=https://wissenwerkommt.de/'+team.id
+  // 'https://api.qrserver.com/v1/create-qr-code/?data=https://wissenwerkommt.de/'+team.teamid
 
   // MENU:TOKEN
   cookie=getCookie("token",true);
@@ -141,15 +143,17 @@ function updateView(json) {
 
     if (team.error) {
       // MAIN-page if a team is requested but not found or not allowed
-      debug(JSON.stringify(team)); //'The server answered: '+JSON.stringify(team))
-      //message(team.error,true);
-
+      debug(JSON.stringify(team));
+      message('',false); // don't want the message here...
+      
       mobile_head.innerHTML="<div class='head_wrapper'><button class='option_button' onclick=toggleView('mobile_options');toggleView('mobile_main');>"+svg_menu+"</button><a href=/ style=text-decoration:none;font-weight:bold>wissenwerkommt</a><br><div style=font-size:0.7em>/<a href=/"+window.location.pathname.substr(1)+">"+window.location.pathname.substr(1)+"</a></div></div>";
       mobile_main.innerHTML='<div class="error_wrapper"><div class="error_text" style=padding-bottom:12px>Das Team hat einen Code für den Zugriff vereinbart:</div><button style="width:100%" onclick=show_cookie_prompt(\'token\')>Token eingeben</button></div>';
     } else {
  
       // MAIN-page if a team is requested
       mobile_head.innerHTML="<div class='head_wrapper'><button class='option_button' onclick=toggleView('mobile_options');toggleView('mobile_main');>"+svg_menu+"</button><a href=/"+team.teamid+" style=text-decoration:none;font-weight:bold>"+(!!team.name?team.name:'Team '+team.teamid)+"</a><br><div style=font-size:0.7em>"+teams_weekday_time+"</div></div>";
+
+      document.title=(!!team.name?team.name:'Team '+team.teamid);
 
       var name=getCookie('name',true);
       mobile_main.innerHTML='';
@@ -406,7 +410,7 @@ function deleteTeam() {
 }
 
 function addEvent() {
-  serverRequest('addEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:document.getElementById('datetime').value,comment:document.getElementById('comment').value},function (r){updateStatus(r);});
+  serverRequest('addEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:document.getElementById('datetime').value,comment:document.getElementById('comment').value},function (r){updateStatus(r);toggleView('mobile_options','none');toggleView('mobile_main','block');});
 }
 
 function cancelORreviveEvent(datetime) {
@@ -506,8 +510,10 @@ function setCookie(cname, cvalue, exdays) {
 
 function debug(text) {
   console.log(text);
-  if ((text=='false')||(JSON.parse(text).error)) {message('Das hat leider nicht funktioniert.')}
-  if (JSON.parse(text).error) {message(''+JSON.parse(text).error+'')}
+  if ((text=='false')||(JSON.parse(text).error)) {
+    message('Das hat leider nicht funktioniert.')
+    if (JSON.parse(text).error) {message(''+JSON.parse(text).error+'')}
+  }
 }
 
 is_mobile=1;
