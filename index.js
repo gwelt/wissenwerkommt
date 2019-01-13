@@ -40,7 +40,7 @@ app.use('/api/:r/:t?', function (req, res) {
         let team=db.getTeam(req.params.t||req.body.teamid);
         let teamCopy=false;
         if (team) {
-          let teamCopy=JSON.parse(JSON.stringify(team));
+          teamCopy=JSON.parse(JSON.stringify(team));
           // add userlevel-information to result
           teamCopy.userlevel=userlevel;
           // remove admin token from return-value if userlevel is < 2
