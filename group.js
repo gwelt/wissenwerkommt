@@ -131,7 +131,7 @@ Group.prototype.getStats = function() {
   eventCount=this.teams.reduce((a,t)=>a+=t.events?t.events.length:0,0);
   attendCount=this.teams.reduce((a,t)=>a+=t.events?t.events.reduce((b,u)=>b+=u.attendees?u.attendees.length:0,0):0,0);
   refusalCount=this.teams.reduce((a,t)=>a+=t.events?t.events.reduce((b,u)=>b+=u.refusals?u.refusals.length:0,0):0,0);
-  return {"teams":teamCount,"events":eventCount,"attendees":attendCount,"refusals":refusalCount,"memorysize":memorySizeOf(this),"JSONsize":formatByteSize(JSON.stringify(this).length)};
+  return {"teams":teamCount,"events":eventCount,"attendees":attendCount,"refusals":refusalCount,"hash":hash(JSON.stringify(this)),"memorysize":memorySizeOf(this),"JSONsize":formatByteSize(JSON.stringify(this).length)};
 }
 
 Group.prototype.load_from_file = function(filename,callback) {
@@ -344,6 +344,10 @@ function getDateString(d) {
   if (!d) {d=new Date()};
   var tzoffset = d.getTimezoneOffset() * 60000;
   return (new Date(d-tzoffset)).toISOString().slice(0, -14);
+}
+
+function hash(data) {
+  return require('crypto').createHash('md5').update(data).digest("hex");
 }
 
 function memorySizeOf(obj) {
