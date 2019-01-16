@@ -131,12 +131,18 @@ Group.prototype.getStats = function() {
   eventCount=this.teams.reduce((a,t)=>a+=t.events?t.events.length:0,0);
   attendCount=this.teams.reduce((a,t)=>a+=t.events?t.events.reduce((b,u)=>b+=u.attendees?u.attendees.length:0,0):0,0);
   refusalCount=this.teams.reduce((a,t)=>a+=t.events?t.events.reduce((b,u)=>b+=u.refusals?u.refusals.length:0,0):0,0);
-  return {"teams":teamCount,"events":eventCount,"attendees":attendCount,"refusals":refusalCount,"hash":hash(JSON.stringify(this)),"memorysize":memorySizeOf(this),"JSONsize":formatByteSize(JSON.stringify(this).length)};
+  return {"teams":teamCount,"events":eventCount,"attendees":attendCount,"refusals":refusalCount,"hash":hash(JSON.stringify(this)),"size":formatByteSize(JSON.stringify(this).length)};
 }
+function formatByteSize(bytes) {
+    if(bytes < 1024) return bytes + " bytes";
+    else if(bytes < 1048576) return(bytes / 1024).toFixed(3) + " KiB";
+    else if(bytes < 1073741824) return(bytes / 1048576).toFixed(3) + " MiB";
+    else return(bytes / 1073741824).toFixed(3) + " GiB";
+};
 
-Group.prototype.load_from_file = function(filename,callback) {
+Group.prototype.load_from_file = function(filepath,filename,callback) {
   this.teams=[];
-  fs.readFile(filename, 'utf8', (err, data)=>{
+  fs.readFile(filepath+'/'+filename, 'utf8', (err, data)=>{
     if (err){console.log('No data-file.')} else {
       try {group = JSON.parse(data)} catch (err) {group={}};
       if (group.hasOwnProperty('teams')) {
@@ -152,10 +158,21 @@ Group.prototype.load_from_file = function(filename,callback) {
   });
 }
 
-Group.prototype.save_to_file = function(filename,callback) {
-  fs.writeFile(filename, JSON.stringify(this), 'utf8', (err)=>{
-    console.log('File '+filename+' saved. Errors: '+err);
-    callback(this);
+Group.prototype.save_to_file = function(filepath,filename,callback,backup) {
+  let data=JSON.stringify(this);
+  fs.writeFile(filepath+'/'+filename, data, 'utf8', (err)=>{
+    console.log('File '+filepath+'/'+filename+' saved.'+(err?' !!! '+err:''));
+    // save backup
+    if (backup) {
+      filepath+='/backup';
+      filename=hash(data);
+      fs.writeFile(filepath+'/'+filename, data, 'utf8', (err)=>{
+        console.log('File '+filepath+'/'+filename+' saved.'+(err?' !!! '+err:''));
+        callback(this);
+      });
+    } else {
+      callback(this);
+    }
   });
 }
 
@@ -349,41 +366,5 @@ function getDateString(d) {
 function hash(data) {
   return require('crypto').createHash('md5').update(data).digest("hex");
 }
-
-function memorySizeOf(obj) {
-    var bytes = 0;
-    function sizeOf(obj) {
-        if(obj !== null && obj !== undefined) {
-            switch(typeof obj) {
-            case 'number':
-                bytes += 8;
-                break;
-            case 'string':
-                bytes += obj.length * 2;
-                break;
-            case 'boolean':
-                bytes += 4;
-                break;
-            case 'object':
-                var objClass = Object.prototype.toString.call(obj).slice(8, -1);
-                if(objClass === 'Object' || objClass === 'Array') {
-                    for(var key in obj) {
-                        if(!obj.hasOwnProperty(key)) continue;
-                        sizeOf(obj[key]);
-                    }
-                } else bytes += obj.toString().length * 2;
-                break;
-            }
-        }
-        return bytes;
-    };
-    return formatByteSize(sizeOf(obj));
-};
-function formatByteSize(bytes) {
-    if(bytes < 1024) return bytes + " bytes";
-    else if(bytes < 1048576) return(bytes / 1024).toFixed(3) + " KiB";
-    else if(bytes < 1073741824) return(bytes / 1048576).toFixed(3) + " MiB";
-    else return(bytes / 1073741824).toFixed(3) + " GiB";
-};
 
 function _debug(m) {0?console.log(m):1};

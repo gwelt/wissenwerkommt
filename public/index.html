@@ -4,8 +4,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="images/apple-touch-icon-precomposed.png">
+<script src="/socket.io/socket.io.js"></script>
 <title>wissenwerkommt</title>
 <script>
+var team=false;
+var socket = io();
+socket.on('update', function (json) {if (json.teamid==team.teamid) {getTeam(team.teamid)}});
+socket.on('team', function (json) {updateView(json)});
+
 // Polyfills
 if ((!Array.prototype.includes)||(!Array.prototype.find)) {loadScript('polyfills.js',afterPolyfill)}
 function loadScript(src, done) {
@@ -28,7 +34,6 @@ if ('serviceWorker' in navigator) {
     });
 }
 */
-var team=false;
 
 function updateView(json) {
   team=json?JSON.parse(json):false;
@@ -349,7 +354,11 @@ function getTeam(teamid) {
       window.location.href=window.location.href.split('/')[0]+teamid;
     } else {
       // else, request team-data
-      serverRequest('getTeam',{token:getCookie('token',true),teamid:teamid},function (r){updateView(r)});
+      if (socket) {
+        setTimeout(function(){socket.emit('getTeam',{token:getCookie('token',true),teamid:teamid})},0);
+      } else {
+        serverRequest('getTeam',{token:getCookie('token',true),teamid:teamid},function (r){updateView(r)});
+      }
     }
   } else {updateView()}
 }
@@ -357,8 +366,10 @@ function getTeam(teamid) {
 function updateStatus(json) {
   message('',false);  
   debug(json);
-  var o=JSON.parse(json);
-  getTeam(o.teamid?o.teamid:'');
+  if (!socket) {
+    var o=JSON.parse(json);
+    getTeam(o.teamid?o.teamid:'');
+  }
 }
 
 function findEvent(team,datetime) {
