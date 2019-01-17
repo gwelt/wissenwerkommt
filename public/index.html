@@ -4,25 +4,30 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="images/apple-touch-icon-precomposed.png">
-<script src="/socket.io/socket.io.js"></script>
 <title>wissenwerkommt</title>
 <script>
 var team=false;
-var socket = io();
-socket.on('update', function (json) {if (json.teamid==team.teamid) {getTeam(team.teamid)}});
-socket.on('team', function (json) {updateView(json)});
+var socket = false;
+
+// load socket.io after waiting for 2 seconds ... let the first getTeam be operated by AJAX to have a quick load.
+setTimeout(function(){loadScript('/socket.io/socket.io.js',afterSocketIO)},2000);
+function afterSocketIO(m) {
+  socket=io();
+  socket.on('update', function (json) {if (json.teamid==team.teamid) {getTeam(team.teamid)}});
+  socket.on('team', function (json) {updateView(json)});
+}
 
 // Polyfills
 if ((!Array.prototype.includes)||(!Array.prototype.find)) {loadScript('polyfills.js',afterPolyfill)}
+function afterPolyfill(m) {}
+
 function loadScript(src, done) {
   var js = document.createElement('script');
   js.src = src;
-  js.onload = function() {
-    done(src+' executed');
-  };
+  js.onload = function() {done(src+' executed')};
   document.head.appendChild(js);  
 }
-function afterPolyfill(m) {debug(m)}
+
 // Service-Worker
 /*
 if ('serviceWorker' in navigator) {

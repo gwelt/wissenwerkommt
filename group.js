@@ -122,7 +122,7 @@ Group.prototype.getUserLevel = function(teamid,token) {
   return userLevel;
 };
 
-Group.prototype.getStats = function() {
+Group.prototype.getStats = function(io) {
   let teamCount=0;
   let eventCount=0;
   let attendCount=0;
@@ -131,7 +131,7 @@ Group.prototype.getStats = function() {
   eventCount=this.teams.reduce((a,t)=>a+=t.events?t.events.length:0,0);
   attendCount=this.teams.reduce((a,t)=>a+=t.events?t.events.reduce((b,u)=>b+=u.attendees?u.attendees.length:0,0):0,0);
   refusalCount=this.teams.reduce((a,t)=>a+=t.events?t.events.reduce((b,u)=>b+=u.refusals?u.refusals.length:0,0):0,0);
-  return {"teams":teamCount,"events":eventCount,"attendees":attendCount,"refusals":refusalCount,"hash":hash(JSON.stringify(this)),"size":formatByteSize(JSON.stringify(this).length)};
+  return {"teams":teamCount,"events":eventCount,"attendees":attendCount,"refusals":refusalCount,"hash":hash(JSON.stringify(this)),"size":formatByteSize(JSON.stringify(this).length),"users":io.engine.clientsCount+1};
 }
 function formatByteSize(bytes) {
     if(bytes < 1024) return bytes + " bytes";

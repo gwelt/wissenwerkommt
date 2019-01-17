@@ -28,7 +28,7 @@ app.use('/api/:r/:t?', function (req, res) {
       res.json(db.addTeam(req.body)||{'error':'teamid invalid or existing'});
       break;
     case 'stats':
-      res.json(db.getStats());
+      res.json(db.getStats(io));
       break;
     case 'getUserLevel':
       res.json(getUserLevel(req));
