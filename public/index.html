@@ -9,7 +9,7 @@
 var team=false;
 var socket = false;
 
-// load socket.io after waiting for 2 seconds ... let the first getTeam be operated by AJAX to have a quick load.
+// load socket.io after waiting for 2 seconds ... let the first getTeam be operated by AJAX to have a quick load before socket.io loads
 setTimeout(function(){loadScript('/socket.io/socket.io.js',afterSocketIO)},2000);
 function afterSocketIO(m) {
   socket=io();
@@ -163,8 +163,10 @@ function updateView(json) {
     admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamDeleteTeam_prompt()"></button><div class="option_text">Team löschen</div></div>';
   }
 
-  mobile_options.innerHTML='<div class="options_wrapper">'+menu+admin_menu+'</div>';
+  var promo='<div class="options_promo"><div class="option_text"><p><a href='+window.location+'>'+window.location+'</a></p><!--<a href=javascript:showQRcode("'+window.location+'")>QR-Code anzeigen</a>--><canvas id="qrcode" style=display:none></canvas></div></div>';
 
+  mobile_options.innerHTML='<div class="options_wrapper">'+menu+admin_menu+promo+'</div>';
+  showQRcode(""+window.location);
 }
 
 function get_time_to_go_till_event_starts(e) {
@@ -472,6 +474,15 @@ function getDateString(d) {
   return (new Date(d-tzoffset)).toISOString().slice(0, -14);
 } 
 
+function showQRcode(url) {
+  if (typeof QRCode == 'undefined') {
+    loadScript('/qrcode.min.js',()=>{
+      QRCode.toCanvas(document.getElementById('qrcode'), url, function (error) {if (error) console.error(error)})
+    });
+  } else {QRCode.toCanvas(document.getElementById('qrcode'), url, function (error) {if (error) console.error(error)})}
+  document.getElementById('qrcode').style.display='inline';
+}
+
 function getCookie(cname,dontask) {
   var name = cname + "=";
   var ca = document.cookie.split(';');
@@ -716,6 +727,9 @@ function message(msg,display) {
   div.options_option {
     border-radius: 0.1em; margin:0px 0px 9px 0px; padding: 9px 9px 9px 9px; background-color: #fff; min-height:68px; overflow: wrap;
   }
+  div.options_promo {
+    border-radius: 0.1em; margin:0px 0px 9px 0px; padding: 9px 9px 9px 9px; xbackground-color: #fff; min-height:68px; overflow: wrap; text-align:center;
+  }
   div.option_text {
     font-size:0.7em; padding:0px 0px 4px 0px;
   }
@@ -838,6 +852,7 @@ function message(msg,display) {
     </div>
   </div>
 </div>
+
 <!--<audio id="audio" no_controls="" no_autoplay><source src="sounds/smb_kick.wav" type="audio/wav">audio not supported</audio><button onclick=document.getElementById("audio").play()>play audio</button>-->
 </body>
 
