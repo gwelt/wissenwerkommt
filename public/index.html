@@ -135,7 +135,6 @@ function updateView(json) {
   if (cookie) {text='Hallo <b>'+cookie+'</b>.<br>Schön, dass du da bist.';}
   svg='';
   menu+='<div class="options_option"><button class="option_button" onclick="show_cookie_prompt(\'name\');">'+svg+'</button><div class="option_text">'+text+'</div></div>';
-  // 'https://api.qrserver.com/v1/create-qr-code/?data=https://wissenwerkommt.de/'+team.teamid
 
   // MENU:TOKEN
   cookie=getCookie("token",true);
@@ -163,7 +162,8 @@ function updateView(json) {
     admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamDeleteTeam_prompt()"></button><div class="option_text">Team löschen</div></div>';
   }
 
-  var promo='<div class="options_promo"><div class="option_text"><p><a href='+window.location+'>'+window.location+'</a></p><!--<a href=javascript:showQRcode("'+window.location+'")>QR-Code anzeigen</a>--><canvas id="qrcode" style=display:none></canvas></div></div>';
+  var l=""+window.location;
+  var promo='<div class="options_promo"><div class="option_text"><canvas id="qrcode" style=display:none></canvas><br><a href='+l+'>'+l.substring(0,l.lastIndexOf("/")+1)+'<br>'+window.location.pathname.substr(1)+'</a></div></div>';
 
   mobile_options.innerHTML='<div class="options_wrapper">'+menu+admin_menu+promo+'</div>';
   showQRcode(""+window.location);
@@ -728,7 +728,7 @@ function message(msg,display) {
     border-radius: 0.1em; margin:0px 0px 9px 0px; padding: 9px 9px 9px 9px; background-color: #fff; min-height:68px; overflow: wrap;
   }
   div.options_promo {
-    border-radius: 0.1em; margin:0px 0px 9px 0px; padding: 9px 9px 9px 9px; xbackground-color: #fff; min-height:68px; overflow: wrap; text-align:center;
+    border-radius: 0.1em; margin:0px 0px 9px 0px; padding: 9px 9px 18px 9px; background-color: #fff; min-height:68px; overflow: wrap; text-align:center;
   }
   div.option_text {
     font-size:0.7em; padding:0px 0px 4px 0px;
