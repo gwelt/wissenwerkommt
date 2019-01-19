@@ -23,7 +23,7 @@ app.use('/:t/manifest.json/:n?', function (req, res) {
     "name": req.params.n||"wissenwerkommt",
     "icons": [
       {
-        "src":(req.params.n?"../":"")+"../images/apple-touch-icon-precomposed.png",
+        "src":(req.params.n?"../":"")+"/../../images/apple-touch-icon-precomposed.png",
         "sizes": "192x192",
         "type": "image/png"
       }
