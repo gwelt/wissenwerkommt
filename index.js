@@ -17,7 +17,7 @@ module.exports = server;
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use('/:t/manifest.json/:n?', function (req, res) {
+app.use('/:t/:n?/manifest.json', function (req, res) {
   res.json({
     "short_name": req.params.n||"wissenwerkommt",
     "name": req.params.n||"wissenwerkommt",
