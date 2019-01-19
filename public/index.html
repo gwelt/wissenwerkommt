@@ -373,8 +373,8 @@ function getTeam(teamid) {
 function updateStatus(json) {
   message('',false);  
   debug(json);
-  if (!socket) {
-    var o=JSON.parse(json);
+  var o=JSON.parse(json);
+  if ((!socket)||(team.teamid!=o.teamid)) {
     getTeam(o.teamid?o.teamid:'');
   }
 }
