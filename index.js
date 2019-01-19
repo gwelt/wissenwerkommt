@@ -33,7 +33,7 @@ app.use('/:t/manifest.json', function (req, res) {
     "theme_color": "#000",
     "display": "standalone"
   });
-}
+});
 app.use('/api/:r/:t?', function (req, res) {
   switch (req.params.r) {
 
