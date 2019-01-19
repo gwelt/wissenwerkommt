@@ -23,7 +23,7 @@ app.use('/:t/manifest.json', function (req, res) {
     "name": req.params.t,
     "icons": [
       {
-        "src":"images/apple-touch-icon-precomposed.png",
+        "src":"../images/apple-touch-icon-precomposed.png",
         "sizes": "192x192",
         "type": "image/png"
       }
