@@ -19,8 +19,8 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/:t/manifest.json', function (req, res) {
   res.json({
-    "short_name": req.params.t,
-    "name": req.params.t,
+    "short_name": "wissenwerkommt",
+    "name": "wissenwerkommt",
     "icons": [
       {
         "src":"../images/apple-touch-icon-precomposed.png",
