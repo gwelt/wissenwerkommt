@@ -163,7 +163,9 @@ function updateView(json) {
   }
 
   var l=""+window.location;
-  var promo='<div class="options_promo"><div class="option_text"><canvas id="qrcode" style=display:none></canvas><br><a href='+l+'>'+l.substring(0,l.lastIndexOf("/")+1)+'<br>'+window.location.pathname.substr(1)+'</a></div></div>';
+  team_name_and_recurrence='';
+  if (team.teamid!=undefined) {team_name_and_recurrence+='<br><b>'+(!!team.name?team.name:'Team '+team.teamid)+'</b><br>'+((teams_weekday_time!='')?teams_weekday_time+'<br>':'')}
+  var promo='<div class="options_promo"><div class="option_text"><a href='+l+'><canvas id="qrcode" style=display:none></canvas></a>'+team_name_and_recurrence+'<br><a href='+l+'>'+l.substring(0,l.lastIndexOf("/")+1)+'<br>'+window.location.pathname.substr(1)+'</a></div></div>';
 
   mobile_options.innerHTML='<div class="options_wrapper">'+menu+admin_menu+promo+'</div>';
   showQRcode(""+window.location);
