@@ -1,5 +1,5 @@
 {
-  "short_name": "wissenwerkommt",
+  "short_name": "wwk",
   "name": "wissenwerkommt",
   "icons": [
     {
@@ -8,7 +8,7 @@
       "type": "image/png"
     }
   ],
-  "no_start_url": "/",
+  "start_url": "/index.html",
   "background_color": "#fff",
   "theme_color": "#000",
   "display": "standalone"
