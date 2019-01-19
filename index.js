@@ -17,10 +17,10 @@ module.exports = server;
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use('/:t/manifest.json', function (req, res) {
+app.use('/:t/manifest.json/:n?', function (req, res) {
   res.json({
-    "short_name": "wissenwerkommt",
-    "name": "wissenwerkommt",
+    "short_name": req.params.n||"wissenwerkommt",
+    "name": req.params.n||"wissenwerkommt",
     "icons": [
       {
         "src":"../images/apple-touch-icon-precomposed.png",

@@ -8,12 +8,6 @@
 var team=false;
 var socket = false;
 
-// dynamically add manifest because it has to be delivered from team-subdirectory
-link=document.createElement('link');
-link.href=window.location.pathname.substr(1)+'/manifest.json';
-link.rel='manifest';
-document.getElementsByTagName('head')[0].appendChild(link);
-
 // load socket.io after waiting for 2 seconds ... let the first getTeam be operated by AJAX to have a quick load before socket.io loads
 setTimeout(function(){loadScript('/socket.io/socket.io.js',afterSocketIO)},2000);
 function afterSocketIO(m) {
@@ -82,6 +76,12 @@ function updateView(json) {
       // MAIN-page if a team is requested
       document.title=(!!team.name?team.name:'Team '+team.teamid);
       mobile_head.innerHTML="<div class='head_wrapper'><button class='option_button' onclick=toggleView('mobile_options');toggleView('mobile_main');>"+svg_menu+"</button><a href=/"+team.teamid+" style=text-decoration:none;font-weight:bold"+((!teams_weekday_time.length)?';position:relative;top:10px':'')+">"+(!!team.name?team.name:'Team '+team.teamid)+"</a><br><div style=font-size:0.7em>"+teams_weekday_time+"</div></div>";
+
+      // dynamically add manifest because it has to be delivered from team-subdirectory
+      link=document.createElement('link');
+      link.href=window.location.pathname.substr(1)+'/manifest.json/'+(!!team.name?team.name:'Team '+team.teamid);
+      link.rel='manifest';
+      document.getElementsByTagName('head')[0].appendChild(link);
 
       //---------- EVENTS ----------//
       var name=getCookie('name',true);
