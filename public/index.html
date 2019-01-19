@@ -79,7 +79,7 @@ function updateView(json) {
 
       // dynamically add manifest because it has to be delivered from team-subdirectory
       link=document.createElement('link');
-      link.href=window.location.pathname.substr(1)+'/'+(!!team.name?team.name:'Team '+team.teamid)+'/manifest.json';
+      link.href=window.location.pathname.substr(1)+'/manifest.json';
       link.rel='manifest';
       document.getElementsByTagName('head')[0].appendChild(link);
 
