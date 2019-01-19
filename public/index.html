@@ -35,18 +35,6 @@ function loadScript(src, done) {
   document.head.appendChild(js);
 }
 
-// Service-Worker
-/*
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('service-worker.js')
-    .then(function(reg){
-      debug("The service worker registered.");
-    }).catch(function(err) {
-      debug("Something went wrong while registering the service worker. This happened: ", err)
-    });
-}
-*/
-
 function updateView(json) {
   team=json?JSON.parse(json):false;
   // create readable string for recurrence of events

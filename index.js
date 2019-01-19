@@ -18,9 +18,10 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/:t/manifest.json', function (req, res) {
+  let team=db.getTeam(req.params.t);
   res.json({
-    "short_name": "wissenwerkommt",
-    "name": "wissenwerkommt",
+    "short_name": team.name||"wissenwerkommt",
+    "name": team.name||"wissenwerkommt",
     "icons": [
       {
         "src":"../images/apple-touch-icon-precomposed.png",
