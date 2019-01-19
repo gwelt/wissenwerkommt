@@ -17,6 +17,23 @@ module.exports = server;
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use('/:t/manifest.json', function (req, res) {
+  res.json({
+    "short_name": req.params.t,
+    "name": req.params.t,
+    "icons": [
+      {
+        "src":"images/apple-touch-icon-precomposed.png",
+        "sizes": "192x192",
+        "type": "image/png"
+      }
+    ],
+    "start_url": "/"+req.params.t,
+    "background_color": "#fff",
+    "theme_color": "#000",
+    "display": "standalone"
+  });
+}
 app.use('/api/:r/:t?', function (req, res) {
   switch (req.params.r) {
 
@@ -74,7 +91,7 @@ app.use('/api/:r/:t?', function (req, res) {
         if (cevent) {res.json(cevent.commentEvent(req.body.comment));emitUpdate(req.body.teamid)} else {res.status(403).json({'error':'event not found'})}
       } else {res.status(401).json({'error':'not sufficient rights to comment event'})}
       break;
-  
+
     // team admins only
     case 'editTeam':
       if (getUserLevel(req)>1) {
