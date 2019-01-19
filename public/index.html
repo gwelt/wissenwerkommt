@@ -28,6 +28,18 @@ function afterSocketIO(m) {
 if ((!Array.prototype.includes)||(!Array.prototype.find)) {loadScript('polyfills.js',afterPolyfill)}
 function afterPolyfill(m) {}
 
+// Service-Worker
+/*
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('service-worker.js')
+    .then(function(reg){
+      debug("The service worker registered.");
+    }).catch(function(err) {
+      debug("Something went wrong while registering the service worker. This happened: ", err)
+    });
+}
+*/
+
 function loadScript(src, done) {
   var js = document.createElement('script');
   js.src = src;
