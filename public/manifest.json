@@ -1,6 +1,6 @@
 {
   "short_name": "wwk",
-  "name": "wissenwerkommt",
+  "name": "wwk",
   "icons": [
     {
       "src":"images/apple-touch-icon-precomposed.png",
@@ -8,7 +8,7 @@
       "type": "image/png"
     }
   ],
-  "start_url": "/index.html",
+  "start_url": "",
   "background_color": "#fff",
   "theme_color": "#000",
   "display": "standalone"

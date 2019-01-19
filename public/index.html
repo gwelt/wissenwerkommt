@@ -2,12 +2,17 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="images/apple-touch-icon-precomposed.png">
 <title>wissenwerkommt</title>
 <script>
 var team=false;
 var socket = false;
+
+// dynamically add manifest because it has to be delivered from team-subdirectory
+link=document.createElement('link');
+link.href='/'+window.location.pathname.substr(1)+'/manifest.json';
+link.rel='manifest';
+document.getElementsByTagName('head')[0].appendChild(link);
 
 // load socket.io after waiting for 2 seconds ... let the first getTeam be operated by AJAX to have a quick load before socket.io loads
 setTimeout(function(){loadScript('/socket.io/socket.io.js',afterSocketIO)},2000);
@@ -25,7 +30,7 @@ function loadScript(src, done) {
   var js = document.createElement('script');
   js.src = src;
   js.onload = function() {done(src+' executed')};
-  document.head.appendChild(js);  
+  document.head.appendChild(js);
 }
 
 // Service-Worker
@@ -51,7 +56,7 @@ function updateView(json) {
   var mobile_main=document.getElementById('mobile_main');
   var mobile_options=document.getElementById('mobile_options');
   var mobile_footer=document.getElementById('mobile_footer');
-  
+
   if (!team) {
 
     mobile_head.innerHTML="<div class='head_wrapper'><button class='option_button' onclick=toggleView('mobile_options');toggleView('mobile_main');>"+svg_menu+"</button><a href=/ style=text-decoration:none;font-weight:bold>wissenwerkommt</a><br><div style=font-size:0.7em>Startseite</div></div>";
@@ -59,21 +64,21 @@ function updateView(json) {
     mobile_footer.innerHTML="";
     serverRequest('getListOfTeamIDs',{},function (r){r=JSON.parse(r); r.forEach(function (t){document.getElementById('teamlist').innerHTML+='<a href=/'+t+'>'+t+'</a> '})});
     serverRequest('stats',{},function (r){document.getElementById('stats').innerHTML=r});
- 
+
   }
 
   else { //if (team) {
 
     if (team.error) {
-      
+
       // MAIN-page if a team is requested but not found or not allowed
       debug(JSON.stringify(team));
       message('',false); // don't want the message here...
       mobile_head.innerHTML="<div class='head_wrapper'><button class='option_button' onclick=toggleView('mobile_options');toggleView('mobile_main');>"+svg_menu+"</button><a href=/ style=text-decoration:none;font-weight:bold>wissenwerkommt</a><br><div style=font-size:0.7em>/<a href=/"+window.location.pathname.substr(1)+">"+window.location.pathname.substr(1)+"</a></div></div>";
       mobile_main.innerHTML='<div class="error_wrapper"><div class="error_text" style=padding-bottom:12px>Das Team hat einen Code für den Zugriff vereinbart:</div><button style="width:100%" onclick=show_cookie_prompt(\'token\')>Token eingeben</button></div>';
-    
+
     } else {
-    
+
       // MAIN-page if a team is requested
       document.title=(!!team.name?team.name:'Team '+team.teamid);
       mobile_head.innerHTML="<div class='head_wrapper'><button class='option_button' onclick=toggleView('mobile_options');toggleView('mobile_main');>"+svg_menu+"</button><a href=/"+team.teamid+" style=text-decoration:none;font-weight:bold"+((!teams_weekday_time.length)?';position:relative;top:10px':'')+">"+(!!team.name?team.name:'Team '+team.teamid)+"</a><br><div style=font-size:0.7em>"+teams_weekday_time+"</div></div>";
@@ -96,20 +101,20 @@ function updateView(json) {
         }
         var peoples_list='';
         if (e.attendees) {e.attendees.forEach(function (att) {peoples_list+='<div class="attendee_item">'+att+'</div>'});}
-        if (e.refusals) {e.refusals.forEach(function (ref) {peoples_list+='<div class="refusal_item">'+ref+'</div>'});}        
+        if (e.refusals) {e.refusals.forEach(function (ref) {peoples_list+='<div class="refusal_item">'+ref+'</div>'});}
         var attendees_counter=(e.attendees?'<div class="attendeescount_wrapper">'+(e.attendees?e.attendees.length:0)+' Teilnehmer'+get_time_to_go_till_event_starts(e)+'</div>':'');
         var peoples_list_container='<div id="peoples_list_container_'+event_counter+'">'+peoples_list+'</div>';
         var day=['So','Mo','Di','Mi','Do','Fr','Sa'][new Date(e.datetime).getDay()]+' '+e.datetime.substring(8,10)+'.'+e.datetime.substring(5,7)+'. '+e.datetime.substring(11,16)+' Uhr';
         var ondblclick='';
         if ((team.userlevel)&&(team.userlevel>1)) {ondblclick=" ondblclick=\"show_teamCommentEdit_prompt(\'"+e.datetime+"\',\'"+(e.comment?e.comment:'')+"\',"+(e.cancelled?true:false)+")\"";}
-        
+
         // content
         mobile_main.innerHTML+='<div id="div'+e.datetime+'" class="statusbutton_wrapper"'+ondblclick+'><button id="status'+e.datetime+'" onclick=toggleStatus("'+e.datetime+'")>'+day+'</button><br>'+comment_important+comment_hint+comment_inline+peoples_list_container+attendees_counter+'</div>';
         document.getElementById('peoples_list_container_'+event_counter).className='statusbutton_wrapper_attendees_following';
 
         // set button-attributes to represent the state of attendence
         if (e.attendees&&e.attendees.includes(name)) {document.getElementById('status'+e.datetime).className='statusbutton_attending'}
-        else if (e.refusals&&e.refusals.includes(name)) {document.getElementById('status'+e.datetime).className='statusbutton_refused'} 
+        else if (e.refusals&&e.refusals.includes(name)) {document.getElementById('status'+e.datetime).className='statusbutton_refused'}
         else {document.getElementById('status'+e.datetime).className='statusbutton_undecided'}
 
         if (!name) {message('Klicke einen Termin 1x an um deine Teilnahme mitzuteilen. Klicke erneut für eine Absage.')}
@@ -117,7 +122,7 @@ function updateView(json) {
       }):false;
 
       debug(JSON.stringify(team)); //'Team-JSON: '+JSON.stringify(team));
-    }    
+    }
 
     mobile_footer.innerHTML="<div id='footer_wrapper' class='footer_wrapper'><div style=font-size:0.7em;text-align:center>Immer besser zu <a href=/>wissenwerkommt</a>.</div></div>"; //<div style=height:8px></div><a href="+window.location+">"+window.location+"</a>
   }
@@ -199,7 +204,7 @@ function get_teams_weekday_time(team) {
   if ((team)&&(team.recurrence)) {
     // order items by weekday
     team.recurrence.sort(function(a,b){return (a.weekday!=0?a.weekday:7)-(b.weekday!=0?b.weekday:7)});
-    
+
     var last_time=undefined;
     var i=-1;
     while (++i<team.recurrence.length) {
@@ -210,12 +215,12 @@ function get_teams_weekday_time(team) {
       // omit weekday 7 (täglich/every day)
       if ( (team.recurrence[i].time==last_time)&&(team.recurrence[i].weekday!=7)&&((((team.recurrence[i-1].weekday)-(team.recurrence[i].weekday-1))%7)==0) ) {
         var first_of_equal_items=i;
-        while ((team.recurrence[first_of_equal_items-1]) // previous item exists   
+        while ((team.recurrence[first_of_equal_items-1]) // previous item exists
           &&(team.recurrence[first_of_equal_items-1].time==team.recurrence[i].time) // time of current item is the same like previous item
           &&((((team.recurrence[i-1].weekday)-(team.recurrence[i].weekday-1))%7)==0) ) // previous item is one weekday before current item
         {
           first_of_equal_items--; // try previous of this previous one next
-        } 
+        }
         teams_weekday_time.pop(); // delete previous one
         teams_weekday=translate(team.recurrence[first_of_equal_items].weekday)+'-'+translate(team.recurrence[i].weekday); // "merge" them (display range from first to last item)
       }
@@ -335,14 +340,14 @@ function display_hour_selection(blockNumber) {
   if (element_weekday) {
     if (element_weekday.value==8) {viewstate='none'}
     document.getElementById('hour'+blockNumber).style.display=viewstate;
-    document.getElementById('minute'+blockNumber).style.display=viewstate;    
+    document.getElementById('minute'+blockNumber).style.display=viewstate;
   }
 }
 
 function toggleView(id,state) {
   message('',false);
   var e=document.getElementById(id);
-  if (state) {e.style.display=state} 
+  if (state) {e.style.display=state}
   else if (e.currentStyle?e.currentStyle.display=='none':getComputedStyle(e, null).display=='none') {e.style.display='block'} else {e.style.display='none'}
 }
 
@@ -373,7 +378,7 @@ function getTeam(teamid) {
 }
 
 function updateStatus(json) {
-  message('',false);  
+  message('',false);
   debug(json);
   var o=JSON.parse(json);
   if ((!socket)||(team.teamid!=o.teamid)) {
@@ -391,7 +396,7 @@ function toggleStatus(datetime) {
   var e=findEvent(team,datetime);
   var name=getCookie('name',true);
   if (e.attendees&&e.attendees.includes(name)) {changeStatus("refuse",datetime)}
-  else if (e.refusals&&e.refusals.includes(name)) {changeStatus("undecided",datetime)} 
+  else if (e.refusals&&e.refusals.includes(name)) {changeStatus("undecided",datetime)}
   else {changeStatus("attend",datetime)}
 }
 
@@ -418,7 +423,7 @@ function editTeam() {
   var recurrences=undefined;
   var i=-1;
   while (i++<6) {
-    var wd='weekday'+i; var hr='hour'+i; var min='minute'+i; 
+    var wd='weekday'+i; var hr='hour'+i; var min='minute'+i;
     if (document.getElementById(wd)&&document.getElementById(hr)&&document.getElementById(min)) {
       if (!recurrences) {recurrences=[]}
       // do not save weekday:8 (unregelmäßig), because it doesn't matter
@@ -474,7 +479,7 @@ function getDateString(d) {
   if (!d) {d=new Date()}
   var tzoffset = d.getTimezoneOffset() * 60000;
   return (new Date(d-tzoffset)).toISOString().slice(0, -14);
-} 
+}
 
 function showQRcode(url) {
   if (typeof QRCode == 'undefined') {
@@ -543,12 +548,12 @@ function debug(text) {
 }
 
 is_mobile=1;
-function check_mobile() 
+function check_mobile()
 {
   var old_mobile_status=is_mobile;
   var width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
   var height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
-  if ( (width<=1024) && (is_mobile!=-1) )//|| ((display_state(document.getElementById('mobile'))==='block')&&(is_mobile!=-1)) ) 
+  if ( (width<=1024) && (is_mobile!=-1) )//|| ((display_state(document.getElementById('mobile'))==='block')&&(is_mobile!=-1)) )
   {
     is_mobile=1;
     //console.log('mobile YES');
@@ -558,7 +563,7 @@ function check_mobile()
     document.getElementById('mobile').style.top=0;
     document.querySelector("meta[name=viewport]").setAttribute('content','initial-scale=1');
   }
-  else 
+  else
   {
     if (is_mobile>0) {is_mobile=0}
     //console.log('mobile NO');
@@ -573,13 +578,13 @@ function check_mobile()
       img.style.right='10px';
       img.style.width='60px';
       img.addEventListener('click',function(e){window.open('/','_self').close();});
-      img.style.cursor='pointer'; 
+      img.style.cursor='pointer';
       document.getElementById('under_mobile').appendChild(img);
       //<img src="/images/logout.svg" style="position:fixed;bottom:10px;right:10px;width:60px">
     }
-    
-    var width=380; 
-    document.getElementById('mobile').style.maxWidth=width+'px'; 
+
+    var width=380;
+    document.getElementById('mobile').style.maxWidth=width+'px';
     document.getElementById('under_mobile').style.backgroundSize=width+58+'px 100%';
     document.getElementById('mobile').style.height='85%';
     document.getElementById('mobile').style.top='8%';
@@ -605,7 +610,7 @@ function message(msg,display) {
 
 <style>
 /* roboto-slab-regular - latin-ext */
-/* 
+/*
 @font-face {
   font-family: 'Roboto Slab';
   font-style: normal;
@@ -614,9 +619,9 @@ function message(msg,display) {
   src: url('/fonts/roboto-slab-v7-latin-ext-regular.eot');
   src: local('Roboto Slab Regular'), local('RobotoSlab-Regular'),
        url('/fonts/roboto-slab-v7-latin-ext-regular.eot?#iefix') format('embedded-opentype'),
-       url('/fonts/roboto-slab-v7-latin-ext-regular.woff2') format('woff2'), 
+       url('/fonts/roboto-slab-v7-latin-ext-regular.woff2') format('woff2'),
        url('/fonts/roboto-slab-v7-latin-ext-regular.woff') format('woff'),
-       url('/fonts/roboto-slab-v7-latin-ext-regular.ttf') format('truetype'), 
+       url('/fonts/roboto-slab-v7-latin-ext-regular.ttf') format('truetype'),
        url('/fonts/roboto-slab-v7-latin-ext-regular.svg#RobotoSlab') format('svg');
 }
 */
@@ -675,13 +680,13 @@ function message(msg,display) {
   a {color:inherit}
   a:hover {color:rgb(0,0,0); nobackground-color:rgb(245,0,0); notext-decoration:none; nopadding: 0 0.5em 0 0.5em; noborder-radius: 0.2em;}
   select, input, button {font-family: 'Roboto', serif; font-size: 1em; padding: 0 0.5em 0 0.5em; border-style: none; border-radius: 0.1em; background-color:rgb(235,235,235); outline:0; height:50px; margin:0 0 0.4em 0;}
- 
+
   input {display:inline; width:100%}
   input[type='checkbox'] {width:1em; height:1em; margin:0 9px 0.4em 9px;}
-  
+
   button {
     border-radius: 0.1em;
-    position: relative; overflow: hidden; display:inline-block; cursor: pointer; 
+    position: relative; overflow: hidden; display:inline-block; cursor: pointer;
     background-color:#A2A2A2; background-image:linear-gradient(#A2A2A2 84%,#A2A2A2 0%);
     margin: 0 0px 0px 0;
     height:50px; letter-spacing: -0.9px; notext-transform: uppercase; text-align: center;
@@ -712,10 +717,10 @@ function message(msg,display) {
     border-radius: 0.1em; margin: 6px 6px 0px 6px; padding: 0px 9px 20px 9px; nobackground-color:#fff; text-align: left;
   }
   div.teamlist_wrapper {
-    border-radius: 0.1em; margin: 20px 6px 20px 6px; padding: 0px 9px 0px 9px; nobackground-color:#fff; text-align: left; font-size: 0.7em; 
+    border-radius: 0.1em; margin: 20px 6px 20px 6px; padding: 0px 9px 0px 9px; nobackground-color:#fff; text-align: left; font-size: 0.7em;
   }
   div.error_wrapper {
-    border-radius: 0.1em; border-style:solid; border-width:0px; border-color:#9E090D; margin: 0px 6px 12px 6px; padding:28px 22px 42px 22px; background-color:#fff; text-align: center; 
+    border-radius: 0.1em; border-style:solid; border-width:0px; border-color:#9E090D; margin: 0px 6px 12px 6px; padding:28px 22px 42px 22px; background-color:#fff; text-align: center;
   }
   div.error_text {
     nobackground-color:#9E090D; font-size: 0.7em;
@@ -748,13 +753,13 @@ function message(msg,display) {
     padding: 6px 6px; text-align: center; font-size:1em;
   }
   div.comment_wrapper {
-    background-color: #fff; margin: 0px 0px 6px 0px; padding: 0px; text-align: center; display:inline-block; width:90%; 
+    background-color: #fff; margin: 0px 0px 6px 0px; padding: 0px; text-align: center; display:inline-block; width:90%;
   }
   div.comment_important {
-    border-radius: 0.1em; background-color:#E81B20; color:#fff; margin: 0px 0px 6px 0px; padding: 5px; text-align: center; display:inline-block; width:80%; 
+    border-radius: 0.1em; background-color:#E81B20; color:#fff; margin: 0px 0px 6px 0px; padding: 5px; text-align: center; display:inline-block; width:80%;
   }
   div.comment_hint {
-    border-radius: 0.1em; background-color:#ff0; nocolor:#fff; margin: 0px 0px 6px 0px; padding: 5px; text-align: center; display:inline-block; width:80%; 
+    border-radius: 0.1em; background-color:#ff0; nocolor:#fff; margin: 0px 0px 6px 0px; padding: 5px; text-align: center; display:inline-block; width:80%;
   }
   div.footer_wrapper {
     border-radius: 0.1em; margin: 6px 6px 20px 6px; padding: 9px 9px 9px 9px; nobackground-color:#fff; text-align: left;
@@ -795,10 +800,10 @@ function message(msg,display) {
   div.attendee_item, div.refusal_item {display:inline-block; white-space: nowrap; background-color:#ddd; border-radius: 0.1em; padding:4px; margin:0px 4px 8px 4px;}
   div.attendee_item {nocolor:#1DA416;}
   div.refusal_item {color:#999; nocolor:#C81B20; text-decoration:line-through;}
-  
+
   div.message {
     border-radius: 0.1em; border-style:solid; border-width:0px; border-color:#9E090D; margin: 10px 21px 25px 21px; padding:0px 22px 12px 22px; background-color:#a22; color:#fff; text-align:left; font-size: 0.7em; background-image:linear-gradient(#555 84%,#555 0%); cursor:pointer; top:-24px; display:none;
-    nobox-shadow: 1px 1px 4px rgba(0, 0, 0, 0.88); 
+    nobox-shadow: 1px 1px 4px rgba(0, 0, 0, 0.88);
   }
   #triangle-up {
     width: 0; height: 0;
@@ -810,18 +815,18 @@ function message(msg,display) {
   }
 
 /* Extra small devices (phones, 600px and down) */
-@media only screen and (max-width: 600px) {} 
+@media only screen and (max-width: 600px) {}
 
 /* Small devices (portrait tabvars and large phones, 600px and up) */
-@media only screen and (min-width: 600px) {} 
+@media only screen and (min-width: 600px) {}
 
 /* Medium devices (landscape tabvars, 768px and up) */
-@media only screen and (min-width: 768px) {} 
+@media only screen and (min-width: 768px) {}
 
 /* Large devices (laptops/desktops, 992px and up) */
 @media only screen and (min-width: 1024px) {
   body {
-    //background-color:#1DB416; 
+    //background-color:#1DB416;
     //background-image:linear-gradient(#1DB416 78%, #1DA416 0%);
     background-image:linear-gradient(#7F7F7F 78%, #696969 0%);
   }
@@ -831,7 +836,7 @@ function message(msg,display) {
   .under_mobile {
     display:block;
   }
-} 
+}
 
 /* Extra large devices (large laptops and desktops, 1200px and up) */
 @media only screen and (min-width: 1200px) {}
