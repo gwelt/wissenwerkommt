@@ -11,6 +11,13 @@ var team=false;
 var socket=false;
 var QRCode=undefined;
 
+// dynamically add manifest because it has to be delivered from team-subdirectory
+if (window.location.pathname.substr(1)) {
+  link=document.createElement('link');
+  link.href=window.location.pathname.substr(1)+'/manifest.json';
+  link.rel='manifest';
+  document.getElementsByTagName('head')[0].appendChild(link);
+}
 
 // Polyfills
 if ((!Array.prototype.includes)||(!Array.prototype.find)) {loadScript('polyfills.js',afterPolyfill)}
@@ -26,13 +33,6 @@ function afterSocketIO(m) {
 
 // Service-Worker
 function registerServiceWorker() {
-  // dynamically add manifest because it has to be delivered from team-subdirectory
-  if (window.location.pathname.substr(1)) {
-    link=document.createElement('link');
-    link.href=window.location.pathname.substr(1)+'/manifest.json';
-    link.rel='manifest';
-    document.getElementsByTagName('head')[0].appendChild(link);
-  }
   if ('serviceWorker' in navigator) {navigator.serviceWorker.register('service-worker.js')}
 }
 
@@ -80,7 +80,7 @@ function updateView(json) {
       // MAIN-page if a team is requested
       document.title=(!!team.name?team.name:'Team '+team.teamid);
       
-      mobile_head.innerHTML="<div class='head_wrapper'><button class='option_button' onclick=toggleView('mobile_options');toggleView('mobile_main');(mobile_options.style.display=='block')?registerServiceWorker():true;>"+svg_menu+"</button><a href=/"+team.teamid+" style=text-decoration:none;font-weight:bold"+((!teams_weekday_time.length)?';position:relative;top:10px':'')+">"+(!!team.name?team.name:'Team '+team.teamid)+"</a><br><div style=font-size:0.7em>"+teams_weekday_time+"</div></div>";
+      mobile_head.innerHTML="<div class='head_wrapper'><button class='option_button' onclick=toggleView('mobile_options');toggleView('mobile_main');registerServiceWorker();>"+svg_menu+"</button><a href=/"+team.teamid+" style=text-decoration:none;font-weight:bold"+((!teams_weekday_time.length)?';position:relative;top:10px':'')+">"+(!!team.name?team.name:'Team '+team.teamid)+"</a><br><div style=font-size:0.7em>"+teams_weekday_time+"</div></div>";
 
       //---------- EVENTS ----------//
       var name=getCookie('name',true);
