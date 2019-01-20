@@ -19,6 +19,10 @@ if (window.location.pathname.substr(1)) {
   document.getElementsByTagName('head')[0].appendChild(link);
 }
 
+// Polyfills
+if ((!Array.prototype.includes)||(!Array.prototype.find)) {loadScript('polyfills.js',afterPolyfill)}
+function afterPolyfill(m) {}
+
 // load socket.io after waiting for a second ... let the first getTeam be operated by AJAX to have a quick load before socket.io loads
 setTimeout(function(){loadScript('/socket.io/socket.io.js',afterSocketIO)},1000);
 function afterSocketIO(m) {
@@ -27,19 +31,8 @@ function afterSocketIO(m) {
   socket.on('team', function (json) {updateView(json)});
 }
 
-// Polyfills
-if ((!Array.prototype.includes)||(!Array.prototype.find)) {loadScript('polyfills.js',afterPolyfill)}
-function afterPolyfill(m) {}
-
 // Service-Worker
-//setTimeout(function(){registerServiceWorker()},3000);
-function registerServiceWorker() {
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('service-worker.js')
-      //.then(function(reg){alert('registered')}).catch(function(err) {alert('failed registering')});
-      //.then(function(reg){}).catch(function(err) {});
-  }
-}
+function registerServiceWorker() {if ('serviceWorker' in navigator) {navigator.serviceWorker.register('service-worker.js')}}
 
 function loadScript(src, done) {
   var js = document.createElement('script');
@@ -85,9 +78,7 @@ function updateView(json) {
       // MAIN-page if a team is requested
       document.title=(!!team.name?team.name:'Team '+team.teamid);
       
-      setTimeout(function(){registerServiceWorker()},0);
-
-      mobile_head.innerHTML="<div class='head_wrapper'><button class='option_button' onclick=toggleView('mobile_options');toggleView('mobile_main');>"+svg_menu+"</button><a href=/"+team.teamid+" style=text-decoration:none;font-weight:bold"+((!teams_weekday_time.length)?';position:relative;top:10px':'')+">"+(!!team.name?team.name:'Team '+team.teamid)+"</a><br><div style=font-size:0.7em>"+teams_weekday_time+"</div></div>";
+      mobile_head.innerHTML="<div class='head_wrapper'><button class='option_button' onclick=toggleView('mobile_options');toggleView('mobile_main');(mobile_options.style.display=='block')?registerServiceWorker():true;>"+svg_menu+"</button><a href=/"+team.teamid+" style=text-decoration:none;font-weight:bold"+((!teams_weekday_time.length)?';position:relative;top:10px':'')+">"+(!!team.name?team.name:'Team '+team.teamid)+"</a><br><div style=font-size:0.7em>"+teams_weekday_time+"</div></div>";
 
       //---------- EVENTS ----------//
       var name=getCookie('name',true);
