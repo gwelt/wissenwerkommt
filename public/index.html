@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="de">
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" type="image/png" href="images/apple-touch-icon-precomposed.png">
@@ -64,8 +64,8 @@ function updateView(json) {
 
   if (!team) {
 
-    mobile_head.innerHTML="<div class='head_wrapper'><button class='option_button' onclick=toggleView('mobile_options');toggleView('mobile_main');>"+svg_menu+"</button><a href=/ style=text-decoration:none;font-weight:bold>wissenwerkommt</a><br><div style=font-size:0.7em>Startseite</div></div>";
-    mobile_main.innerHTML='<div class="new_team_wrapper"><input type="text" id="name" maxlength=24 value="" placeholder="Name deines Teams" autocomplete="off"><br>'+get_team_weekdaytime_selection(team)+'<br><input type="text" id="teamid" maxlength=16 value="'+window.location.pathname.substr(1)+'" placeholder="Team-ID *" autocomplete="off"><br><input type="text" id="admintoken" maxlength=16 value="'+(team.admintoken||'')+'" placeholder="Admin-Token" autocomplete="off"><input type="hidden" id="teamtoken" maxlength=16 value="'+(team.teamtoken||'')+'" autocomplete="off"><br><button class="button_ok" onclick=addTeam()>Team erstellen</button><br></div><div class="teamlist_wrapper" id="teamlist"></div><div class="teamlist_wrapper" id="stats"></div>';
+    mobile_head.innerHTML="<div class='head_wrapper'><button aria-label='toggleView' class='option_button' onclick=toggleView('mobile_options');toggleView('mobile_main');>"+svg_menu+"</button><a href=/ style=text-decoration:none;font-weight:bold>wissenwerkommt</a><br><div style=font-size:0.7em>Startseite</div></div>";
+    mobile_main.innerHTML='<div class="new_team_wrapper"><input type="text" id="name" maxlength=24 value="" placeholder="Name deines Teams" autocomplete="off"><br>'+get_team_weekdaytime_selection(team)+'<br><input type="text" id="teamid" maxlength=16 value="'+window.location.pathname.substr(1)+'" placeholder="Team-ID *" autocomplete="off"><br><input type="text" id="admintoken" maxlength=16 value="'+(team.admintoken||'')+'" placeholder="Admin-Token" autocomplete="off"><input type="hidden" id="teamtoken" maxlength=16 value="'+(team.teamtoken||'')+'" autocomplete="off"><br><button aria-label="ok" class="button_ok" onclick=addTeam()>Team erstellen</button><br></div><div class="teamlist_wrapper" id="teamlist"></div><div class="teamlist_wrapper" id="stats"></div>';
     mobile_footer.innerHTML="";
     serverRequest('getListOfTeamIDs',{},function (r){r=JSON.parse(r); r.forEach(function (t){document.getElementById('teamlist').innerHTML+='<a href=/'+t+'>'+t+'</a> '})});
     serverRequest('stats',{},function (r){document.getElementById('stats').innerHTML=r});
@@ -79,15 +79,15 @@ function updateView(json) {
       // MAIN-page if a team is requested but not found or not allowed
       debug(JSON.stringify(team));
       message('',false); // don't want the message here...
-      mobile_head.innerHTML="<div class='head_wrapper'><button class='option_button' onclick=toggleView('mobile_options');toggleView('mobile_main');>"+svg_menu+"</button><a href=/ style=text-decoration:none;font-weight:bold>wissenwerkommt</a><br><div style=font-size:0.7em>/<a href=/"+window.location.pathname.substr(1)+">"+window.location.pathname.substr(1)+"</a></div></div>";
-      mobile_main.innerHTML='<div class="error_wrapper"><div class="error_text" style=padding-bottom:12px>Das Team hat einen Code für den Zugriff vereinbart:</div><button style="width:100%" onclick=show_cookie_prompt(\'token\')>Token eingeben</button></div>';
+      mobile_head.innerHTML="<div class='head_wrapper'><button aria-label='toggleView' class='option_button' onclick=toggleView('mobile_options');toggleView('mobile_main');>"+svg_menu+"</button><a href=/ style=text-decoration:none;font-weight:bold>wissenwerkommt</a><br><div style=font-size:0.7em>/<a href=/"+window.location.pathname.substr(1)+">"+window.location.pathname.substr(1)+"</a></div></div>";
+      mobile_main.innerHTML='<div class="error_wrapper"><div class="error_text" style=padding-bottom:12px>Das Team hat einen Code für den Zugriff vereinbart:</div><button aria-label="Token eingeben" style="width:100%" onclick=show_cookie_prompt(\'token\')>Token eingeben</button></div>';
 
     } else {
 
       // MAIN-page if a team is requested
       document.title=(!!team.name?team.name:'Team '+team.teamid);
 
-      mobile_head.innerHTML="<div class='head_wrapper'><button class='option_button' onclick=toggleView('mobile_options');toggleView('mobile_main');>"+svg_menu+"</button><a href=/"+team.teamid+" style=text-decoration:none;font-weight:bold"+((!teams_weekday_time.length)?';position:relative;top:10px':'')+">"+(!!team.name?team.name:'Team '+team.teamid)+"</a><br><div style=font-size:0.7em>"+teams_weekday_time+"</div></div>";
+      mobile_head.innerHTML="<div class='head_wrapper'><button aria-label='toggleView' class='option_button' onclick=toggleView('mobile_options');toggleView('mobile_main');>"+svg_menu+"</button><a href=/"+team.teamid+" style=text-decoration:none;font-weight:bold"+((!teams_weekday_time.length)?';position:relative;top:10px':'')+">"+(!!team.name?team.name:'Team '+team.teamid)+"</a><br><div style=font-size:0.7em>"+teams_weekday_time+"</div></div>";
 
       //---------- EVENTS ----------//
       var name=getCookie('name',true);
@@ -115,7 +115,7 @@ function updateView(json) {
         if ((team.userlevel)&&(team.userlevel>1)) {ondblclick=" ondblclick=\"show_teamCommentEdit_prompt(\'"+e.datetime+"\',\'"+(e.comment?e.comment:'')+"\',"+(e.cancelled?true:false)+")\"";}
 
         // content
-        mobile_main.innerHTML+='<div id="div'+e.datetime+'" class="statusbutton_wrapper"'+ondblclick+'><button id="status'+e.datetime+'" onclick=toggleStatus("'+e.datetime+'")>'+day+'</button><br>'+comment_important+comment_hint+comment_inline+peoples_list_container+attendees_counter+'</div>';
+        mobile_main.innerHTML+='<div id="div'+e.datetime+'" class="statusbutton_wrapper"'+ondblclick+'><button aria-label="'+day+'" id="status'+e.datetime+'" onclick=toggleStatus("'+e.datetime+'")>'+day+'</button><br>'+comment_important+comment_hint+comment_inline+peoples_list_container+attendees_counter+'</div>';
         document.getElementById('peoples_list_container_'+event_counter).className='statusbutton_wrapper_attendees_following';
 
         // set button-attributes to represent the state of attendence
@@ -145,34 +145,34 @@ function updateView(json) {
   cookie=getCookie("name",true);
   if (cookie) {text='Hallo <b>'+cookie+'</b>.<br>Schön, dass du da bist.';}
   svg='';
-  menu+='<div class="options_option"><button class="option_button" onclick="show_cookie_prompt(\'name\');">'+svg+'</button><div class="option_text">'+text+'</div></div>';
+  menu+='<div class="options_option"><button aria-label="Name" class="option_button" onclick="show_cookie_prompt(\'name\');">'+svg+'</button><div class="option_text">'+text+'</div></div>';
 
   // MENU:TOKEN
   cookie=getCookie("token",true);
   text='Gib einen Token an, um Einstellungen vorzunehmen.';
   if (cookie) {text='Dein Token:<br><b>'+cookie+'</b>'}
   svg='';
-  menu+='<div class="options_option"><button class="option_button" onclick="show_cookie_prompt(\'token\');">'+svg+'</button><div class="option_text">'+text+'</div></div>';
+  menu+='<div class="options_option"><button aria-label="Token" class="option_button" onclick="show_cookie_prompt(\'token\');">'+svg+'</button><div class="option_text">'+text+'</div></div>';
 
   if ((team)&&(team.userlevel)&&(team.userlevel>1)) {
     admin_menu+='<div class="divider">Termine</div>';
     // ADMIN_MENU:NEW EVENT
-    admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamAddEvent_prompt()"></button><div class="option_text">Termin hinzufügen</div></div>';
+    admin_menu+='<div class="options_option"><button aria-label="Termin hinzufügen" class="option_button" onclick="show_teamAddEvent_prompt()"></button><div class="option_text">Termin hinzufügen</div></div>';
     // ADMIN_MENU:DELETE EVENT
-    admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamDeleteEvent_prompt()"></button><div class="option_text">Termin bearbeiten / absagen</div></div>';
+    admin_menu+='<div class="options_option"><button aria-label="Termin bearbeiten" class="option_button" onclick="show_teamDeleteEvent_prompt()"></button><div class="option_text">Termin bearbeiten / absagen</div></div>';
     // ADMIN_MENU:DATETIME
-    admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamPreferenceWeekdayTime_prompt(team)"></button><div class="option_text">Terminserie:<br><b>'+(teams_weekday_time.length?teams_weekday_time:'keine (unregelmäßig)')+'</b></div></div>';
+    admin_menu+='<div class="options_option"><button aria-label="Terminserie" class="option_button" onclick="show_teamPreferenceWeekdayTime_prompt(team)"></button><div class="option_text">Terminserie:<br><b>'+(teams_weekday_time.length?teams_weekday_time:'keine (unregelmäßig)')+'</b></div></div>';
     admin_menu+='<div class="divider">Team</div>';
     // ADMIN_MENU:TEAM-NAME
-    admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamPreference_prompt(\'<b>Name</b> des Teams:\',\'name\',\''+(team.name?team.name:'')+'\',\'\');"></button><div class="option_text">Name des Teams:<br><b>'+team.name+'</b></div></div>';
+    admin_menu+='<div class="options_option"><button aria-label="Name des Teams" class="option_button" onclick="show_teamPreference_prompt(\'<b>Name</b> des Teams:\',\'name\',\''+(team.name?team.name:'')+'\',\'\');"></button><div class="option_text">Name des Teams:<br><b>'+team.name+'</b></div></div>';
     // ADMIN_MENU:TEAM-ID
-    admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamPreference_prompt(\'<b>Team-ID</b> / Aufruf-URL:\',\'new_teamid\',\''+(team.teamid?team.teamid:'')+'\',\'Achtung! Mit der Team-ID veränderst du auch den Aufruf-Link (URL) für dein Team!\');"></button><div class="option_text">ID des Teams:<br><b>'+team.teamid+'</b></div></div>';
+    admin_menu+='<div class="options_option"><button aria-label="Team-ID" class="option_button" onclick="show_teamPreference_prompt(\'<b>Team-ID</b> / Aufruf-URL:\',\'new_teamid\',\''+(team.teamid?team.teamid:'')+'\',\'Achtung! Mit der Team-ID veränderst du auch den Aufruf-Link (URL) für dein Team!\');"></button><div class="option_text">ID des Teams:<br><b>'+team.teamid+'</b></div></div>';
     // ADMIN_MENU:ADMIN-TOKEN
-    admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamPreference_prompt(\'<b>Admin-Token</b>:\',\'admintoken\',\''+(team.admintoken?team.admintoken:'')+'\',\'Achtung! Wenn du den Admin-Token veränderst, wirst du gleich selbst nicht mehr Admin sein. Du musst den Token dann erst selbst neu angeben!\');"></button><div class="option_text">Admin-Token:<br><b>'+team.admintoken+'</b></div></div>';
+    admin_menu+='<div class="options_option"><button aria-label="Admin-Token" class="option_button" onclick="show_teamPreference_prompt(\'<b>Admin-Token</b>:\',\'admintoken\',\''+(team.admintoken?team.admintoken:'')+'\',\'Achtung! Wenn du den Admin-Token veränderst, wirst du gleich selbst nicht mehr Admin sein. Du musst den Token dann erst selbst neu angeben!\');"></button><div class="option_text">Admin-Token:<br><b>'+team.admintoken+'</b></div></div>';
     // ADMIN_MENU:TEAM-TOKEN
-    admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamPreference_prompt(\'<b>Team-Token</b>:\',\'teamtoken\',\''+(team.teamtoken?team.teamtoken:'')+'\',\'Vergiss nicht, deinem Team den neuen Team-Token mitzuteilen!\');"></button><div class="option_text">Team-Token:<br><b>'+team.teamtoken+'</b></div></div>';
+    admin_menu+='<div class="options_option"><button aria-label="Team-Token" class="option_button" onclick="show_teamPreference_prompt(\'<b>Team-Token</b>:\',\'teamtoken\',\''+(team.teamtoken?team.teamtoken:'')+'\',\'Vergiss nicht, deinem Team den neuen Team-Token mitzuteilen!\');"></button><div class="option_text">Team-Token:<br><b>'+team.teamtoken+'</b></div></div>';
     // ADMIN_MENU:DELETE TEAM
-    admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamDeleteTeam_prompt()"></button><div class="option_text">Team löschen</div></div>';
+    admin_menu+='<div class="options_option"><button aria-label="Team löschen" class="option_button" onclick="show_teamDeleteTeam_prompt()"></button><div class="option_text">Team löschen</div></div>';
   }
 
   var l=""+window.location;
@@ -300,7 +300,7 @@ function get_team_weekdaytime_selection(team,blockNumber,hidden) {
 
 function show_teamPreferenceWeekdayTime_prompt(team) {
   var e=document.getElementById('mobile_prompt');
-  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top"><b>Wann</b> findet der Termin statt?</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><div id=weekdaytime_selection></div><button class="button_ok" onclick="editTeam();hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
+  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top"><b>Wann</b> findet der Termin statt?</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><div id=weekdaytime_selection></div><button aria-label="ok" class="button_ok" onclick="editTeam();hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
 
   // create multiple selections according to team recurrences
   var i=0;
@@ -317,33 +317,33 @@ function show_teamPreferenceWeekdayTime_prompt(team) {
 }
 function show_teamPreference_prompt(text,param,preval,subline) {
   var e=document.getElementById('mobile_prompt');
-  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">'+text+'</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><input type="text" id="'+param+'" maxlength=24 value="'+preval+'" placeholder="" autocomplete="off"><button class="button_ok" onclick="editTeam();hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom">'+(subline?subline+'<br>':'')+'<br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
+  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">'+text+'</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><input type="text" id="'+param+'" maxlength=24 value="'+preval+'" placeholder="" autocomplete="off"><button aria-label="ok" class="button_ok" onclick="editTeam();hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom">'+(subline?subline+'<br>':'')+'<br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
   document.getElementById('mobile_inner').style.display='none';
   e.style.display='block';
   document.getElementById(param).focus();
 }
 function show_teamDeleteTeam_prompt() {
   var e=document.getElementById('mobile_prompt');
-  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">Möchtest du dieses Team unwiderruflich <b>löschen</b>?<br><br><i>'+team.name+'</i></div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><button class="button_ok" onclick="deleteTeam();hide_prompt();">Team löschen</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
+  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">Möchtest du dieses Team unwiderruflich <b>löschen</b>?<br><br><i>'+team.name+'</i></div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><button aria-label="ok" class="button_ok" onclick="deleteTeam();hide_prompt();">Team löschen</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
   document.getElementById('mobile_inner').style.display='none';
   e.style.display='block';
 }
 function show_teamAddEvent_prompt() {
   var e=document.getElementById('mobile_prompt');
-  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top"><b>Wann</b> findet der Termin statt?</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><input type="text" id="datetime" value="'+getDateString()+'T00:00" placeholder="datetime" autocomplete="off"><div class="prompt_text_top"><b>Hinweis</b> zum Termin:</div><input type="text" id="comment" maxlength=140 value="Einzeltermin" placeholder="Angabe erforderlich" autocomplete="off"><button class="button_ok" onclick="addEvent();hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
+  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top"><b>Wann</b> findet der Termin statt?</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><input type="text" id="datetime" value="'+getDateString()+'T00:00" placeholder="datetime" autocomplete="off"><div class="prompt_text_top"><b>Hinweis</b> zum Termin:</div><input type="text" id="comment" maxlength=140 value="Einzeltermin" placeholder="Angabe erforderlich" autocomplete="off"><button aria-label="ok" class="button_ok" onclick="addEvent();hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
   document.getElementById('mobile_inner').style.display='none';
   e.style.display='block';
   document.getElementById('datetime').focus();
 }
 function show_teamDeleteEvent_prompt() {
   var e=document.getElementById('mobile_prompt');
-  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">Mit einem <b>Doppelklick auf einen Termin</b> kannst du einen Dialog öffnen. Administratoren können dort...<ul><li>einen Hinweis zum Termin hinterlegen</li><li>den Termin absagen</li></ul>Termine, die nicht zu einer Serie gehören, werden automatisch gelöscht, wenn keine Zusagen, Absagen oder Hinweise vorhanden sind.<p></div><button class="button_ok" onclick="hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom"><!--<br><a href=javascript:hide_prompt()>Abbrechen</a>--></div></div>';
+  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">Mit einem <b>Doppelklick auf einen Termin</b> kannst du einen Dialog öffnen. Administratoren können dort...<ul><li>einen Hinweis zum Termin hinterlegen</li><li>den Termin absagen</li></ul>Termine, die nicht zu einer Serie gehören, werden automatisch gelöscht, wenn keine Zusagen, Absagen oder Hinweise vorhanden sind.<p></div><button aria-label="ok" class="button_ok" onclick="hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom"><!--<br><a href=javascript:hide_prompt()>Abbrechen</a>--></div></div>';
   document.getElementById('mobile_inner').style.display='none';
   e.style.display='block';
 }
 function show_teamCommentEdit_prompt(datetime,preval_comment,cancelled) {
   var e=document.getElementById('mobile_prompt');
-  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top"><b>Hinweis</b> zum Termin:</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><input type="text" id="comment'+datetime+'" maxlength=140 value="'+preval_comment+'" placeholder="" autocomplete="off"><button class="button_ok" onclick="commentEvent(\''+datetime+'\');hide_prompt();">ok</button><div style=clear:both></div><div style="bgcolor:#f0f;padding-top:20px"><input type="checkbox" id="cancelled'+datetime+'"'+(cancelled?' checked':'')+' onclick="cancelORreviveEvent(\''+datetime+'\');" style="float:left"><div style="font-size:0.7em;margin-top:2px">Termin fällt aus</div></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
+  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top"><b>Hinweis</b> zum Termin:</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><input type="text" id="comment'+datetime+'" maxlength=140 value="'+preval_comment+'" placeholder="" autocomplete="off"><button aria-label="ok" class="button_ok" onclick="commentEvent(\''+datetime+'\');hide_prompt();">ok</button><div style=clear:both></div><div style="bgcolor:#f0f;padding-top:20px"><input type="checkbox" id="cancelled'+datetime+'"'+(cancelled?' checked':'')+' onclick="cancelORreviveEvent(\''+datetime+'\');" style="float:left"><div style="font-size:0.7em;margin-top:2px">Termin fällt aus</div></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
   document.getElementById('mobile_inner').style.display='none';
   e.style.display='block';
   document.getElementById('comment'+datetime).focus();
@@ -542,7 +542,7 @@ function show_cookie_prompt(cname,str_functionToCall) {
   if (cname=='name') {text='Bitte gib deinen <b>Namen</b> ein:'; placeholder='Name';}
   else if (cname=='token') {text='Bitte gib deinen <b>Token</b> ein:'; placeholder='Token';}
   var e=document.getElementById('mobile_prompt');
-  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">'+text+'</div><input type="text" id="cinput" maxlength=24 value="'+preval+'" placeholder="'+placeholder+'" autocomplete="off"><button class="button_ok" onclick="setCookie(\''+cname+'\',document.getElementById(\'cinput\').value,365);hide_prompt();'+(str_functionToCall||'')+'">ok</button><div style=clear:both></div><div class="prompt_text_bottom">Diese Information wird als Cookie in deinem Browser gespeichert.<br><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
+  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">'+text+'</div><input type="text" id="cinput" maxlength=24 value="'+preval+'" placeholder="'+placeholder+'" autocomplete="off"><button aria-label="ok" class="button_ok" onclick="setCookie(\''+cname+'\',document.getElementById(\'cinput\').value,365);hide_prompt();'+(str_functionToCall||'')+'">ok</button><div style=clear:both></div><div class="prompt_text_bottom">Diese Information wird als Cookie in deinem Browser gespeichert.<br><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
   document.getElementById('mobile_inner').style.display='none';
   e.style.display='block';
   document.getElementById('cinput').focus();
@@ -849,11 +849,17 @@ function message(msg,display) {
   <div id="mobile" class="mobile">
     <div id="mobile_prompt" class="mobile_prompt"></div>
     <div id="mobile_inner" class="mobile_inner">
-      <div id="mobile_head" class="head"></div>
-      <div id="mobile_message" onclick="javascript:this.style.display='none'" class="message"><div id=triangle-up></div><div id="message"></div></div>
-      <div id="mobile_options" class="options"></div>
-      <div id="mobile_main" class="main"></div>
-      <div id="mobile_footer" class="footer"></div>
+      <header>
+        <div id="mobile_head" class="head"></div>
+      </header>
+      <main>
+        <div id="mobile_message" onclick="javascript:this.style.display='none'" class="message"><div id=triangle-up></div><div id="message"></div></div>
+        <div id="mobile_options" class="options"></div>
+        <div id="mobile_main" class="main"></div>
+      </main>
+      <footer>
+        <div id="mobile_footer" class="footer"></div>
+      </footer>
     </div>
   </div>
 </div>
