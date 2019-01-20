@@ -32,8 +32,13 @@ function afterSocketIO(m) {
 }
 
 // Service-Worker
+registerServiceWorker();
 function registerServiceWorker() {
-  if ('serviceWorker' in navigator) {navigator.serviceWorker.register('service-worker.js')}
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('/service-worker.js');
+    });
+  }
 }
 
 function loadScript(src, done) {
@@ -80,7 +85,7 @@ function updateView(json) {
       // MAIN-page if a team is requested
       document.title=(!!team.name?team.name:'Team '+team.teamid);
       
-      mobile_head.innerHTML="<div class='head_wrapper'><button class='option_button' onclick=toggleView('mobile_options');toggleView('mobile_main');registerServiceWorker();>"+svg_menu+"</button><a href=/"+team.teamid+" style=text-decoration:none;font-weight:bold"+((!teams_weekday_time.length)?';position:relative;top:10px':'')+">"+(!!team.name?team.name:'Team '+team.teamid)+"</a><br><div style=font-size:0.7em>"+teams_weekday_time+"</div></div>";
+      mobile_head.innerHTML="<div class='head_wrapper'><button class='option_button' onclick=toggleView('mobile_options');toggleView('mobile_main');>"+svg_menu+"</button><a href=/"+team.teamid+" style=text-decoration:none;font-weight:bold"+((!teams_weekday_time.length)?';position:relative;top:10px':'')+">"+(!!team.name?team.name:'Team '+team.teamid)+"</a><br><div style=font-size:0.7em>"+teams_weekday_time+"</div></div>";
 
       //---------- EVENTS ----------//
       var name=getCookie('name',true);
