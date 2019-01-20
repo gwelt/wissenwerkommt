@@ -11,13 +11,6 @@ var team=false;
 var socket=false;
 var QRCode=undefined;
 
-// dynamically add manifest because it has to be delivered from team-subdirectory
-if (window.location.pathname.substr(1)) {
-  link=document.createElement('link');
-  link.href=window.location.pathname.substr(1)+'/manifest.json';
-  link.rel='manifest';
-  document.getElementsByTagName('head')[0].appendChild(link);
-}
 
 // Polyfills
 if ((!Array.prototype.includes)||(!Array.prototype.find)) {loadScript('polyfills.js',afterPolyfill)}
@@ -32,7 +25,16 @@ function afterSocketIO(m) {
 }
 
 // Service-Worker
-function registerServiceWorker() {if ('serviceWorker' in navigator) {navigator.serviceWorker.register('service-worker.js')}}
+function registerServiceWorker() {
+  // dynamically add manifest because it has to be delivered from team-subdirectory
+  if (window.location.pathname.substr(1)) {
+    link=document.createElement('link');
+    link.href=window.location.pathname.substr(1)+'/manifest.json';
+    link.rel='manifest';
+    document.getElementsByTagName('head')[0].appendChild(link);
+  }
+  if ('serviceWorker' in navigator) {navigator.serviceWorker.register('service-worker.js')}
+}
 
 function loadScript(src, done) {
   var js = document.createElement('script');
