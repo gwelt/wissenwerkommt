@@ -3,7 +3,7 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" type="image/png" href="images/apple-touch-icon-precomposed.png">
-<meta name="theme-color" content="#C2C2C2">
+<meta name="theme-color" content="#000">
 <title>wissenwerkommt</title>
 <script>
 var team=false;
@@ -30,9 +30,13 @@ if ((!Array.prototype.includes)||(!Array.prototype.find)) {loadScript('polyfills
 function afterPolyfill(m) {}
 
 // Service-Worker
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('service-worker.js')
-    .then(function(reg){}).catch(function(err) {});
+//setTimeout(function(){registerServiceWorker()},3000);
+function registerServiceWorker() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('service-worker.js')
+      //.then(function(reg){alert('registered')}).catch(function(err) {alert('failed registering')});
+      //.then(function(reg){}).catch(function(err) {});
+  }
 }
 
 function loadScript(src, done) {
@@ -78,6 +82,9 @@ function updateView(json) {
 
       // MAIN-page if a team is requested
       document.title=(!!team.name?team.name:'Team '+team.teamid);
+      
+      setTimeout(function(){registerServiceWorker()},0);
+
       mobile_head.innerHTML="<div class='head_wrapper'><button class='option_button' onclick=toggleView('mobile_options');toggleView('mobile_main');>"+svg_menu+"</button><a href=/"+team.teamid+" style=text-decoration:none;font-weight:bold"+((!teams_weekday_time.length)?';position:relative;top:10px':'')+">"+(!!team.name?team.name:'Team '+team.teamid)+"</a><br><div style=font-size:0.7em>"+teams_weekday_time+"</div></div>";
 
       //---------- EVENTS ----------//

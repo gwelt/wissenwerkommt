@@ -19,7 +19,6 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/:t/manifest.json', function (req, res) {
   let team=db.getTeam(req.params.t);
-  console.log('MANIFEST: '+req.params.t);
   res.json({
     "short_name": team.name||"wissenwerkommt",
     "name": team.name||"wissenwerkommt",
@@ -30,13 +29,13 @@ app.use('/:t/manifest.json', function (req, res) {
         "type": "image/png"
       }
     ],
-    "start_url": "/",
+    "start_url": "/"+req.params.t,
     "background_color": "#fff",
     "theme_color": "#000",
     "display": "standalone"
   });
 });
-//+req.params.t;
+
 app.use('/api/:r/:t?', function (req, res) {
   switch (req.params.r) {
 
