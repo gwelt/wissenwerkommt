@@ -18,8 +18,8 @@ if (window.location.pathname.substr(1)) {
   document.getElementsByTagName('head')[0].appendChild(link);
 }
 
-// load socket.io after waiting for 2 seconds ... let the first getTeam be operated by AJAX to have a quick load before socket.io loads
-setTimeout(function(){loadScript('/socket.io/socket.io.js',afterSocketIO)},2000);
+// load socket.io after waiting for a second ... let the first getTeam be operated by AJAX to have a quick load before socket.io loads
+setTimeout(function(){loadScript('/socket.io/socket.io.js',afterSocketIO)},1000);
 function afterSocketIO(m) {
   socket=io();
   socket.on('update', function (json) {if (json.teamid==team.teamid) {getTeam(team.teamid)}});
@@ -610,6 +610,7 @@ function message(msg,display) {
 }
 
 </script>
+<noscript>Your browser does not support JavaScript!</noscript>
 
 <style>
 /* roboto-slab-regular - latin-ext */

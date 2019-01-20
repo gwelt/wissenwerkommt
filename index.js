@@ -27,7 +27,12 @@ app.use('/:t/manifest.json', function (req, res) {
         "src":"../images/apple-touch-icon-precomposed.png",
         "sizes": "192x192",
         "type": "image/png"
-      }
+      },
+      {
+        "src": "/images/apple-touch-icon-precomposed.png",
+        "sizes": "512x512",
+        "type": "image/png"
+      }      
     ],
     "start_url": "/"+req.params.t,
     "background_color": "#fff",
