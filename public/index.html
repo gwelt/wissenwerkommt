@@ -31,11 +31,7 @@ function afterPolyfill(m) {}
 // Service-Worker
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('service-worker.js')
-    .then(function(reg){
-      debug("The service worker registered.");
-    }).catch(function(err) {
-      debug("Something went wrong while registering the service worker. This happened: ", err)
-    });
+    .then(function(reg){}).catch(function(err) {});
 }
 
 function loadScript(src, done) {
