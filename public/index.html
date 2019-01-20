@@ -50,6 +50,7 @@ function loadScript(src, done) {
 
 function updateView(json) {
   team=json?JSON.parse(json):false;
+
   // create readable string for recurrence of events
   var teams_weekday_time=get_teams_weekday_time(team);
   document.title='wissenwerkommt';
@@ -84,7 +85,7 @@ function updateView(json) {
 
       // MAIN-page if a team is requested
       document.title=(!!team.name?team.name:'Team '+team.teamid);
-      
+
       mobile_head.innerHTML="<div class='head_wrapper'><button class='option_button' onclick=toggleView('mobile_options');toggleView('mobile_main');>"+svg_menu+"</button><a href=/"+team.teamid+" style=text-decoration:none;font-weight:bold"+((!teams_weekday_time.length)?';position:relative;top:10px':'')+">"+(!!team.name?team.name:'Team '+team.teamid)+"</a><br><div style=font-size:0.7em>"+teams_weekday_time+"</div></div>";
 
       //---------- EVENTS ----------//
@@ -156,6 +157,8 @@ function updateView(json) {
     admin_menu+='<div class="divider">Termine</div>';
     // ADMIN_MENU:NEW EVENT
     admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamAddEvent_prompt()"></button><div class="option_text">Termin hinzufügen</div></div>';
+    // ADMIN_MENU:DELETE EVENT
+    admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamDeleteEvent_prompt()"></button><div class="option_text">Termin bearbeiten / absagen</div></div>';
     // ADMIN_MENU:DATETIME
     admin_menu+='<div class="options_option"><button class="option_button" onclick="show_teamPreferenceWeekdayTime_prompt(team)"></button><div class="option_text">Terminserie:<br><b>'+(teams_weekday_time.length?teams_weekday_time:'keine (unregelmäßig)')+'</b></div></div>';
     admin_menu+='<div class="divider">Team</div>';
@@ -303,7 +306,7 @@ function show_teamPreferenceWeekdayTime_prompt(team) {
     while (++i<team.recurrence.length) {
       document.getElementById('weekdaytime_selection').innerHTML+=get_team_weekdaytime_selection(team,i);
     }
-    document.getElementById('weekdaytime_selection').innerHTML+=get_team_weekdaytime_selection(team,i,true);
+    if (i<7) {document.getElementById('weekdaytime_selection').innerHTML+=get_team_weekdaytime_selection(team,i,true)}
   }
 
   document.getElementById('mobile_inner').style.display='none';
@@ -328,6 +331,12 @@ function show_teamAddEvent_prompt() {
   document.getElementById('mobile_inner').style.display='none';
   e.style.display='block';
   document.getElementById('datetime').focus();
+}
+function show_teamDeleteEvent_prompt() {
+  var e=document.getElementById('mobile_prompt');
+  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">Mit einem <b>Doppelklick auf einen Termin</b> kannst du einen Dialog öffnen. Administratoren können dort...<ul><li>einen Hinweis zum Termin hinterlegen</li><li>den Termin absagen</li></ul>Termine, die nicht zu einer Serie gehören, werden automatisch gelöscht, wenn keine Zusagen, Absagen oder Hinweise vorhanden sind.<p></div><button class="button_ok" onclick="hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom"><!--<br><a href=javascript:hide_prompt()>Abbrechen</a>--></div></div>';
+  document.getElementById('mobile_inner').style.display='none';
+  e.style.display='block';
 }
 function show_teamCommentEdit_prompt(datetime,preval_comment,cancelled) {
   var e=document.getElementById('mobile_prompt');
@@ -384,8 +393,10 @@ function getTeam(teamid) {
 function updateStatus(json) {
   message('',false);
   debug(json);
+  // call getTeam if socket will not take care of updateView (because it has not been loaded yet)
+  // OR to URL-relocate if teamid changed (getTeam will take care of that)
   var o=JSON.parse(json);
-  if ((!socket)||(team.teamid!=o.teamid)) {
+  if ((!socket)||((team.teamid!=o.teamid)&&(o.teamid!=undefined))) {
     getTeam(o.teamid?o.teamid:'');
   }
 }
