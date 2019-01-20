@@ -189,8 +189,6 @@ io.on('connection', function (socket) {
 
 function emitUpdate(teamid) {
   io.sockets.emit('update',{teamid:teamid});
-  //io.emit('update',{teamid:teamid});
-  //io.to(teamid).emit('update',{teamid:teamid});
 }
 
 function getUserLevel(req) {

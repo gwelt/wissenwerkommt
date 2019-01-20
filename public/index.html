@@ -49,6 +49,7 @@ function loadScript(src, done) {
 }
 
 function updateView(json) {
+  var time=stopwatch();
   team=json?JSON.parse(json):false;
 
   // create readable string for recurrence of events
@@ -181,6 +182,8 @@ function updateView(json) {
 
   mobile_options.innerHTML='<div class="options_wrapper">'+menu+admin_menu+promo+'</div>';
   showQRcode(""+window.location);
+
+  console.log('updateView: '+stopwatch(time)+'ms');
 }
 
 function get_time_to_go_till_event_starts(e) {
@@ -364,9 +367,16 @@ function toggleView(id,state) {
   else if (e.currentStyle?e.currentStyle.display=='none':getComputedStyle(e, null).display=='none') {e.style.display='block'} else {e.style.display='none'}
 }
 
+function stopwatch(time) {
+  if (typeof time != 'undefined') {
+    return new Date()-time;
+  } else {return new Date()}
+}
+
 function serverRequest(apicall,json,callback) {
+  var t=stopwatch();
   var req = new XMLHttpRequest();
-  req.onreadystatechange = function() {if (this.readyState == 4) {callback(this.responseText)}};
+  req.onreadystatechange = function() {if (this.readyState == 4) {console.log('serverRequest: '+stopwatch(t)+'ms'); callback(this.responseText)}};
   req.open("POST","/api/"+apicall,true);
   req.setRequestHeader("Content-Type","application/json;charset=UTF-8");
   req.send(JSON.stringify(json));
