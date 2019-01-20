@@ -3,6 +3,7 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" type="image/png" href="images/apple-touch-icon-precomposed.png">
+<link rel="icon" type="manifest" href="manifest.json">
 <meta name="theme-color" content="#000">
 <title>wissenwerkommt</title>
 <script>
@@ -11,12 +12,14 @@ var socket=false;
 var QRCode=undefined;
 
 // dynamically add manifest because it has to be delivered from team-subdirectory
+/*
 if (window.location.pathname.substr(1)) {
   link=document.createElement('link');
   link.href=window.location.pathname.substr(1)+'/manifest.json';
   link.rel='manifest';
   document.getElementsByTagName('head')[0].appendChild(link);
 }
+*/
 
 // load socket.io after waiting for 2 seconds ... let the first getTeam be operated by AJAX to have a quick load before socket.io loads
 setTimeout(function(){loadScript('/socket.io/socket.io.js',afterSocketIO)},2000);
@@ -126,10 +129,10 @@ function updateView(json) {
 
       }):false;
 
-      debug(JSON.stringify(team)); //'Team-JSON: '+JSON.stringify(team));
+      debug(JSON.stringify(team));
     }
 
-    mobile_footer.innerHTML="<div id='footer_wrapper' class='footer_wrapper'><div style=font-size:0.7em;text-align:center>Immer besser zu <a href=/>wissenwerkommt</a>.</div></div>"; //<div style=height:8px></div><a href="+window.location+">"+window.location+"</a>
+    mobile_footer.innerHTML="<div id='footer_wrapper' class='footer_wrapper'><div style=font-size:0.7em;text-align:center>Immer besser zu <a href=/>wissenwerkommt</a>.</div></div>";
   }
 
   //---------- MENU ----------//
@@ -251,7 +254,7 @@ function get_teams_weekday_time(team) {
 function get_team_weekdaytime_selection(team,blockNumber,hidden) {
   // special case: blockNumber is not defined in case of a "create a new team"-form - current weekday and time will be preset in this case
   var preset=8;
-  if (blockNumber===undefined) {blockNumber=0; preset=new Date().getDay()}
+  if (blockNumber===undefined) {blockNumber=0;} //preset=new Date().getDay()
   var selected='';
   // prepare weekday-selection
   var weekdays=[[1,'montags'],[2,'dienstags'],[3,'mittwochs'],[4,'donnerstags'],[5,'freitags'],[6,'samstags'],[0,'sonntags'],[7,'täglich'],[8,'unregelmäßig']];
@@ -556,7 +559,7 @@ function check_mobile()
   var old_mobile_status=is_mobile;
   var width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
   var height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
-  if ( (width<=1024) && (is_mobile!=-1) )//|| ((display_state(document.getElementById('mobile'))==='block')&&(is_mobile!=-1)) )
+  if ( (width<=800) && (is_mobile!=-1) )//|| ((display_state(document.getElementById('mobile'))==='block')&&(is_mobile!=-1)) )
   {
     is_mobile=1;
     //console.log('mobile YES');
@@ -591,7 +594,7 @@ function check_mobile()
     document.getElementById('under_mobile').style.backgroundSize=width+58+'px 100%';
     document.getElementById('mobile').style.height='85%';
     document.getElementById('mobile').style.top='8%';
-    document.querySelector("meta[name=viewport]").setAttribute('content','width=1024,initial-scale=1');
+    document.querySelector("meta[name=viewport]").setAttribute('content','width=800,initial-scale=1');
   }
   if (old_mobile_status!=is_mobile) {}
 }
@@ -657,9 +660,7 @@ function message(msg,display) {
   .under_mobile {
     display:none;
     position:fixed;
-    //z-index:0;
     width:100%; height:100%;
-    //background: url(images/phone.svg);
     background-repeat: no-repeat;
     background-position: top center;
     background-size: 490px 100%;
@@ -681,7 +682,7 @@ function message(msg,display) {
     .footer {}
 
   a {color:inherit}
-  a:hover {color:rgb(0,0,0); nobackground-color:rgb(245,0,0); notext-decoration:none; nopadding: 0 0.5em 0 0.5em; noborder-radius: 0.2em;}
+  a:hover {color:rgb(0,0,0)}
   select, input, button {font-family: 'Roboto', serif; font-size: 1em; padding: 0 0.5em 0 0.5em; border-style: none; border-radius: 0.1em; background-color:rgb(235,235,235); outline:0; height:50px; margin:0 0 0.4em 0;}
 
   input {display:inline; width:100%}
@@ -692,7 +693,7 @@ function message(msg,display) {
     position: relative; overflow: hidden; display:inline-block; cursor: pointer;
     background-color:#A2A2A2; background-image:linear-gradient(#A2A2A2 84%,#A2A2A2 0%);
     margin: 0 0px 0px 0;
-    height:50px; letter-spacing: -0.9px; notext-transform: uppercase; text-align: center;
+    height:50px; letter-spacing: -0.9px; text-align: center;
     box-shadow: 0 1px 1px rgba(0, 0, 0, 0.16), 0 1px 1px rgba(0, 0, 0, 0.1);
   }
   button:before {
@@ -714,25 +715,25 @@ function message(msg,display) {
   }
 
   div.head_wrapper {
-    border-radius: 0.1em; margin: 6px 6px 2px 6px; padding: 9px 9px 0px 9px; nobackground-color:#fff; text-align: left; min-height:72px;
+    border-radius: 0.1em; margin: 6px 6px 2px 6px; padding: 9px 9px 0px 9px; text-align: left; min-height:72px;
   }
   div.new_team_wrapper {
-    border-radius: 0.1em; margin: 6px 6px 0px 6px; padding: 0px 9px 20px 9px; nobackground-color:#fff; text-align: left;
+    border-radius: 0.1em; margin: 6px 6px 0px 6px; padding: 0px 9px 20px 9px; text-align: left;
   }
   div.teamlist_wrapper {
-    border-radius: 0.1em; margin: 20px 6px 20px 6px; padding: 0px 9px 0px 9px; nobackground-color:#fff; text-align: left; font-size: 0.7em;
+    border-radius: 0.1em; margin: 20px 6px 20px 6px; padding: 0px 9px 0px 9px; text-align: left; font-size: 0.7em;
   }
   div.error_wrapper {
     border-radius: 0.1em; border-style:solid; border-width:0px; border-color:#9E090D; margin: 0px 6px 12px 6px; padding:28px 22px 42px 22px; background-color:#fff; text-align: center;
   }
   div.error_text {
-    nobackground-color:#9E090D; font-size: 0.7em;
+    font-size: 0.7em;
   }
   div.error_code {
     font-family: monospace; font-size: 0.7em;
   }
   div.options_wrapper {
-    border-radius: 0.1em; margin: 0px 6px 18px 6px; padding: 0px 0px 0px 0px; nobackground-color:#ccc; text-align: left;
+    border-radius: 0.1em; margin: 0px 6px 18px 6px; padding: 0px 0px 0px 0px; text-align: left;
   }
   div.options_option {
     border-radius: 0.1em; margin:0px 0px 9px 0px; padding: 9px 9px 9px 9px; background-color: #fff; min-height:68px; overflow: wrap;
@@ -747,10 +748,10 @@ function message(msg,display) {
     float:right; margin:0px 0px 0px 8px; height: 50px; width: 50px;
   }
   div.divider {
-    border-radius: 0.1em; margin:0px 0px 0px 0px; padding: 9px 9px 9px 9px; nobackground-color: #fff; min-height:10px; overflow: wrap; font-size: 0.7em;
+    border-radius: 0.1em; margin:0px 0px 0px 0px; padding: 9px 9px 9px 9px; min-height:10px; overflow: wrap; font-size: 0.7em;
   }
   div.admin_wrapper {
-    border-radius: 0.1em; margin: 0px 6px 12px 6px; padding: 0px 6px 0px 9px; nobackground-color:#ddd; text-align: left;
+    border-radius: 0.1em; margin: 0px 6px 12px 6px; padding: 0px 6px 0px 9px; text-align: left;
   }
   div.attendeescount_wrapper {
     padding: 6px 6px; text-align: center; font-size:1em;
@@ -762,17 +763,10 @@ function message(msg,display) {
     border-radius: 0.1em; background-color:#E81B20; color:#fff; margin: 0px 0px 6px 0px; padding: 5px; text-align: center; display:inline-block; width:80%;
   }
   div.comment_hint {
-    border-radius: 0.1em; background-color:#ff0; nocolor:#fff; margin: 0px 0px 6px 0px; padding: 5px; text-align: center; display:inline-block; width:80%;
+    border-radius: 0.1em; background-color:#ff0; margin: 0px 0px 6px 0px; padding: 5px; text-align: center; display:inline-block; width:80%;
   }
   div.footer_wrapper {
-    border-radius: 0.1em; margin: 6px 6px 20px 6px; padding: 9px 9px 9px 9px; nobackground-color:#fff; text-align: left;
-  }
-  div.banner {
-    border-radius: 0.1em 0.1em 0em 0em; margin: 0px 0px 0px 15px; padding: 8px 16px 6px 16px; position:absolute; display:inline; overflow:hidden; white-space: nowrap; color:#fff; background-color:#20609f; text-align: center; font-size:0.6em; noletter-spacing: 0.5px; z-index:-1;
-  }
-  div.statusbutton_wrapper_after_banner {
-    //border-radius: 0.1em; margin: 22px 6px 12px 6px; padding: 20px 0 10px 0; background-color:#fff; text-align: center; font-size:0.7em;
-    border-radius: 0.1em; margin: 42px 6px 12px 6px; padding: 20px 0 10px 0; background-color:#fff; text-align: center; font-size:0.7em;
+    border-radius: 0.1em; margin: 6px 6px 20px 6px; padding: 9px 9px 9px 9px; text-align: left;
   }
   div.statusbutton_wrapper {
     border-radius: 0.1em; margin: 0px 6px 12px 6px; padding: 20px 0 10px 0; background-color:#fff; text-align: center; font-size:0.7em;
@@ -788,61 +782,44 @@ function message(msg,display) {
   }
 
   button.statusbutton_undecided, button.statusbutton_attending, button.statusbutton_refused, button.statusbutton_wait {
-    cursor: pointer; width:80%; margin:0px 0px 8px 0px; font-size:1.4em; noletter-spacing: 0.2px;
+    cursor: pointer; width:80%; margin:0px 0px 8px 0px; font-size:1.4em;
   }
   button.statusbutton_undecided {color:#000; background-color:#ffbf00; background-image:linear-gradient(#ffbf00 84%,#efaf00 0%);}
   button.statusbutton_attending {color:#000; background-color:#1DA416; background-image:linear-gradient(#1DB416 84%,#1DA416 0%);}
   button.statusbutton_refused   {color:#000; background-color:#C81B20; background-image:linear-gradient(#E81B20 84%,#D81B20 0%);}
   button.statusbutton_wait      {color:#000; background-color:#C0C0C0; background-image:linear-gradient(#C0C0C0 84%,#A0A0A0 0%);}
 
-  //button.button_cancel {float:left; color:#808080; background-image:linear-gradient(#f0f0f0 80%, #f0f0f0 0%);}
-  button.button_ok {float:right; margin-right:0px; width:100%; nobackground-image:linear-gradient(#1DB416 84%,#1DA416 0%);}
+  button.button_ok {float:right; margin-right:0px; width:100%;}
 
   div.statusbutton_wrapper_attendees_first {padding:8px;}
   div.statusbutton_wrapper_attendees_following {background-color: #fff; padding:8px 8px 0px 8px;}
   div.attendee_item, div.refusal_item {display:inline-block; white-space: nowrap; background-color:#ddd; border-radius: 0.1em; padding:4px; margin:0px 4px 8px 4px;}
-  div.attendee_item {nocolor:#1DA416;}
-  div.refusal_item {color:#999; nocolor:#C81B20; text-decoration:line-through;}
+  div.attendee_item {}
+  div.refusal_item {color:#999; text-decoration:line-through;}
 
   div.message {
-    border-radius: 0.1em; border-style:solid; border-width:0px; border-color:#9E090D; margin: 10px 21px 25px 21px; padding:0px 22px 12px 22px; background-color:#a22; color:#fff; text-align:left; font-size: 0.7em; background-image:linear-gradient(#555 84%,#555 0%); cursor:pointer; top:-24px; display:none;
-    nobox-shadow: 1px 1px 4px rgba(0, 0, 0, 0.88);
+    border-radius: 0.1em; border-style:solid; border-width:0px; border-color:#fff; margin: 0px 21px 15px 21px; padding:0px 22px 12px 22px; background-color:#fff; color:#000; text-align:left; font-size: 0.7em; cursor:pointer; top:-24px; display:none;
   }
   #triangle-up {
     width: 0; height: 0;
     border-left: 10px solid transparent;
     border-right: 10px solid transparent;
-    border-bottom: 12px solid #555;
+    border-bottom: 12px solid #fff;
     top:-12px;
     position:relative;
   }
 
-/* Extra small devices (phones, 320px and down) */
 @media only screen and (max-width: 320px) {body{font-size:1.4em}}
-
-/* Small devices (portrait tabvars and large phones, 600px and up) */
-@media only screen and (min-width: 500px) {}
-
-/* Medium devices (landscape tabvars, 768px and up) */
-@media only screen and (min-width: 768px) {}
-
-/* Large devices (laptops/desktops, 992px and up) */
-@media only screen and (min-width: 1024px) {
+@media only screen and (min-width: 800px) {
   body {
-    //background-color:#1DB416;
-    //background-image:linear-gradient(#1DB416 78%, #1DA416 0%);
     background-image:linear-gradient(#7F7F7F 78%, #696969 0%);
   }
   .mobile {
-    border-radius: 0em;
   }
   .under_mobile {
     display:block;
   }
 }
-
-/* Extra large devices (large laptops and desktops, 1200px and up) */
-@media only screen and (min-width: 1200px) {}
 
 </style>
 
@@ -863,7 +840,6 @@ function message(msg,display) {
   </div>
 </div>
 
-<!--<audio id="audio" no_controls="" no_autoplay><source src="sounds/smb_kick.wav" type="audio/wav">audio not supported</audio><button onclick=document.getElementById("audio").play()>play audio</button>-->
 </body>
 
 </html>
