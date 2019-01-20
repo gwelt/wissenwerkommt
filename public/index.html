@@ -3,6 +3,7 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" type="image/png" href="images/apple-touch-icon-precomposed.png">
+<meta name="theme-color" content="#C2C2C2">
 <title>wissenwerkommt</title>
 <script>
 var team=false;
@@ -139,7 +140,7 @@ function updateView(json) {
 
   // MENU:TOKEN
   cookie=getCookie("token",true);
-  text='Für den Zugriff kann die Eingabe eines Token notwendig sein.';
+  text='Gib einen Token an, um Einstellungen vorzunehmen.';
   if (cookie) {text='Dein Token:<br><b>'+cookie+'</b>'}
   svg='';
   menu+='<div class="options_option"><button class="option_button" onclick="show_cookie_prompt(\'token\');">'+svg+'</button><div class="option_text">'+text+'</div></div>';
@@ -636,7 +637,7 @@ function message(msg,display) {
        url('/fonts/roboto-v18-latin-ext-regular.svg#Roboto') format('svg'); /* Legacy iOS */
 }
   * {-webkit-box-sizing: border-box; -moz-box-sizing: border-box; box-sizing: border-box;}
-  body {padding:0; margin:0; background-color:#fff;font-family: 'Roboto', serif; font-size: 1.6em; color:#000; background-color:#c2c2c2;word-wrap: break-word;}
+  body {padding:0; margin:0;font-family: 'Roboto', serif; font-size: 1.6em; color:#000; background-color:#c2c2c2;word-wrap: break-word;}
   /*
     green #86E082 #5BCF55 #3BBA34 #1DA416 #0E8108
     red   #FE9395 #FD686C #E34044 #C81B20 #9E090D
