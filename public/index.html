@@ -41,6 +41,13 @@ function registerServiceWorker() {
   }
 }
 
+window.addEventListener('offline', function(event){
+  console.log("You lost connection.");
+});
+window.addEventListener('online', function(event){
+  console.log("You are now back online.");
+});
+
 function loadScript(src, done) {
   var js = document.createElement('script');
   js.src = src;
@@ -112,7 +119,7 @@ function updateView(json) {
         var peoples_list_container='<div id="peoples_list_container_'+event_counter+'">'+peoples_list+'</div>';
         var day=['So','Mo','Di','Mi','Do','Fr','Sa'][new Date(e.datetime).getDay()]+' '+e.datetime.substring(8,10)+'.'+e.datetime.substring(5,7)+'. '+e.datetime.substring(11,16)+' Uhr';
         var ondblclick='';
-        if ((team.userlevel)&&(team.userlevel>1)) {ondblclick=" ondblclick=\"show_teamCommentEdit_prompt(\'"+e.datetime+"\',\'"+(e.comment?e.comment:'')+"\',"+(e.cancelled?true:false)+")\"";}
+        if ((team.userlevel)&&(team.userlevel>1)) {ondblclick=" onclick=\"_ondblclick(function(){show_teamCommentEdit_prompt(\'"+e.datetime+"\',\'"+(e.comment?e.comment:'')+"\',"+(e.cancelled?true:false)+")})\"";}
 
         // content
         mobile_main.innerHTML+='<div id="div'+e.datetime+'" class="statusbutton_wrapper"'+ondblclick+'><button aria-label="'+day+'" id="status'+e.datetime+'" onclick=toggleStatus("'+e.datetime+'")>'+day+'</button><br>'+comment_important+comment_hint+comment_inline+peoples_list_container+attendees_counter+'</div>';
@@ -149,7 +156,7 @@ function updateView(json) {
 
   // MENU:TOKEN
   cookie=getCookie("token",true);
-  text='Gib einen Token an, um Einstellungen vorzunehmen.';
+  text='Hier kannst du einen Token-Code eingeben.';
   if (cookie) {text='Dein Token:<br><b>'+cookie+'</b>'}
   svg='';
   menu+='<div class="options_option"><button aria-label="Token" class="option_button" onclick="show_cookie_prompt(\'token\');">'+svg+'</button><div class="option_text">'+text+'</div></div>';
@@ -164,15 +171,16 @@ function updateView(json) {
     admin_menu+='<div class="options_option"><button aria-label="Terminserie" class="option_button" onclick="show_teamPreferenceWeekdayTime_prompt(team)"></button><div class="option_text">Terminserie:<br><b>'+(teams_weekday_time.length?teams_weekday_time:'keine (unregelmäßig)')+'</b></div></div>';
     admin_menu+='<div class="divider">Team</div>';
     // ADMIN_MENU:TEAM-NAME
-    admin_menu+='<div class="options_option"><button aria-label="Name des Teams" class="option_button" onclick="show_teamPreference_prompt(\'<b>Name</b> des Teams:\',\'name\',\''+(team.name?team.name:'')+'\',\'\');"></button><div class="option_text">Name des Teams:<br><b>'+team.name+'</b></div></div>';
+    admin_menu+='<div class="options_option"><button aria-label="Name des Teams" class="option_button" onclick="show_teamPreference_prompt(\'<b>Name</b> des Teams:\',\'name\',\''+(team.name?team.name:'')+'\',\'\');"></button><div class="option_text">Name des Teams:<br><b>'+(team.name?team.name:'Team '+team.teamid)+'</b></div></div>';
     // ADMIN_MENU:TEAM-ID
     admin_menu+='<div class="options_option"><button aria-label="Team-ID" class="option_button" onclick="show_teamPreference_prompt(\'<b>Team-ID</b> / Aufruf-URL:\',\'new_teamid\',\''+(team.teamid?team.teamid:'')+'\',\'Achtung! Mit der Team-ID veränderst du auch den Aufruf-Link (URL) für dein Team!\');"></button><div class="option_text">ID des Teams:<br><b>'+team.teamid+'</b></div></div>';
     // ADMIN_MENU:ADMIN-TOKEN
-    admin_menu+='<div class="options_option"><button aria-label="Admin-Token" class="option_button" onclick="show_teamPreference_prompt(\'<b>Admin-Token</b>:\',\'admintoken\',\''+(team.admintoken?team.admintoken:'')+'\',\'Achtung! Wenn du den Admin-Token veränderst, wirst du gleich selbst nicht mehr Admin sein. Du musst den Token dann erst selbst neu angeben!\');"></button><div class="option_text">Admin-Token:<br><b>'+team.admintoken+'</b></div></div>';
+    admin_menu+='<div class="options_option"><button aria-label="Admin-Token" class="option_button" onclick="show_teamPreference_prompt(\'<b>Admin-Token</b>:\',\'admintoken\',\''+(team.admintoken?team.admintoken:'')+'\',\'Achtung! Wenn du den Admin-Token veränderst, wirst du gleich selbst nicht mehr Admin sein. Du musst den Token dann erst selbst neu angeben!\');"></button><div class="option_text">Admin-Token:'+(team.admintoken?'<br><b>'+team.admintoken+'</b>':' keiner<br>Jeder darf administrieren.')+'</div></div>';
     // ADMIN_MENU:TEAM-TOKEN
-    admin_menu+='<div class="options_option"><button aria-label="Team-Token" class="option_button" onclick="show_teamPreference_prompt(\'<b>Team-Token</b>:\',\'teamtoken\',\''+(team.teamtoken?team.teamtoken:'')+'\',\'Vergiss nicht, deinem Team den neuen Team-Token mitzuteilen!\');"></button><div class="option_text">Team-Token:<br><b>'+team.teamtoken+'</b></div></div>';
+    admin_menu+='<div class="options_option"><button aria-label="Team-Token" class="option_button" onclick="show_teamPreference_prompt(\'<b>Team-Token</b>:\',\'teamtoken\',\''+(team.teamtoken?team.teamtoken:'')+'\',\'Vergiss nicht, deinem Team den neuen Team-Token mitzuteilen!\');"></button><div class="option_text">Team-Token:'+(team.teamtoken?'<br><b>'+team.teamtoken+'</b>':' keiner<br>Jeder darf teilnehmen.')+'</div></div>';
     // ADMIN_MENU:DELETE TEAM
     admin_menu+='<div class="options_option"><button aria-label="Team löschen" class="option_button" onclick="show_teamDeleteTeam_prompt()"></button><div class="option_text">Team löschen</div></div>';
+    admin_menu+='<div class="divider"></div>';
   }
 
   var l=""+window.location;
@@ -324,7 +332,7 @@ function show_teamPreference_prompt(text,param,preval,subline) {
 }
 function show_teamDeleteTeam_prompt() {
   var e=document.getElementById('mobile_prompt');
-  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">Möchtest du dieses Team unwiderruflich <b>löschen</b>?<br><br><i>'+team.name+'</i></div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><button aria-label="ok" class="button_ok" onclick="deleteTeam();hide_prompt();">Team löschen</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
+  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">Möchtest du dieses Team unwiderruflich <b>löschen</b>?<br><br><i>'+(team.name?team.name:'Team '+team.teamid)+'</i></div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><button aria-label="ok" class="button_ok" onclick="deleteTeam();hide_prompt();">Team löschen</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
   document.getElementById('mobile_inner').style.display='none';
   e.style.display='block';
 }
@@ -337,7 +345,7 @@ function show_teamAddEvent_prompt() {
 }
 function show_teamDeleteEvent_prompt() {
   var e=document.getElementById('mobile_prompt');
-  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">Mit einem <b>Doppelklick auf einen Termin</b> kannst du einen Dialog öffnen. Administratoren können dort...<ul><li>einen Hinweis zum Termin hinterlegen</li><li>den Termin absagen</li></ul>Termine, die nicht zu einer Serie gehören, werden automatisch gelöscht, wenn keine Zusagen, Absagen oder Hinweise vorhanden sind.<p></div><button aria-label="ok" class="button_ok" onclick="hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom"><!--<br><a href=javascript:hide_prompt()>Abbrechen</a>--></div></div>';
+  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">Mit einem <b>Doppelklick auf einen Termin</b> kannst du einen Dialog öffnen. Administratoren können dort<ul><li>einen Hinweis zum Termin hinterlegen oder</li><li>den Termin absagen.</li></ul>Hinweis: Termine, die nicht zu einer Serie gehören, werden automatisch gelöscht, wenn keine Zusagen, Absagen oder Hinweise vorhanden sind. Serientermine können nur abgesagt - aber nicht gelöscht werden.<p></div><button aria-label="ok" class="button_ok" onclick="hide_prompt();">ok</button><div style=clear:both></div><!--<div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div>--></div>';
   document.getElementById('mobile_inner').style.display='none';
   e.style.display='block';
 }
@@ -376,7 +384,7 @@ function stopwatch(time) {
 function serverRequest(apicall,json,callback) {
   var t=stopwatch();
   var req = new XMLHttpRequest();
-  req.onreadystatechange = function() {if (this.readyState == 4) {console.log('serverRequest: '+stopwatch(t)+'ms'); callback(this.responseText)}};
+  req.onreadystatechange = function() {if (this.readyState == 4) {console.log(apicall+': '+stopwatch(t)+'ms'); callback(this.responseText)}};
   req.open("POST","/api/"+apicall,true);
   req.setRequestHeader("Content-Type","application/json;charset=UTF-8");
   req.send(JSON.stringify(json));
@@ -626,6 +634,17 @@ function message(msg,display) {
   if (display==false) {e.style.display='none'} else {
     document.getElementById('message').innerHTML=msg;
     e.style.display='block';
+  }
+}
+
+var dblclickTimer=null;
+function _ondblclick(dblclick) {
+  if (dblclickTimer==null) {
+    dblclickTimer=setTimeout(function(){dblclickTimer=null}, 400);
+  } else {
+    clearTimeout(dblclickTimer);
+    dblclickTimer=null;
+    dblclick();
   }
 }
 
