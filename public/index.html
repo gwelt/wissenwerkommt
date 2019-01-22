@@ -198,9 +198,9 @@ function get_time_to_go_till_event_starts(e) {
   // calculate time to go till event starts
   var time_to_go_till_event_starts='';
   var minutes_to_go=Math.floor((new Date(e.datetime)-new Date())/60000)+1;
-  if (minutes_to_go<1) {time_to_go_till_event_starts='gestartet'}
+  if (minutes_to_go<1) {time_to_go_till_event_starts=''} // gestartet
   else if (minutes_to_go<5) {time_to_go_till_event_starts='startet gleich'}
-  else if (minutes_to_go<60) {time_to_go_till_event_starts='startet in '+minutes_to_go+' Minuten'}
+  else if (minutes_to_go<60) {time_to_go_till_event_starts='noch '+minutes_to_go+' Minuten'}
   else {
     var hours_to_go=Math.floor(minutes_to_go/60);
     if (hours_to_go<12) {time_to_go_till_event_starts='noch '+hours_to_go+':'+((minutes_to_go%60>9)?minutes_to_go%60:'0'+minutes_to_go%60)+' Stunden'}
@@ -345,7 +345,7 @@ function show_teamAddEvent_prompt() {
 }
 function show_teamDeleteEvent_prompt() {
   var e=document.getElementById('mobile_prompt');
-  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">Mit einem <b>Doppelklick auf einen Termin</b> kannst du einen Dialog öffnen. Administratoren können dort<ul><li>einen Hinweis zum Termin hinterlegen oder</li><li>den Termin absagen.</li></ul>Hinweis: Termine, die nicht zu einer Serie gehören, werden automatisch gelöscht, wenn keine Zusagen, Absagen oder Hinweise vorhanden sind. Serientermine können nur abgesagt - aber nicht gelöscht werden.<p></div><button aria-label="ok" class="button_ok" onclick="hide_prompt();">ok</button><div style=clear:both></div><!--<div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div>--></div>';
+  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">Mit einem <b>Doppelklick auf einen Termin</b> kannst du einen Dialog öffnen. Administratoren können dort<ul><li>einen Hinweis zum Termin hinterlegen oder</li><li>den Termin absagen.</li></ul>Hinweis: Termine, die nicht zu einer Serie gehören, werden automatisch gelöscht, wenn keine Zusagen, Absagen oder Hinweise vorhanden sind. Serientermine können nur abgesagt (nicht gelöscht) werden.<p></div><button aria-label="ok" class="button_ok" onclick="hide_prompt();">ok</button><div style=clear:both></div><!--<div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div>--></div>';
   document.getElementById('mobile_inner').style.display='none';
   e.style.display='block';
 }
@@ -506,6 +506,10 @@ function save() {
 
 function dump() {
   serverRequest('dump',{token:getCookie('token',true)},function (r){updateStatus(r);});
+}
+
+function getLog() {
+  serverRequest('getLog',{token:getCookie('token',true)},function(r){console.log(r);});
 }
 
 function getDateString(d) {

@@ -40,8 +40,10 @@ app.use('/:t/manifest.json', function (req, res) {
     "display": "standalone"
   });
 });
-
 app.use('/api/:r/:t?', function (req, res) {
+  
+  log.add(req.params,req.body);
+
   switch (req.params.r) {
 
     // open
@@ -153,14 +155,19 @@ app.use('/api/:r/:t?', function (req, res) {
         res.json(db);
       } else {res.status(401).json({'error':'not sufficient rights to do that (dump)'})}
       break;
+    case 'getLog':
+      if (getUserLevel(req)>2) {
+        res.send(log.read());
+      } else {res.status(400).json({'error':'not a valid API-call'})}
+      break;
 
     default:
-      res.status(400).json({'error':'not a valid AJAX-API-call'});
+      res.status(400).json({'error':'not a valid API-call'});
 
   }
 
 });
-app.use(function(req, res, next){res.sendFile('index.html',{root:path.join(__dirname,'public')})});
+app.use(function(req, res, next){if (req.url.lastIndexOf('/')==0) {res.sendFile('index.html',{root:path.join(__dirname,'public')})} else {res.status(404).send()} });
 
 io.on('connection', function (socket) {
   // socket.emit = reply only to the client who asked
@@ -204,6 +211,14 @@ function getUserLevel(req) {
     if ((token==config.sysoptoken) && (token!==undefined)) {return 3}
     return db.getUserLevel(teamid,token);
   }
+}
+
+var log=new Logger(100);
+function Logger(maxlength) {this.maxlength=(maxlength||25); this.list=[];}
+Logger.prototype.add = function (a,b) {this.list.push([getDateString()+' '+(b.teamid?b.teamid+' ':'')+(b.datetime?b.datetime+' ':'')+a.r+' '+(b.name?b.name+' ':'')+'\n']); while (this.list.length>this.maxlength) {this.list.splice(0,1)};}
+function getDateString() {let d=new Date(); return (new Date(d-d.getTimezoneOffset()*60000)).toISOString().slice(0, -5);}
+Logger.prototype.read = function () {
+  return this.list.reduce((a,c)=>a+c,'');
 }
 
 process.on('SIGINT', function(){ if (config.SIGINT==undefined) {config.SIGINT=true; console.log('SIGINT'); db.save_to_file(config.datafilepath,config.datafile,()=>{process.exit(0)},true)} });
