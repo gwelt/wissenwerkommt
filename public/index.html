@@ -10,8 +10,8 @@
 var team=false;
 var socket=false;
 var currentView=undefined;
+var is_mobile=1;
 var QRCode=undefined;
-
 
 // Polyfills
 if ((!Array.prototype.includes)||(!Array.prototype.find)) {loadScript('polyfills.js',function(){})}
@@ -127,7 +127,7 @@ function updateView(json) {
         else if (e.refusals&&e.refusals.includes(name)) {document.getElementById('status'+e.datetime).className='statusbutton_refused'}
         else {document.getElementById('status'+e.datetime).className='statusbutton_undecided'}
 
-        if (!name) {message('Klicke einen Termin 1x an um deine Teilnahme mitzuteilen. Klicke erneut für eine Absage.')}
+        if ((!name)&&(currentView!='mobile_options')) {message('Klicke einen <span style="background-image:linear-gradient(#ffbf00 84%,#efaf00 0%)">Termin</span> 1x an um deine <u>Teilnahme</u> mitzuteilen. Klicke erneut für eine <u>Absage</u>.')}
 
       }):false;
 
@@ -153,7 +153,8 @@ function updateView(json) {
 
   // MENU:TOKEN
   cookie=getCookie("token",true);
-  text='Hier kannst du einen Token-Code eingeben.';
+  //text='Hier kannst du einen Token-Code eingeben.';
+  text='Zur Team-Administration muss du einen Token angeben.';
   if (cookie) {text='Dein Token:<br><b>'+cookie+'</b>'}
   svg='';
   menu+='<div class="options_option"><button aria-label="Token" class="option_button" onclick="show_cookie_prompt(\'token\');">'+svg+'</button><div class="option_text">'+text+'</div></div>';
@@ -195,7 +196,7 @@ function get_time_to_go_till_event_starts(e) {
   // calculate time to go till event starts
   var time_to_go_till_event_starts='';
   var minutes_to_go=Math.floor((new Date(e.datetime)-new Date())/60000)+1;
-  if (minutes_to_go<1) {time_to_go_till_event_starts=''} // gestartet
+  if (minutes_to_go<1) {time_to_go_till_event_starts='gestartet'}
   else if (minutes_to_go<5) {time_to_go_till_event_starts='startet gleich'}
   else if (minutes_to_go<60) {time_to_go_till_event_starts='noch '+minutes_to_go+' Minuten'}
   else {
@@ -378,7 +379,7 @@ function showView(view_to_display) {
     document.getElementById('mobile_main').style.display='none';
     showQRcode(""+window.location);
     SocketIO();
-    navigator.serviceWorker.register('/service-worker.js');
+    //navigator.serviceWorker.register('/service-worker.js');
   } else {
     document.getElementById('mobile_main').style.display='block';
     document.getElementById('mobile_options').style.display='none';
@@ -588,12 +589,11 @@ function setCookie(cname, cvalue, exdays) {
 function debug(text) {
   console.log(text);
   if ((text=='false')||(JSON.parse(text).error)) {
-    message('Das hat leider nicht funktioniert.')
-    if (JSON.parse(text).error) {message(''+JSON.parse(text).error+'')}
+    message('<span style=color:#f00>Das hat leider nicht funktioniert.</span>')
+    if (JSON.parse(text).error) {message('<span style=color:#f00>'+JSON.parse(text).error+'</span>')}
   }
 }
 
-is_mobile=1;
 function check_mobile()
 {
   var old_mobile_status=is_mobile;
@@ -850,7 +850,7 @@ function _ondblclick(dblclick) {
   div.refusal_item {color:#888; text-decoration:line-through; background-color:#fff; border:2px solid #ddd;}
 
   div.message {
-    border-radius: 0.1em; border-style:solid; border-width:0px; border-color:#fff; margin: 0px 21px 15px 21px; padding:0px 22px 12px 22px; background-color:#fff; color:#000; text-align:left; font-size: 0.7em; cursor:pointer; top:-24px; display:none;
+    border-radius: 0.1em; margin: 0px 21px 15px 21px; padding:0px 22px 12px 22px; background-color:#fff; color:#000; text-align:left; font-size: 0.7em; cursor:pointer; top:-24px; display:none;
   }
   #triangle-up {
     width: 0; height: 0;
