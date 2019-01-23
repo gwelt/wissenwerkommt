@@ -154,7 +154,7 @@ function updateView(json) {
   // MENU:TOKEN
   cookie=getCookie("token",true);
   //text='Hier kannst du einen Token-Code eingeben.';
-  text='Zur Team-Administration muss du einen Token angeben.';
+  text='Zur Team-Administration musst du einen Token angeben.';
   if (cookie) {text='Dein Token:<br><b>'+cookie+'</b>'}
   svg='';
   menu+='<div class="options_option"><button aria-label="Token" class="option_button" onclick="show_cookie_prompt(\'token\');">'+svg+'</button><div class="option_text">'+text+'</div></div>';
