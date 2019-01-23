@@ -9,9 +9,14 @@
 <script>
 var team=false;
 var socket=false;
+var currentView=undefined;
 var QRCode=undefined;
 
-// dynamically add manifest because it has to be delivered from team-subdirectory
+
+// Polyfills
+if ((!Array.prototype.includes)||(!Array.prototype.find)) {loadScript('polyfills.js',function(){})}
+
+// dynamically add manifest.json because it has to be delivered from team-subdirectory
 if (window.location.pathname.substr(1)) {
   link=document.createElement('link');
   link.href=window.location.pathname.substr(1)+'/manifest.json';
@@ -19,20 +24,17 @@ if (window.location.pathname.substr(1)) {
   document.getElementsByTagName('head')[0].appendChild(link);
 }
 
-// Polyfills
-if ((!Array.prototype.includes)||(!Array.prototype.find)) {loadScript('polyfills.js',afterPolyfill)}
-function afterPolyfill(m) {}
-
-// load socket.io after waiting for a second ... let the first getTeam be operated by AJAX to have a quick load before socket.io loads
-setTimeout(function(){loadScript('/socket.io/socket.io.js',afterSocketIO)},1000);
-function afterSocketIO(m) {
+// load socket.io after waiting for a second ... let the first getTeam be operated by AJAX to have a quick start before socket.io loads
+//setTimeout(function(){SocketIO()},1000);
+function SocketIO() {if (!socket) {loadScript('/socket.io/socket.io.js', function() {
   socket=io();
   socket.on('update', function (json) {if (json.teamid==team.teamid) {getTeam(team.teamid)}});
   socket.on('team', function (json) {updateView(json)});
-}
+  getTeam();
+})}};
 
 // Service-Worker
-registerServiceWorker();
+//registerServiceWorker();
 function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
@@ -40,13 +42,8 @@ function registerServiceWorker() {
     });
   }
 }
-
-window.addEventListener('offline', function(event){
-  console.log("You lost connection.");
-});
-window.addEventListener('online', function(event){
-  console.log("You are now back online.");
-});
+//window.addEventListener('offline', function(event){console.log("You lost connection.");});
+//window.addEventListener('online', function(event){console.log("You are now back online.");});
 
 function loadScript(src, done) {
   var js = document.createElement('script');
@@ -71,7 +68,7 @@ function updateView(json) {
 
   if (!team) {
 
-    mobile_head.innerHTML="<div class='head_wrapper'><button aria-label='toggleView' class='option_button' onclick=toggleView('mobile_options');toggleView('mobile_main');>"+svg_menu+"</button><a href=/ style=text-decoration:none;font-weight:bold>wissenwerkommt</a><br><div style=font-size:0.7em>Startseite</div></div>";
+    mobile_head.innerHTML="<div class='head_wrapper'><button aria-label='toggleView' class='option_button' onclick=toggleView();>"+svg_menu+"</button><a href=/ style=text-decoration:none;font-weight:bold>wissenwerkommt</a><br><div style=font-size:0.7em>Startseite</div></div>";
     mobile_main.innerHTML='<div class="new_team_wrapper"><input type="text" id="name" maxlength=24 value="" placeholder="Name deines Teams" autocomplete="off"><br>'+get_team_weekdaytime_selection(team)+'<br><input type="text" id="teamid" maxlength=16 value="'+window.location.pathname.substr(1)+'" placeholder="Team-ID *" autocomplete="off"><br><input type="text" id="admintoken" maxlength=16 value="'+(team.admintoken||'')+'" placeholder="Admin-Token" autocomplete="off"><input type="hidden" id="teamtoken" maxlength=16 value="'+(team.teamtoken||'')+'" autocomplete="off"><br><button aria-label="ok" class="button_ok" onclick=addTeam()>Team erstellen</button><br></div><div class="teamlist_wrapper" id="teamlist"></div><div class="teamlist_wrapper" id="stats"></div>';
     mobile_footer.innerHTML="";
     serverRequest('getListOfTeamIDs',{},function (r){r=JSON.parse(r); r.forEach(function (t){document.getElementById('teamlist').innerHTML+='<a href=/'+t+'>'+t+'</a> '})});
@@ -86,7 +83,7 @@ function updateView(json) {
       // MAIN-page if a team is requested but not found or not allowed
       debug(JSON.stringify(team));
       message('',false); // don't want the message here...
-      mobile_head.innerHTML="<div class='head_wrapper'><button aria-label='toggleView' class='option_button' onclick=toggleView('mobile_options');toggleView('mobile_main');>"+svg_menu+"</button><a href=/ style=text-decoration:none;font-weight:bold>wissenwerkommt</a><br><div style=font-size:0.7em>/<a href=/"+window.location.pathname.substr(1)+">"+window.location.pathname.substr(1)+"</a></div></div>";
+      mobile_head.innerHTML="<div class='head_wrapper'><button aria-label='toggleView' class='option_button' onclick=toggleView();>"+svg_menu+"</button><a href=/ style=text-decoration:none;font-weight:bold>wissenwerkommt</a><br><div style=font-size:0.7em>/<a href=/"+window.location.pathname.substr(1)+">"+window.location.pathname.substr(1)+"</a></div></div>";
       mobile_main.innerHTML='<div class="error_wrapper"><div class="error_text" style=padding-bottom:12px>Das Team hat einen Code für den Zugriff vereinbart:</div><button aria-label="Token eingeben" style="width:100%" onclick=show_cookie_prompt(\'token\')>Token eingeben</button></div>';
 
     } else {
@@ -94,7 +91,7 @@ function updateView(json) {
       // MAIN-page if a team is requested
       document.title=(!!team.name?team.name:'Team '+team.teamid);
 
-      mobile_head.innerHTML="<div class='head_wrapper'><button aria-label='toggleView' class='option_button' onclick=toggleView('mobile_options');toggleView('mobile_main');>"+svg_menu+"</button><a href=/"+team.teamid+" style=text-decoration:none;font-weight:bold"+((!teams_weekday_time.length)?';position:relative;top:10px':'')+">"+(!!team.name?team.name:'Team '+team.teamid)+"</a><br><div style=font-size:0.7em>"+teams_weekday_time+"</div></div>";
+      mobile_head.innerHTML="<div class='head_wrapper'><button aria-label='toggleView' class='option_button' onclick=toggleView();>"+svg_menu+"</button><a href=/"+team.teamid+" style=text-decoration:none;font-weight:bold"+((!teams_weekday_time.length)?';position:relative;top:10px':'')+">"+(!!team.name?team.name:'Team '+team.teamid)+"</a><br><div style=font-size:0.7em>"+teams_weekday_time+"</div></div>";
 
       //---------- EVENTS ----------//
       var name=getCookie('name',true);
@@ -189,7 +186,7 @@ function updateView(json) {
   var promo='<div class="options_promo"><div class="option_text"><a href='+l+'><canvas id="qrcode" style=display:none></canvas></a>'+team_name_and_recurrence+'<br><a href='+l+'>'+l.substring(0,l.lastIndexOf("/")+1)+'<br>'+window.location.pathname.substr(1)+'</a></div></div>';
 
   mobile_options.innerHTML='<div class="options_wrapper">'+menu+admin_menu+promo+'</div>';
-  showQRcode(""+window.location);
+  if (currentView=='mobile_options') {showQRcode(""+window.location)};
 
   console.log('updateView: '+stopwatch(time)+'ms');
 }
@@ -368,11 +365,24 @@ function display_hour_selection(blockNumber) {
   }
 }
 
-function toggleView(id,state) {
+function toggleView() {
   message('',false);
-  var e=document.getElementById(id);
-  if (state) {e.style.display=state}
-  else if (e.currentStyle?e.currentStyle.display=='none':getComputedStyle(e, null).display=='none') {e.style.display='block'} else {e.style.display='none'}
+  var e=document.getElementById('mobile_main');
+  if (e.currentStyle?e.currentStyle.display=='none':getComputedStyle(e, null).display=='none') {showView('mobile_main')} else {showView('mobile_options')}
+}
+
+function showView(view_to_display) {
+  currentView=view_to_display;
+  if (currentView=='mobile_options') {
+    document.getElementById('mobile_options').style.display='block';
+    document.getElementById('mobile_main').style.display='none';
+    showQRcode(""+window.location);
+    SocketIO();
+    navigator.serviceWorker.register('/service-worker.js');
+  } else {
+    document.getElementById('mobile_main').style.display='block';
+    document.getElementById('mobile_options').style.display='none';
+  }
 }
 
 function stopwatch(time) {
@@ -414,7 +424,8 @@ function updateStatus(json) {
   // call getTeam if socket will not take care of updateView (because it has not been loaded yet)
   // OR to URL-relocate if teamid changed (getTeam will take care of that)
   var o=JSON.parse(json);
-  if ((!socket)||((team.teamid!=o.teamid)&&(o.teamid!=undefined))) {
+  if ( (!socket) || ((team.teamid!=o.teamid)&&(o.teamid!=undefined)) ) {
+    SocketIO();
     getTeam(o.teamid?o.teamid:'');
   }
 }
@@ -469,11 +480,11 @@ function editTeam() {
 }
 
 function deleteTeam() {
-  serverRequest('deleteTeam',{token:getCookie('token',true),teamid:document.getElementById('teamid').value},function (r){updateStatus(r);toggleView('mobile_options','none');toggleView('mobile_main','block');});
+  serverRequest('deleteTeam',{token:getCookie('token',true),teamid:document.getElementById('teamid').value},function (r){updateStatus(r);showView('mobile_main');});
 }
 
 function addEvent() {
-  serverRequest('addEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:document.getElementById('datetime').value,comment:document.getElementById('comment').value},function (r){updateStatus(r);toggleView('mobile_options','none');toggleView('mobile_main','block');});
+  serverRequest('addEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:document.getElementById('datetime').value,comment:document.getElementById('comment').value},function (r){updateStatus(r);toggleView();});
 }
 
 function cancelORreviveEvent(datetime) {
