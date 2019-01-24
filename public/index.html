@@ -106,7 +106,7 @@ function updateView(json) {
         if (e.cancelled) {comment_important='<div class=comment_important>TERMIN FÄLLT AUS</div>';}
         var comment_hint='';
         // check if event is NOT a recurring event
-        if (!(team.recurrence?team.recurrence.filter(function(r){return ((r.weekday==new Date(e.datetime).getDay())&&(r.time==e.datetime.substring(11,16)))}):[1]).length) {
+        if (!(team.recurrence?team.recurrence.filter(function(r){return (((r.weekday==new Date(e.datetime).getDay())||(r.weekday==7))&&(r.time==e.datetime.substring(11,16)))}):[1]).length) {
           comment_hint='<div class=comment_hint>Termin außerhalb der Serie</div>';
         }
         var peoples_list='';
