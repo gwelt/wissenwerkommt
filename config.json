@@ -3,6 +3,7 @@
   "datafile": "data.json",
   "datafilepath": "data",
   "sysoptoken": "sysop",
+  "cryptosecret": "1234567890",
   "maxTeams": 250,
   "maxEvents": 100,
   "maxIndications": 250

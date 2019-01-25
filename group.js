@@ -1,5 +1,6 @@
-var fs = require('fs');
 module.exports = Group;
+var fs = require('fs');
+var crypto = require('crypto');
 var config = {};
 try {config=require('./config.json')} catch(err){};
 
@@ -144,6 +145,8 @@ Group.prototype.load_from_file = function(filepath,filename,callback) {
   this.teams=[];
   fs.readFile(filepath+'/'+filename, 'utf8', (err, data)=>{
     if (err){console.log('No data-file.')} else {
+      // decrypt
+      try {data=decrypt(JSON.parse(data))} catch (err) {console.log('decryption failed',err)}
       try {group = JSON.parse(data)} catch (err) {group={}};
       if (group.hasOwnProperty('teams')) {
         group.teams.forEach((t)=>{
@@ -159,13 +162,15 @@ Group.prototype.load_from_file = function(filepath,filename,callback) {
 }
 
 Group.prototype.save_to_file = function(filepath,filename,callback,backup) {
-  let data=JSON.stringify(this);
+  //if (this.teams.length==0) {callback(this)}
+  // encrypt
+  let data=encrypt(JSON.stringify(this));
   fs.writeFile(filepath+'/'+filename, data, 'utf8', (err)=>{
     console.log('File '+filepath+'/'+filename+' saved.'+(err?' !!! '+err:''));
     // save backup
     if (backup) {
       filepath+='/backup';
-      filename=hash(data);
+      filename=hash(JSON.stringify(this));
       fs.writeFile(filepath+'/'+filename, data, 'utf8', (err)=>{
         console.log('File '+filepath+'/'+filename+' saved.'+(err?' !!! '+err:''));
         callback(this);
@@ -175,6 +180,23 @@ Group.prototype.save_to_file = function(filepath,filename,callback,backup) {
     }
   });
 }
+
+function encrypt(text) {
+ let iv=crypto.randomBytes(16);
+ let cipher = crypto.createCipheriv('aes-256-cbc', getCipherKey(process.env.SECRET||config.cryptosecret), iv);
+ let encrypted = cipher.update(text);
+ encrypted = Buffer.concat([encrypted, cipher.final()]);
+ return JSON.stringify({ iv: iv.toString('hex'), encryptedData: encrypted.toString('hex') });
+}
+function decrypt(text) {
+ let iv = Buffer.from(text.iv, 'hex');
+ let encryptedText = Buffer.from(text.encryptedData, 'hex');
+ let decipher = crypto.createDecipheriv('aes-256-cbc', getCipherKey(process.env.SECRET||config.cryptosecret), iv);
+ let decrypted = decipher.update(encryptedText);
+ decrypted = Buffer.concat([decrypted, decipher.final()]);
+ return decrypted.toString();
+}
+function getCipherKey(key) {if ((typeof key!= 'string')||(key.length<1)) {key="nosecret"}; while (key.length<32) {key+=key}; while (key.length>32) {key=key.slice(0,-1)}; return key;}
 
 Group.prototype.findTeam = function(teamid) {
   if ((typeof teamid=='string') && this.teams instanceof Array && teamid) {
@@ -214,6 +236,8 @@ Team.prototype.addEvent = function(json) {
   let event=new Event(json);
   if ( (typeof event.datetime !== 'undefined') && (!this.findEvent(event.datetime)) )
   {
+    // reject events with start-date more than 12 months ahead
+    if ((new Date(event.datetime)-new Date())/1000/60/60/24 > 360) {return false}
     if (!(this.events instanceof Array)) {this.events=[]};
     if (this.events.length<(config.maxEvents||100)) {this.events.push(event)} else {return false}
     return event;
