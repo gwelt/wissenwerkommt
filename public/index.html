@@ -519,15 +519,15 @@ function deleteEvent(datetime) {
 }
 
 function load() {
-  serverRequest('load',{token:getCookie('token',true)});
+  serverRequest('load',{token:getCookie('token',true)},function (r){console.log(r)});
 }
 
 function save() {
-  serverRequest('save',{token:getCookie('token',true)});
+  serverRequest('save',{token:getCookie('token',true)},function (r){console.log(r)});
 }
 
 function dump() {
-  serverRequest('dump',{token:getCookie('token',true)}); //function (r){updateStatus(r)}
+  serverRequest('dump',{token:getCookie('token',true)},function (r){console.log(r)});
 }
 
 function getLog() {
