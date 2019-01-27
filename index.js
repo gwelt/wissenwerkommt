@@ -10,9 +10,35 @@ var port = process.env.PORT || config.port || 3000;
 var Group = require('./group.js');
 var db=new Group();
 server.listen(port, function () {
-  db.load_from_file(config.datafilepath,config.datafile,(group)=>{});
+  db.load_from_file(config.datafilepath,config.datafile,()=>{});
 });
 module.exports = server;
+
+/* NGINX-sample config
+server {
+  listen 80;
+  server_name localhost;
+  location ~* (^/api/)|(^/socket\.io)|(manifest\.json$) {
+    proxy_pass http://127.0.0.1:3000;
+    proxy_http_version 1.1;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection 'upgrade';
+    proxy_set_header Host $host;
+    proxy_cache_bypass $http_upgrade;
+    proxy_read_timeout 86400s;
+  }
+  location ~* /[^\.]*$ {
+    rewrite ^(.*)$ / break;
+    root   /REPLACE_THIS_PATH/wissenwerkommt/public;
+    index  index.html;
+  }
+  location ~* [^/]*\.[^/]*$ {
+    root   /REPLACE_THIS_PATH/wissenwerkommt/public;
+    index  index.html;
+  }
+}
+*/
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.json());
@@ -24,7 +50,8 @@ app.use('/:t/manifest.json', function (req, res) {
     "name": team.name||"wissenwerkommt",
     "icons": [
       {"src":"../images/wissenwerkommt192.png","sizes": "192x192","type": "image/png"},
-      {"src": "../images/wissenwerkommt512.png","sizes": "512x512","type": "image/png"}      
+      {"src": "../images/wissenwerkommt512.png","sizes": "512x512","type": "image/png"},
+      {"src": "../images/wissenwerkommt1024.png","sizes": "1024x1024","type": "image/png"}
     ],
     "start_url": "/"+req.params.t,
     "background_color": "#fff",
@@ -144,7 +171,9 @@ app.use('/api/:r/:t?', function (req, res) {
       break;
     case 'dump':
       if (getUserLevel(req)>2) {
+        db.groomTeams(false);
         res.json(db);
+        db.groomTeams(true);
       } else {res.status(401).json({'error':'not sufficient rights to do that (dump)'})}
       break;
     case 'getLog':

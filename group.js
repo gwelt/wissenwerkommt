@@ -44,7 +44,7 @@ Group.prototype.getListOfTeamIDs = function() {
   } else {return false}
 }
 
-Group.prototype.getTeam = function(teamid) {
+Group.prototype.getTeam = function(teamid,backfill) {
   let t=this.findTeam(teamid);
   if (t) {
     if (!(t.events instanceof Array)) {t.events=[]};
@@ -55,13 +55,19 @@ Group.prototype.getTeam = function(teamid) {
     // this will delete all automatic generated events without changes/edits (manually added events should have at least one other property)
     t.events=t.events.filter(e=>Object.values(e).reduce((a,c)=>(c!==undefined)?a+1:a,0)>1);
     // backfill: generate future events, if any recurrance is specified
-    t.generateNextRecurringEvents();
+    if ((backfill==undefined)||(backfill==true)) {t.generateNextRecurringEvents();}
     // order events by date
     t.events.sort((a,b)=>{return (a.datetime>b.datetime)?1:-1});
     if (!t.events.length) {t.events=undefined};
     return t;
   }
   return false;
+}
+
+Group.prototype.groomTeams = function(backfill) {
+  // delete all backfilled events from model (you may want do this with (backfill=false) some time to save space - or just to groom)
+  // events will automatically be backfilled when getTeam is requested
+  this.teams.forEach((t)=>{this.getTeam(t.teamid,backfill)});
 }
 
 Group.prototype.addTeam = function(json) {
