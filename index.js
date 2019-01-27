@@ -42,7 +42,7 @@ app.use('/:t/manifest.json', function (req, res) {
 });
 app.use('/api/:r/:t?', function (req, res) {
   
-  log.add(req.params,req.body);
+  if (['attend','refuse','undecided'].find((a)=>a==req.params.r)) {log.add(req.params,req.body)}
 
   switch (req.params.r) {
 
@@ -175,7 +175,6 @@ io.on('connection', function (socket) {
   // io.sockets.emit = reply to all clients (including the one who asked)
   //socket.emit('data',{welcomemessage: 'Welcome!'});
   socket.on('getTeam', function (req) {
-    //console.log('io:'+JSON.stringify(req));
     let userlevel=getUserLevel(req);
     if (userlevel>0) {
       let team=db.getTeam(req.teamid);

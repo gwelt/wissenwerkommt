@@ -519,15 +519,15 @@ function deleteEvent(datetime) {
 }
 
 function load() {
-  serverRequest('load',{token:getCookie('token',true)},function (r){updateStatus(r);});
+  serverRequest('load',{token:getCookie('token',true)});
 }
 
 function save() {
-  serverRequest('save',{token:getCookie('token',true)},function (r){updateStatus(r);});
+  serverRequest('save',{token:getCookie('token',true)});
 }
 
 function dump() {
-  serverRequest('dump',{token:getCookie('token',true)},function (r){updateStatus(r);});
+  serverRequest('dump',{token:getCookie('token',true)}); //function (r){updateStatus(r)}
 }
 
 function getLog() {
@@ -542,7 +542,7 @@ function getDateString(d) {
 
 function showQRcode(url) {
   if (typeof QRCode == 'undefined') {
-    loadScript('/qrcode.min.js',function(){QRCode.toCanvas(document.getElementById('qrcode'), url, function (error) {if (error) console.error(error)})});
+    loadScript('/qrcode.min.js',function(url){showQRcode(url)});
   } else {QRCode.toCanvas(document.getElementById('qrcode'), url, function (error) {if (error) console.error(error)})}
   document.getElementById('qrcode').style.display='inline';
 }
