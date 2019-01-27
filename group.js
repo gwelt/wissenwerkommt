@@ -236,8 +236,8 @@ Team.prototype.addEvent = function(json) {
   let event=new Event(json);
   if ( (typeof event.datetime !== 'undefined') && (!this.findEvent(event.datetime)) )
   {
-    // reject events with start-date more than 12 months ahead
-    if ((new Date(event.datetime)-new Date())/1000/60/60/24 > 360) {return false}
+    // reject events with start-date more than 12 months ahead // 360*86400000
+    if ((new Date(event.datetime)-new Date()) > 31104000000) {return false}
     if (!(this.events instanceof Array)) {this.events=[]};
     if (this.events.length<(config.maxEvents||100)) {this.events.push(event)} else {return false}
     return event;
