@@ -77,11 +77,11 @@ function updateView(json) {
   if (!team) {
 
     mobile_head.innerHTML="<div class='head_wrapper'><button aria-label='toggleView' class='option_button' onclick=toggleView();>"+svg_menu+"</button><a href=/ style=text-decoration:none;font-weight:bold>wissenwerkommt</a><br><div style=font-size:0.7em>Startseite</div></div>";
-    mobile_main.innerHTML='<div id="main01"><div class="form_wrapper"><input type="text" id="visitteamid" maxlength=16 value="'+window.location.pathname.substr(1)+'" placeholder="Team-ID" autocomplete="off"><button aria-label="Team aufrufen" id="team_aufrufen" class="button_ok" onclick=getTeam(document.getElementById("visitteamid").value)>Team aufrufen</button></div><br><div class="textblock_wrapper">...oder erstelle dein eigenes Team!</div><div class="form_wrapper"><button aria-label="Team anlegen" class="button_ok" onclick="document.getElementById(\'main02\').style.display=\'block\';document.getElementById(\'main01\').style.display=\'none\'">neues Team</button></div><br></div><div id="main02" style=display:none><div class="form_wrapper"><input type="text" id="name" maxlength=24 value="" placeholder="Name deines Teams" autocomplete="off"><br>'+get_team_weekdaytime_selection(team)+'<br><input type="text" id="teamid" maxlength=16 value="'+window.location.pathname.substr(1)+'" placeholder="Team-ID *" autocomplete="off"><br><input type="text" id="admintoken" maxlength=16 value="'+(team.admintoken||'')+'" placeholder="Admin-Token" autocomplete="off"><input type="hidden" id="teamtoken" maxlength=16 value="'+(team.teamtoken||'')+'" autocomplete="off"><br><button aria-label="Team erstellen" class="button_ok" onclick=addTeam()>Team erstellen</button><br></div></div><div class="textblock_wrapper" id="teamlist"></div><div class="textblock_wrapper" id="stats"></div>';
+    mobile_main.innerHTML='<div id="main01"><div class="form_wrapper"><input type="text" id="visitteamid" maxlength=16 value="'+window.location.pathname.substr(1)+'" placeholder="Team-ID" autocomplete="off"><button aria-label="Team aufrufen" id="team_aufrufen" class="button_ok" onclick=getTeam(document.getElementById("visitteamid").value)>Team aufrufen</button></div><br><div class="textblock_wrapper">...oder erstelle dein eigenes Team:</div><div class="form_wrapper"><button aria-label="Team anlegen" class="button_ok" onclick="document.getElementById(\'main02\').style.display=\'block\';document.getElementById(\'main01\').style.display=\'none\'">neues Team</button></div><br></div><div id="main02" style=display:none><div class="form_wrapper"><input type="text" id="name" maxlength=24 value="" placeholder="Name deines Teams" autocomplete="off"><br>'+get_team_weekdaytime_selection(team)+'<br><input type="text" id="teamid" maxlength=16 value="'+window.location.pathname.substr(1)+'" placeholder="Team-ID *" autocomplete="off"><br><input type="text" id="admintoken" maxlength=16 value="'+(team.admintoken||'')+'" placeholder="Admin-Token" autocomplete="off"><input type="hidden" id="teamtoken" maxlength=16 value="'+(team.teamtoken||'')+'" autocomplete="off"><br><button aria-label="Team erstellen" class="button_ok" onclick=addTeam()>Team erstellen</button><br></div></div><div class="textblock_wrapper" id="teamlist"></div><div class="textblock_wrapper" id="stats"></div>';
     mobile_footer.innerHTML="";
     addOnKeyCode13EventListener('visitteamid','team_aufrufen');
-    serverRequest('getListOfTeamIDs',{},function (r){r=JSON.parse(r); r.forEach(function (t){document.getElementById('teamlist').innerHTML+='<a href=/'+t+'>'+t+'</a> '})});
-    serverRequest('stats',{},function (r){document.getElementById('stats').innerHTML=r});
+    serverRequest('getListOfTeamIDs',{"token":getCookie("token",true)},function (r){r=JSON.parse(r); r.forEach(function(t) {document.getElementById('teamlist').innerHTML+='<a href=/'+t+'>'+t+'</a> '})});
+    serverRequest('stats',{},function (r){if (typeof r!='undefined') {document.getElementById('stats').innerHTML=r} else {message('<span style=color:#f00>=== API is offline! ===</span><br>It\'ll probably be back in a minute...')}});
 
   }
 
@@ -367,7 +367,7 @@ function show_teamCommentEdit_prompt(datetime,preval_comment,cancelled) {
 }
 
 function display_hour_selection(blockNumber) {
-	if (!blockNumber) {blockNumber=''}
+  if (!blockNumber) {blockNumber=''}
   var viewstate='inline';
   var element_weekday=document.getElementById('weekday'+blockNumber);
   if (element_weekday) {
@@ -406,7 +406,7 @@ function stopwatch(time) {
 function serverRequest(apicall,json,callback) {
   var t=stopwatch();
   var req = new XMLHttpRequest();
-  req.onreadystatechange = function() {if (this.readyState == 4) {console.log(apicall+': '+stopwatch(t)+'ms'); callback(this.responseText)}};
+  req.onreadystatechange = function() {if (this.readyState == 4) {console.log(apicall+': '+stopwatch(t)+'ms'); if (this.status<500) {callback(this.responseText)} else {callback()}}};
   req.open("POST","/api/"+apicall,true);
   req.setRequestHeader("Content-Type","application/json;charset=UTF-8");
   req.send(JSON.stringify(json));
@@ -528,11 +528,11 @@ function save() {
 }
 
 function dump() {
-  serverRequest('dump',{token:getCookie('token',true)},function (r){console.log(r)});
+  serverRequest('dump',{token:getCookie('token',true)},function (r){document.open();document.write('<code>'+r+'</code>');document.close()}); //console.log(r)
 }
 
 function getLog() {
-  serverRequest('getLog',{token:getCookie('token',true)},function(r){console.log(r);});
+  serverRequest('getLog',{token:getCookie('token',true)},function(r){document.open();document.write('<pre>'+r+'</pre>');document.close()}); //console.log(r)
 }
 
 function getDateString(d) {

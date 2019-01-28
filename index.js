@@ -66,17 +66,19 @@ app.use('/api/:r/:t?', function (req, res) {
   switch (req.params.r) {
 
     // open
+    /*
     case 'getListOfTeamIDs':
       res.json(db.getListOfTeamIDs());
       break;
+    case 'getUserLevel':
+      res.json(getUserLevel(req));
+      break;
+    */
     case 'addTeam':
       res.json(db.addTeam(req.body)||{'error':'teamid invalid or existing'});
       break;
     case 'stats':
       res.json(db.getStats(io));
-      break;
-    case 'getUserLevel':
-      res.json(getUserLevel(req));
       break;
 
     // team members only
@@ -175,6 +177,11 @@ app.use('/api/:r/:t?', function (req, res) {
         res.json(db);
         db.groomTeams(true);
       } else {res.status(401).json({'error':'not sufficient rights to do that (dump)'})}
+      break;
+    case 'getListOfTeamIDs':
+      if (getUserLevel(req)>2) {
+        res.json(db.getListOfTeamIDs());
+      } else {res.json([])}
       break;
     case 'getLog':
       if (getUserLevel(req)>2) {

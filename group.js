@@ -138,14 +138,8 @@ Group.prototype.getStats = function(io) {
   eventCount=this.teams.reduce((a,t)=>a+=t.events?t.events.length:0,0);
   attendCount=this.teams.reduce((a,t)=>a+=t.events?t.events.reduce((b,u)=>b+=u.attendees?u.attendees.length:0,0):0,0);
   refusalCount=this.teams.reduce((a,t)=>a+=t.events?t.events.reduce((b,u)=>b+=u.refusals?u.refusals.length:0,0):0,0);
-  return {"teams":teamCount,"events":eventCount,"attendees":attendCount,"refusals":refusalCount,"hash":hash(JSON.stringify(this)),"size":formatByteSize(JSON.stringify(this).length),"users":io.engine.clientsCount+1};
+  return {"teams":teamCount,"events":eventCount,"attendees":attendCount,"refusals":refusalCount,"md5":hash(JSON.stringify(this)),"kb":Math.round(JSON.stringify(this).length/1024),"users":io.engine.clientsCount+1};
 }
-function formatByteSize(bytes) {
-    if(bytes < 1024) return bytes + " bytes";
-    else if(bytes < 1048576) return(bytes / 1024).toFixed(3) + " KiB";
-    else if(bytes < 1073741824) return(bytes / 1048576).toFixed(3) + " MiB";
-    else return(bytes / 1073741824).toFixed(3) + " GiB";
-};
 
 Group.prototype.load_from_file = function(filepath,filename,callback) {
   this.teams=[];
