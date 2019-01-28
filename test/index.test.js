@@ -32,6 +32,7 @@ describe ('OPEN REST-REQUESTS', function() {
     it('Returns a list of all team-IDs.', function(done) {
       request(app)
         .get('/api/getListOfTeamIDs')
+        .send({token:'sysop'})
         .set('Accept', 'application/json')
         .expect('Content-Type', /json/)
         .expect(200)
