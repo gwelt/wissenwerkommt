@@ -123,8 +123,8 @@ function updateView(json) {
         if (cc) {
           cc=cc.replace(/(\ |\b)(max|min)\d{1,3}(\ |\b)/gi, function (x) {
             var count=/\d{1,3}/.exec(x);
-            if (/max/i.exec(x)) {attendees_max=count; comment_inline+='<div class=comment_wrapper>Maximal '+count+' Teilnehmer!</div>';}
-            if (/min/i.exec(x)) {attendees_min=count; comment_inline+='<div class=comment_wrapper>Mindestens '+count+' Teilnehmer!</div>';}
+            if (/max/i.exec(x)) {attendees_max=count; comment_inline+='<div class=comment_wrapper>maximal '+count+' Teilnehmer</div>';}
+            if (/min/i.exec(x)) {attendees_min=count; comment_inline+='<div class=comment_wrapper>mindestens '+count+' Teilnehmer</div>';}
             //alert('MIN '+attendees_min+' MAX '+attendees_max);
             return '';
           });
