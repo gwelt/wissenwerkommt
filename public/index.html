@@ -26,12 +26,12 @@ if (window.location.pathname.substr(1)) {
 }
 
 // load socket.io after waiting for a second ... let the first getTeam be operated by AJAX to have a quick start before socket.io loads
-//setTimeout(function(){SocketIO()},1000);
+setTimeout(function(){SocketIO()},1000);
 function SocketIO() {if (!socket) {loadScript('/socket.io/socket.io.js', function() {
   socket=io();
   socket.on('update', function (json) {if (json.teamid==team.teamid) {getTeam(team.teamid)}});
   socket.on('team', function (json) {updateView(json)});
-  getTeam();
+  //getTeam();
 })}};
 
 // Service-Worker
@@ -64,6 +64,16 @@ function updateView(json) {
   var time=stopwatch();
   team=json?JSON.parse(json):false;
 
+  // read myteams-cookie
+  var myteams=getCookie('myteams',true);
+  if (!myteams) {myteams=[]} else {myteams=myteams.split(",").filter(function(t) {return (t!=team.teamid)?t:false})};
+  // add teamid to myteams-cookie
+  if (team.teamid) {
+    myteams.push(team.teamid);
+    myteams.sort();
+    setCookie('myteams',myteams.toString(),365,true);
+  };
+
   // create readable string for recurrence of events
   var teams_weekday_time=get_teams_weekday_time(team);
   document.title='wissenwerkommt';
@@ -80,8 +90,14 @@ function updateView(json) {
     mobile_main.innerHTML='<div id="main01"><div class="form_wrapper"><input type="text" id="visitteamid" maxlength=16 value="'+window.location.pathname.substr(1)+'" placeholder="Team-ID" autocomplete="off"><button aria-label="Team aufrufen" id="team_aufrufen" class="button_ok" onclick=getTeam(document.getElementById("visitteamid").value)>Team aufrufen</button></div><br><div class="textblock_wrapper">...oder erstelle dein eigenes Team:</div><div class="form_wrapper"><button aria-label="Team anlegen" class="button_ok" onclick="document.getElementById(\'main02\').style.display=\'block\';document.getElementById(\'main01\').style.display=\'none\'">neues Team</button></div><br></div><div id="main02" style=display:none><div class="form_wrapper"><input type="text" id="name" maxlength=24 value="" placeholder="Name deines Teams" autocomplete="off"><br>'+get_team_weekdaytime_selection(team)+'<br><input type="text" id="teamid" maxlength=16 value="'+window.location.pathname.substr(1)+'" placeholder="Team-ID *" autocomplete="off"><br><input type="text" id="admintoken" maxlength=16 value="'+(team.admintoken||'')+'" placeholder="Admin-Token" autocomplete="off"><input type="hidden" id="teamtoken" maxlength=16 value="'+(team.teamtoken||'')+'" autocomplete="off"><br><button aria-label="Team erstellen" class="button_ok" onclick=addTeam()>Team erstellen</button><br></div></div><div class="textblock_wrapper" id="teamlist"></div><div class="textblock_wrapper" id="stats"></div>';
     mobile_footer.innerHTML="";
     addOnKeyCode13EventListener('visitteamid','team_aufrufen');
-    serverRequest('getListOfTeamIDs',{"token":getCookie("token",true)},function (r){r=JSON.parse(r); r.forEach(function(t) {document.getElementById('teamlist').innerHTML+='<a href=/'+t+'>'+t+'</a> '})});
-    serverRequest('stats',{},function (r){if (typeof r!='undefined') {document.getElementById('stats').innerHTML=r} else {message('<span style=color:#f00>=== API is offline! ===</span><br>It\'ll probably be back in a minute...')}});
+
+    // team-favourites (from myteams-cookie)
+    document.getElementById('teamlist').innerHTML+='Lieblingsteams:<br>';
+    myteams.forEach(function(t) {document.getElementById('teamlist').innerHTML+='<a href=/'+t+'>'+t+'</a> '});
+    document.getElementById('teamlist').innerHTML+=' (<a href=/ onclick=setCookie("myteams","",365,true)>löschen</a>)';
+
+    serverRequest('getListOfTeamIDs',{"token":getCookie("token",true)},function (r){r=JSON.parse(r); if (r.length>0) {document.getElementById('teamlist').innerHTML=''}; r.forEach(function(t) {document.getElementById('teamlist').innerHTML+='<a href=/'+t+'>'+t+'</a> '});});
+    serverRequest('stats',{},function (r){if (typeof r!='undefined') {document.getElementById('stats').innerHTML=r} else {message('<span style=color:#f00>=== API is offline! ===</span>')}});
 
   }
 
@@ -99,7 +115,7 @@ function updateView(json) {
 
       // MAIN-page if a team is requested
       document.title=(!!team.name?team.name:'Team '+team.teamid);
-
+      
       mobile_head.innerHTML="<div class='head_wrapper'><button aria-label='toggleView' class='option_button' onclick=toggleView();>"+svg_menu+"</button><a href=/"+team.teamid+" style=text-decoration:none;font-weight:bold"+((!teams_weekday_time.length)?';position:relative;top:10px':'')+">"+(!!team.name?team.name:'Team '+team.teamid)+"</a><br><div style=font-size:0.7em>"+teams_weekday_time+"</div></div>";
 
       //---------- EVENTS ----------//
@@ -422,7 +438,7 @@ function showView(view_to_display) {
     document.getElementById('mobile_options').style.display='block';
     document.getElementById('mobile_main').style.display='none';
     showQRcode(""+window.location);
-    SocketIO();
+    //SocketIO();
     //navigator.serviceWorker.register('/service-worker.js');
   } else {
     document.getElementById('mobile_main').style.display='block';
@@ -617,7 +633,7 @@ function show_cookie_prompt(cname,str_functionToCall) {
   document.getElementById('cinput').focus();
 }
 
-function setCookie(cname, cvalue, exdays) {
+function setCookie(cname, cvalue, exdays, dontgetteam) {
   var expires='';
   cvalue=cvalue.replace(/[^\w\s\däüöÄÜÖß\.,!\@#$^&*()\+=\-\[\]\/{}\|:\?']/g,'').trim().slice(0,140);
   if (cvalue==""||cvalue==null) {exdays=0} //0 = delete cookie
@@ -627,7 +643,7 @@ function setCookie(cname, cvalue, exdays) {
     expires = "expires="+d.toUTCString();
   }
   document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
-  getTeam();
+  if (!dontgetteam) {getTeam()};
   return getCookie(cname,true);
 }
 
