@@ -4,6 +4,7 @@
   "datafilepath": "data",
   "sysoptoken": "sysop",
   "cryptosecret": "1234567890",
+  "maxGroups": 100,
   "maxTeams": 250,
   "maxEvents": 100,
   "maxIndications": 250

@@ -1,18 +1,77 @@
-module.exports = Group;
+module.exports = WissenWerKommt;
 var fs = require('fs');
 var crypto = require('crypto');
 var config = {};
 try {config=require('./config.json')} catch(err){};
 
-function Group() {
+function WissenWerKommt() {
+  this.groups=[];
   this.teams=[];
 }
 
+// Group <n:n> Team <1:n> Event
+
+// Group (Sparte)
+function Group(json) {
+  let res=[];
+  this.groupid=validateString('id',json.groupid,res);
+  this.admintoken=validateString('token',json.admintoken,res);
+  this.teamtoken=validateString('token',json.teamtoken,res);
+  this.name=validateString('name',json.name,res);
+  // TODO: listOfTeamIDsAndTeamToken (members)
+  this.members=json.members;
+  _debug('GROUP '+this.groupid+' >> '+res);
+}
+
+WissenWerKommt.prototype.addGroup = function(json) {
+  let group=new Group(json);
+  if ( (typeof group.groupid !== 'undefined') && (!this.findTeam(group.groupid)) && (!this.findGroup(group.groupid)) )
+  {
+    if (!(this.groups instanceof Array)) {this.groups=[]};
+    if (this.groups.length<(config.maxGroups||100)) {this.groups.push(group)} else {return false}
+    return group;
+  } else {
+    return false;
+  }
+}
+
+WissenWerKommt.prototype.editGroup = function(json) {
+  // create a temporary group-object to make use of data-checks in constructor
+  let editGroup=new Group(json);
+  let group=this.findTeam(editGroup.groupid);
+  if (group) {
+    // exceptional case: new_groupid changes existing groupid (only, if new_groupid does not exist yet)
+    if (json['new_groupid']!==undefined) {
+      // generate temporary group with new_groupid to check validity and availability of new groupid
+      let temp_group=new Group({'groupid':json['new_groupid']});
+      if ( (typeof temp_group.groupid !== 'undefined') && (!this.findTeam(temp_group.groupid)) && (!this.findGroup(temp_group.groupid)) ) {
+        editGroup.groupid=temp_group.groupid;
+      } else {return false}
+      json['new_groupid']=undefined;
+    }
+    // check for each property, if json-key (!) is not undefined
+    // that way, a string with no length ('') can delete/undefine a current string
+    for (let key of Object.keys(editGroup)) {if (json[key]!==undefined) {group[key]=editGroup[key]}};
+    return group;
+  } else {
+    return false;
+  }
+}
+
+WissenWerKommt.prototype.deleteGroup = function(json) {
+  if ( (json.hasOwnProperty('groupid')) && (this.findGroup(json.groupid)) ) {
+    this.groups=this.groups.filter(g=>g.groupid!==json.groupid);
+    return true;
+  } else {return false}
+}
+
+
+// Team (Mannschaft)
 function Team(json) {
   let res=[];
-  this.teamid=validateString('teamid',json.teamid,res);
-  this.admintoken=validateString('admintoken',json.admintoken,res);
-  this.teamtoken=validateString('teamtoken',json.teamtoken,res);
+  this.teamid=validateString('id',json.teamid,res);
+  this.admintoken=validateString('token',json.admintoken,res);
+  this.teamtoken=validateString('token',json.teamtoken,res);
   this.name=validateString('name',json.name,res);
   if (json.recurrence instanceof Array) {
     this.recurrence=[];
@@ -28,6 +87,7 @@ function Team(json) {
   _debug('TEAM '+this.teamid+' >> '+res);
 }
 
+// Event (Termin)
 function Event(json) {
   let res=[];
   this.datetime=validateString('datetime',json.datetime);
@@ -38,13 +98,19 @@ function Event(json) {
   _debug('EVENT '+this.datetime+' >> '+res);
 }
 
-Group.prototype.getListOfTeamIDs = function() {
+WissenWerKommt.prototype.getAllIDs = function() {
+  var groups=[];
+  if (this.groups instanceof Array) {
+    groups=this.groups.map(g=>g.groupid).sort();
+  }
+  var teams=[];
   if (this.teams instanceof Array) {
-    return this.teams.map(t=>t.teamid).sort();
-  } else {return false}
+    teams=this.teams.map(t=>t.teamid).sort();
+  }
+  return {"groups":groups,"teams":teams};
 }
 
-Group.prototype.getTeam = function(teamid,backfill) {
+WissenWerKommt.prototype.getTeam = function(teamid,backfill) {
   let t=this.findTeam(teamid);
   if (t) {
     if (!(t.events instanceof Array)) {t.events=[]};
@@ -61,18 +127,33 @@ Group.prototype.getTeam = function(teamid,backfill) {
     if (!t.events.length) {t.events=undefined};
     return t;
   }
+  // if id is not a teamid - it maybe is a groupid ... try it
+  return this.getGroup(teamid);
+}
+
+WissenWerKommt.prototype.getGroup = function(groupid) {
+  let g=this.findGroup(groupid);
+  if (g) {
+    // filter members with same id as groupid to prevent infinite loop (should only occur when data is manipulated)
+    if (g.members) {
+      g.members=g.members.filter(m=>m.teamid!=groupid);
+      g.members.sort((a,b)=>{return (a.teamid>b.teamid)?1:-1});
+      if (!g.members.length) {g.members=undefined};
+    }
+    return g;
+  }
   return false;
 }
 
-Group.prototype.groomTeams = function(backfill) {
+WissenWerKommt.prototype.groomTeams = function(backfill) {
   // delete all backfilled events from model (you may want do this with (backfill=false) some time to save space - or just to groom)
   // events will automatically be backfilled when getTeam is requested
   this.teams.forEach((t)=>{this.getTeam(t.teamid,backfill)});
 }
 
-Group.prototype.addTeam = function(json) {
+WissenWerKommt.prototype.addTeam = function(json) {
   let team=new Team(json);
-  if ( (typeof team.teamid !== 'undefined') && (!this.findTeam(team.teamid)) )
+  if ( (typeof team.teamid !== 'undefined') && (!this.findTeam(team.teamid)) && (!this.findGroup(team.teamid)) )
   {
     if (!(this.teams instanceof Array)) {this.teams=[]};
     if (this.teams.length<(config.maxTeams||250)) {this.teams.push(team)} else {return false}
@@ -82,7 +163,7 @@ Group.prototype.addTeam = function(json) {
   }
 }
 
-Group.prototype.editTeam = function(json) {
+WissenWerKommt.prototype.editTeam = function(json) {
   // create a temporary team-object to make use of data-checks in constructor
   let editTeam=new Team(json);
   let team=this.findTeam(editTeam.teamid);
@@ -91,7 +172,7 @@ Group.prototype.editTeam = function(json) {
     if (json['new_teamid']!==undefined) {
       // generate temporary team with new_teamid to check validity and availability of new teamid
       let temp_team=new Team({'teamid':json['new_teamid']});
-      if ( (typeof temp_team.teamid !== 'undefined') && (!this.findTeam(temp_team.teamid)) ) {
+      if ( (typeof temp_team.teamid !== 'undefined') && (!this.findTeam(temp_team.teamid)) && (!this.findGroup(temp_team.teamid)) ) {
         editTeam.teamid=temp_team.teamid;
       } else {return false}
       json['new_teamid']=undefined;
@@ -105,7 +186,7 @@ Group.prototype.editTeam = function(json) {
   }
 }
 
-Group.prototype.deleteTeam = function(json) {
+WissenWerKommt.prototype.deleteTeam = function(json) {
   if ( (json.hasOwnProperty('teamid')) && (this.findTeam(json.teamid)) ) {
     this.teams=this.teams.filter(t=>t.teamid!==json.teamid);
     //if (!this.teams.length) {this.teams=undefined; return [];};
@@ -113,7 +194,7 @@ Group.prototype.deleteTeam = function(json) {
   } else {return false}
 }
 
-Group.prototype.getUserLevel = function(teamid,token) {
+WissenWerKommt.prototype.getUserLevel = function(teamid,token) {
   let t=this.findTeam(teamid);
   let userLevel=0; // not a member
   if (t) {
@@ -129,27 +210,34 @@ Group.prototype.getUserLevel = function(teamid,token) {
   return userLevel;
 };
 
-Group.prototype.getStats = function(io) {
+WissenWerKommt.prototype.getStats = function(io) {
+  let groupCount=0;
   let teamCount=0;
   let eventCount=0;
   let attendCount=0;
   let refusalCount=0;
+  try {groupCount=this.groups.length} catch(e) {};
   try {teamCount=this.teams.length} catch(e) {};
   eventCount=this.teams.reduce((a,t)=>a+=t.events?t.events.length:0,0);
   attendCount=this.teams.reduce((a,t)=>a+=t.events?t.events.reduce((b,u)=>b+=u.attendees?u.attendees.length:0,0):0,0);
   refusalCount=this.teams.reduce((a,t)=>a+=t.events?t.events.reduce((b,u)=>b+=u.refusals?u.refusals.length:0,0):0,0);
-  return {"teams":teamCount,"events":eventCount,"attendees":attendCount,"refusals":refusalCount,"md5":hash(JSON.stringify(this)),"kb":Math.round(JSON.stringify(this).length/1024),"users":io.engine.clientsCount+1};
+  return {"groups":groupCount,"teams":teamCount,"events":eventCount,"attendees":attendCount,"refusals":refusalCount,"md5":hash(JSON.stringify(this)),"kb":Math.round(JSON.stringify(this).length/1024),"users":io.engine.clientsCount+1};
 }
 
-Group.prototype.load_from_file = function(filepath,filename,callback) {
+WissenWerKommt.prototype.load_from_file = function(filepath,filename,callback) {
   this.teams=[];
-  fs.readFile(filepath+'/'+filename, 'utf8', (err, data)=>{
+  fs.readFile(filepath+'/'+filename, 'utf8', (err, data_encrypted)=>{
     if (err){console.log('No data-file.')} else {
       // decrypt
-      try {data=decrypt(JSON.parse(data))} catch (err) {console.log('decryption failed',err)}
-      try {group = JSON.parse(data)} catch (err) {group={}};
-      if (group.hasOwnProperty('teams')) {
-        group.teams.forEach((t)=>{
+      try {data_encrypted=decrypt(JSON.parse(data_encrypted))} catch (err) {console.log('decryption failed',err)}
+      try {data = JSON.parse(data_encrypted)} catch (err) {data={}};
+      if (data.hasOwnProperty('groups')) {
+        data.groups.forEach((g)=>{
+          let group=this.addGroup(g);
+        });
+      }
+      if (data.hasOwnProperty('teams')) {
+        data.teams.forEach((t)=>{
           let team=this.addTeam(t);
           if ((team)&&(t.hasOwnProperty('events'))) {
             t.events.forEach((e)=>{team.addEvent(e)});
@@ -161,8 +249,7 @@ Group.prototype.load_from_file = function(filepath,filename,callback) {
   });
 }
 
-Group.prototype.save_to_file = function(filepath,filename,callback,backup) {
-  //if (this.teams.length==0) {callback(this)}
+WissenWerKommt.prototype.save_to_file = function(filepath,filename,callback,backup) {
   // encrypt
   let data=encrypt(JSON.stringify(this));
   fs.writeFile(filepath+'/'+filename, data, 'utf8', (err)=>{
@@ -198,13 +285,19 @@ function decrypt(text) {
 }
 function getCipherKey(key) {if ((typeof key!= 'string')||(key.length<1)) {key="nosecret"}; while (key.length<32) {key+=key}; while (key.length>32) {key=key.slice(0,-1)}; return key;}
 
-Group.prototype.findTeam = function(teamid) {
+WissenWerKommt.prototype.findGroup = function(groupid) {
+  if ((typeof groupid=='string') && this.groups instanceof Array && groupid) {
+    return this.groups.find(g => g.groupid==groupid.toLowerCase())||false;
+  } else {return false}
+}
+
+WissenWerKommt.prototype.findTeam = function(teamid) {
   if ((typeof teamid=='string') && this.teams instanceof Array && teamid) {
     return this.teams.find(t => t.teamid==teamid.toLowerCase())||false;
   } else {return false}
 }
 
-Group.prototype.findEvent = function(teamid,datetime) {
+WissenWerKommt.prototype.findEvent = function(teamid,datetime) {
   let team=this.findTeam(teamid);
   if (team) {return team.findEvent(datetime)} else {return false}
 }
@@ -312,15 +405,14 @@ function validateString(propertyname,string,res) {
   if (s!==string) {res.push(propertyname+": invalid characters removed")};
 
   switch (propertyname) {
-    case 'teamid':
+    case 'id':
       if (/^\w{3,16}$/i.test(s)) {
         return s.toLowerCase();
       } else {
         res.push(propertyname+" has to have no other but 3 to 16 word characters (a-z, A-Z, 0-9, _)");
       }
       break;
-    case 'admintoken':
-    case 'teamtoken':
+    case 'token':
       if (/^.{1,16}$/i.test(s)) {
         return s;
       } else {

@@ -7,8 +7,8 @@ var path = require('path');
 var config = {};
 try {config=require('./config.json')} catch(err){};
 var port = process.env.PORT || config.port || 3000;
-var Group = require('./group.js');
-var db=new Group();
+var WissenWerKommt = require('./wissenwerkommt.js');
+var db=new WissenWerKommt();
 server.listen(port, function () {
   db.load_from_file(config.datafilepath,config.datafile,()=>{});
 });
@@ -66,14 +66,9 @@ app.use('/api/:r/:t?', function (req, res) {
   switch (req.params.r) {
 
     // open
-    /*
-    case 'getListOfTeamIDs':
-      res.json(db.getListOfTeamIDs());
+    case 'addGroup':
+      res.json(db.addGroup(req.body)||{'error':'groupid invalid or existing'});
       break;
-    case 'getUserLevel':
-      res.json(getUserLevel(req));
-      break;
-    */
     case 'addTeam':
       res.json(db.addTeam(req.body)||{'error':'teamid invalid or existing'});
       break;
@@ -122,7 +117,19 @@ app.use('/api/:r/:t?', function (req, res) {
       } else {res.status(401).json({'error':'not sufficient rights to comment event'})}
       break;
 
-    // team admins only
+    // admins only
+    case 'editGroup':
+      if (getUserLevel(req)>1) {
+        res.json(db.editGroup(req.body));
+        emitUpdate(req.body.groupid);
+      } else {res.status(401).json({'error':'not sufficient rights to edit group'})}
+      break;
+    case 'deleteGroup':
+      if (getUserLevel(req)>1) {
+        res.json(db.deleteGroup(req.body));
+        emitUpdate(req.body.groupid);
+      } else {res.status(401).json({'error':'not sufficient rights to delete group'})}
+      break;
     case 'editTeam':
       if (getUserLevel(req)>1) {
         res.json(db.editTeam(req.body));
@@ -178,10 +185,10 @@ app.use('/api/:r/:t?', function (req, res) {
         db.groomTeams(true);
       } else {res.status(401).json({'error':'not sufficient rights to do that (dump)'})}
       break;
-    case 'getListOfTeamIDs':
+    case 'getAllIDs':
       if (getUserLevel(req)>2) {
-        res.json(db.getListOfTeamIDs());
-      } else {res.json([])}
+        res.json(db.getAllIDs());
+      } else {res.status(401).json({'error':'not sufficient rights to do that (getAllIDs)'})}
       break;
     case 'getLog':
       if (getUserLevel(req)>2) {
