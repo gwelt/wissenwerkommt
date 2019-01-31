@@ -134,8 +134,8 @@ WissenWerKommt.prototype.getTeam = function(teamid,backfill) {
 WissenWerKommt.prototype.getGroup = function(groupid) {
   let g=this.findGroup(groupid);
   if (g) {
-    // filter members with same id as groupid to prevent infinite loop (should only occur when data is manipulated)
     if (g.members) {
+      // filter members with same id as groupid to prevent infinite loop (should only occur when data is manipulated)
       g.members=g.members.filter(m=>m.teamid!=groupid);
       g.members.sort((a,b)=>{return (a.teamid>b.teamid)?1:-1});
       if (!g.members.length) {g.members=undefined};
@@ -194,8 +194,8 @@ WissenWerKommt.prototype.deleteTeam = function(json) {
   } else {return false}
 }
 
-WissenWerKommt.prototype.getUserLevel = function(teamid,token) {
-  let t=this.findTeam(teamid);
+WissenWerKommt.prototype.getUserLevel = function(id,token) {
+  let t=this.findTeam(id);
   let userLevel=0; // not a member
   if (t) {
     if ((t.admintoken)&&(token==t.admintoken)) {
@@ -204,6 +204,18 @@ WissenWerKommt.prototype.getUserLevel = function(teamid,token) {
       if ((!t.teamtoken)||(token==t.teamtoken)) {
         userLevel=1;  // team-member
         if (!t.admintoken) {userLevel=2} // team-admin
+      }
+    }
+  } else {
+    let g=this.findGroup(id);
+    if (g) {
+      if ((g.admintoken)&&(token==g.admintoken)) {
+        userLevel=2; // group-admin
+      } else {
+        if ((!g.teamtoken)||(token==g.teamtoken)) {
+          userLevel=1;  // group-member
+          if (!g.admintoken) {userLevel=2} // group-admin
+        }
       }
     }
   }
