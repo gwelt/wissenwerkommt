@@ -28,10 +28,10 @@ describe ('OPEN REST-REQUESTS', function() {
     });
   });
 
-  describe('GET /api/getListOfTeamIDs', function() {
-    it('Returns a list of all team-IDs.', function(done) {
+  describe('GET /api/getAllIDs', function() {
+    it('Returns a list of all team- and group-IDs.', function(done) {
       request(app)
-        .get('/api/getListOfTeamIDs')
+        .get('/api/getAllIDs')
         .send({token:'sysop'})
         .set('Accept', 'application/json')
         .expect('Content-Type', /json/)
