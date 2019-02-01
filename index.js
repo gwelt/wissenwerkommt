@@ -78,6 +78,7 @@ app.use('/api/:r/:t?', function (req, res) {
 
     // team members only
     case 'getTeam':
+      // will also getGroup
       let userlevel=getUserLevel(req);
       if (userlevel>0) {
         let team=db.getTeam(req.params.t||req.body.teamid);

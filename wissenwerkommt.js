@@ -5,11 +5,11 @@ var config = {};
 try {config=require('./config.json')} catch(err){};
 
 function WissenWerKommt() {
-  this.groups=[];
-  this.teams=[];
+  this.groups=[]; // Sparten
+  this.teams=[]; // Mannschaften
 }
 
-// Group <n:n> Team <1:n> Event
+// Group/Sparte <n:n> Team/Mannschaft <1:n> Event/Termin
 
 // Group (Sparte)
 function Group(json) {
