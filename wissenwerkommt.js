@@ -38,7 +38,7 @@ WissenWerKommt.prototype.addGroup = function(json) {
 WissenWerKommt.prototype.editGroup = function(json) {
   // create a temporary group-object to make use of data-checks in constructor
   let editGroup=new Group(json);
-  let group=this.findTeam(editGroup.groupid);
+  let group=this.findGroup(editGroup.groupid);
   if (group) {
     // exceptional case: new_groupid changes existing groupid (only, if new_groupid does not exist yet)
     if (json['new_groupid']!==undefined) {
