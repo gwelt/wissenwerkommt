@@ -239,7 +239,7 @@ function updateView(json) {
   cookie=getCookie("name",true);
   if (cookie) {text='Hallo <b>'+cookie+'</b>.<br>Schön, dass du da bist.';}
   svg='';
-  menu+='<div class="options_option"><button aria-label="Name" class="option_button" onclick="show_cookie_prompt(\'name\');">'+svg+'</button><div class="option_text">'+text+'</div></div>';
+  menu+='<div class="options_option"><button aria-label="Name" class="option_button" onclick="show_cookie_prompt(\'name\',showView(\'mobile_main\'));">'+svg+'</button><div class="option_text">'+text+'</div></div>';
 
   // MENU:TOKEN
   cookie=getCookie("token",true);
@@ -684,8 +684,8 @@ function show_cookie_prompt(cname,str_functionToCall) {
   var text='???';
   var placeholder='';
   var preval=(getCookie(cname,true)||'');
-  if (cname=='name') {text='Bitte gib deinen <b>Namen</b> ein:'; placeholder='Name';}
-  else if (cname=='token') {text='Bitte gib deinen <b>Token</b> ein:'; placeholder='Token';}
+  if (cname=='name') {text='Bitte gib deinen <b>Namen</b> ein:'; placeholder='';}
+  else if (cname=='token') {text='Bitte gib deinen <b>Token</b> ein:'; placeholder='';}
   var e=document.getElementById('mobile_prompt');
   e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">'+text+'</div><input type="text" id="cinput" maxlength=24 value="'+preval+'" placeholder="'+placeholder+'" autocomplete="off"><button aria-label="ok" class="button_ok" id="okCookie" onclick="setCookie(\''+cname+'\',document.getElementById(\'cinput\').value,365);hide_prompt();'+(str_functionToCall||'')+'">ok</button><div style=clear:both></div><div class="prompt_text_bottom">Diese Information wird als Cookie in deinem Browser gespeichert.<br><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
   document.getElementById('mobile_inner').style.display='none';
