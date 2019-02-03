@@ -60,7 +60,7 @@ app.use('/:t/manifest.json', function (req, res) {
   });
 });
 app.use('/api/:r/:t?', function (req, res) {
-  
+
   if (['attend','refuse','undecided'].find((a)=>a==req.params.r)) {log.add(req.params,req.body)}
 
   switch (req.params.r) {
@@ -235,16 +235,22 @@ function emitUpdate(teamid) {
 
 function getUserLevel(req) {
   if ((typeof req=='object')&&(req.body)&&(req.params)) {
-    let teamid=req.params.t||req.body.teamid;
+    let id=req.params.t||req.body.teamid||req.params.g||req.body.groupid;
     let token=req.body.token;
     if ((token==config.sysoptoken) && (token!==undefined)) {return 3}
-    return db.getUserLevel(teamid,token);
+    return db.getUserLevel(id,token);
   }
-  else {
+  else if (req.teamid) {
     let teamid=req.teamid;
     let token=req.token;
     if ((token==config.sysoptoken) && (token!==undefined)) {return 3}
     return db.getUserLevel(teamid,token);
+  }
+  else if (req.groupid) {
+    let groupid=req.groupid;
+    let token=req.token;
+    if ((token==config.sysoptoken) && (token!==undefined)) {return 3}
+    return db.getUserLevel(groupid,token);
   }
 }
 

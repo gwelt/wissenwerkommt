@@ -74,21 +74,21 @@ function updateView(json) {
 
   // read myteams-cookie
   var myteams=(getCookie('myteams',true)||'').split(",");
-  
+
   if (temp_obj.error) {
     // MAIN-page if a team or group is requested but not found or not allowed
     document.title='wissenwerkommt';
     message('',false); // don't want the message here...
     mobile_head.innerHTML="<div class='head_wrapper'><button aria-label='toggleView' class='option_button' onclick=toggleView();>"+svg_menu+"</button><a href=/ style=text-decoration:none;font-weight:bold>wissenwerkommt</a><br><div style=font-size:0.7em>/<a href=/"+window.location.pathname.substr(1)+">"+window.location.pathname.substr(1)+"</a></div></div>";
     mobile_main.innerHTML='<div class="error_wrapper"><div class="error_text" style=padding-bottom:12px>Das Team hat einen Code für den Zugriff vereinbart:</div><button aria-label="Token eingeben" style="width:100%" onclick=show_cookie_prompt(\'token\')>Token eingeben</button></div>';
-    mobile_footer.innerHTML="<div id='footer_wrapper' class='footer_wrapper'><div style=font-size:0.7em;text-align:center>Immer besser zu <a href=/>wissenwerkommt</a>.</div></div>";    
+    mobile_footer.innerHTML="<div id='footer_wrapper' class='footer_wrapper'><div style=font-size:0.7em;text-align:center>Immer besser zu <a href=/>wissenwerkommt</a>.</div></div>";
   }
 
   if (group) {
     // GROUP
     // MAIN-page if a group is requested
     document.title=(!!group.name?group.name:'Sparte '+group.groupid);
-    
+
     // add groupid to myteams-cookie
     if ((group.groupid)&&(myteams.indexOf(group.groupid)<0)) {
       myteams.push(group.groupid);
@@ -98,7 +98,7 @@ function updateView(json) {
 
     mobile_head.innerHTML="<div class='head_wrapper'><button aria-label='toggleView' class='option_button' onclick=toggleView();>"+svg_menu+"</button><a href=/"+group.groupid+" style=text-decoration:none;font-weight:bold>"+(!!group.name?group.name:'Sparte '+group.groupid)+"</a><br><div style=font-size:0.7em>"+group.groupid+"</div></div>";
     mobile_main.innerHTML='<div class="statusbutton_wrapper">'+JSON.stringify(group)+'</div>';
-    mobile_footer.innerHTML="<div id='footer_wrapper' class='footer_wrapper'><div style=font-size:0.7em;text-align:center>Immer besser zu <a href=/>wissenwerkommt</a>.</div></div>";    
+    mobile_footer.innerHTML="<div id='footer_wrapper' class='footer_wrapper'><div style=font-size:0.7em;text-align:center>Immer besser zu <a href=/>wissenwerkommt</a>.</div></div>";
   }
 
   if (team) {
@@ -115,7 +115,7 @@ function updateView(json) {
 
     // create readable string for recurrence of events
     var teams_weekday_time=get_teams_weekday_time(team);
-    
+
     mobile_head.innerHTML="<div class='head_wrapper'><button aria-label='toggleView' class='option_button' onclick=toggleView();>"+svg_menu+"</button><a href=/"+team.teamid+" style=text-decoration:none;font-weight:bold"+((!teams_weekday_time.length)?';position:relative;top:10px':'')+">"+(!!team.name?team.name:'Team '+team.teamid)+"</a><br><div style=font-size:0.7em>"+teams_weekday_time+"</div></div>";
 
     //---------- EVENTS ----------//
@@ -439,15 +439,29 @@ function show_teamPreferenceWeekdayTime_prompt(team) {
 }
 function show_teamPreference_prompt(text,param,preval,subline) {
   var e=document.getElementById('mobile_prompt');
-  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">'+text+'</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><input type="text" id="'+param+'" maxlength=24 value="'+preval+'" placeholder="" autocomplete="off"><button aria-label="ok" id="okTeamPreference" class="button_ok" onclick="editTeam();hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom">'+(subline?subline+'<br>':'')+'<br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
+   e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">'+text+'</div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><input type="text" id="'+param+'" maxlength=24 value="'+preval+'" placeholder="" autocomplete="off"><button aria-label="ok" id="okTeamPreference" class="button_ok" onclick="editTeam();hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom">'+(subline?subline+'<br>':'')+'<br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
   document.getElementById('mobile_inner').style.display='none';
   addOnKeyCode13EventListener(param,'okTeamPreference');
+  e.style.display='block';
+  document.getElementById(param).focus();
+}
+function show_groupPreference_prompt(text,param,preval,subline) {
+  var e=document.getElementById('mobile_prompt');
+   e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">'+text+'</div><input type="hidden" id="groupid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><input type="text" id="'+param+'" maxlength=24 value="'+preval+'" placeholder="" autocomplete="off"><button aria-label="ok" id="okGroupPreference" class="button_ok" onclick="editGroup();hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom">'+(subline?subline+'<br>':'')+'<br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
+  document.getElementById('mobile_inner').style.display='none';
+  addOnKeyCode13EventListener(param,'okGroupPreference');
   e.style.display='block';
   document.getElementById(param).focus();
 }
 function show_teamDeleteTeam_prompt() {
   var e=document.getElementById('mobile_prompt');
   e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">Möchtest du dieses Team unwiderruflich <b>löschen</b>?<br><br><i>'+(team.name?team.name:'Team '+team.teamid)+'</i></div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><button aria-label="ok" class="button_ok" onclick="deleteTeam();hide_prompt();">Team löschen</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
+  document.getElementById('mobile_inner').style.display='none';
+  e.style.display='block';
+}
+function show_groupDeleteGroup_prompt() {
+  var e=document.getElementById('mobile_prompt');
+  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">Möchtest du diese Sparte unwiderruflich <b>löschen</b>?<br><br><i>'+(group.name?group.name:'Team '+group.groupid)+'</i></div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><button aria-label="ok" class="button_ok" onclick="deleteGroup();hide_prompt();">Sparte löschen</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
   document.getElementById('mobile_inner').style.display='none';
   e.style.display='block';
 }
@@ -601,8 +615,16 @@ function editTeam() {
   serverRequest('editTeam',{token:getCookie('token',true),teamid:document.getElementById('teamid')?document.getElementById('teamid').value:undefined,new_teamid:document.getElementById('new_teamid')?document.getElementById('new_teamid').value:undefined,name:document.getElementById('name')?document.getElementById('name').value:undefined,teamtoken:document.getElementById('teamtoken')?document.getElementById('teamtoken').value:undefined,admintoken:document.getElementById('admintoken')?document.getElementById('admintoken').value:undefined,recurrence:recurrences},function (r){updateStatus(r);});
 }
 
+function editGroup() {
+  serverRequest('editGroup',{token:getCookie('token',true),groupid:document.getElementById('groupid')?document.getElementById('groupid').value:undefined,new_groupid:document.getElementById('new_groupid')?document.getElementById('new_groupid').value:undefined,name:document.getElementById('name')?document.getElementById('name').value:undefined,teamtoken:document.getElementById('teamtoken')?document.getElementById('teamtoken').value:undefined,admintoken:document.getElementById('admintoken')?document.getElementById('admintoken').value:undefined},function (r){updateStatus(r);});
+}
+
 function deleteTeam() {
   serverRequest('deleteTeam',{token:getCookie('token',true),teamid:document.getElementById('teamid').value},function (r){updateStatus(r);showView('mobile_main');});
+}
+
+function deleteGroup() {
+  serverRequest('deleteGroup',{token:getCookie('token',true),groupid:document.getElementById('groupid').value},function (r){updateStatus(r);showView('mobile_main');});
 }
 
 function addEvent() {
