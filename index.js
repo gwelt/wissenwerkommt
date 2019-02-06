@@ -125,6 +125,18 @@ app.use('/api/:r/:t?', function (req, res) {
         emitUpdate(req.body.groupid);
       } else {res.status(401).json({'error':'not sufficient rights to edit group'})}
       break;
+    case 'addMember':
+      if (getUserLevel(req)>1) {
+        let agroup=db.findGroup(req.body.groupid);
+        if (agroup) {res.json(agroup.addMember({"id":req.body.memberid,"token":req.body.membertoken}));emitUpdate(req.body.groupid)} else {res.json(false)}
+      } else {res.status(401).json({'error':'not sufficient rights to add member'})}
+      break;
+    case 'removeMember':
+      if (getUserLevel(req)>1) {
+        let agroup=db.findGroup(req.body.groupid);
+        if (agroup) {res.json(agroup.removeMember({"id":req.body.memberid}));emitUpdate(req.body.groupid)} else {res.json(false)}
+      } else {res.status(401).json({'error':'not sufficient rights to remove member'})}
+      break;
     case 'deleteGroup':
       if (getUserLevel(req)>1) {
         res.json(db.deleteGroup(req.body));

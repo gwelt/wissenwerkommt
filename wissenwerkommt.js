@@ -18,9 +18,36 @@ function Group(json) {
   this.admintoken=validateString('token',json.admintoken,res);
   this.teamtoken=validateString('token',json.teamtoken,res);
   this.name=validateString('name',json.name,res);
-  // TODO: listOfTeamIDsAndTeamToken (members)
-  this.members=json.members;
+  this.members=[];
   _debug('GROUP '+this.groupid+' >> '+res);
+}
+// Member (Mitglied / Team einer Sparte)
+function Member(json) {
+  let res=[];
+  this.id=validateString('id',json.id,res);
+  this.token=validateString('token',json.token,res);
+  _debug('MEMBER '+this.id+' >> '+res);
+}
+
+Group.prototype.addMember = function(json) {
+  // add member (team) to group
+  let member=new Member(json);
+  if ( (typeof member.id !== 'undefined') && (member.id!=this.groupid) && ((!this.members) || (!this.members.find(m=>m.id==member.id))) )
+  {
+    if (!(this.members instanceof Array)) {this.members=[]};
+    if (this.members.length<(config.maxTeams||250)) {this.members.push(member); this.members.sort((a,b)=>{return (a.id>b.id)?1:-1});} else {return false}
+    return member;
+  } else {
+    return false;
+  }
+}
+
+Group.prototype.removeMember = function(json) {
+  // remove member (team) from group
+  if ( (json.hasOwnProperty('id')) && (this.members) )  {
+    this.members=this.members.filter(m=>m.id!==json.id);
+    return true;
+  } else {return false}
 }
 
 WissenWerKommt.prototype.addGroup = function(json) {
@@ -136,8 +163,8 @@ WissenWerKommt.prototype.getGroup = function(groupid) {
   if (g) {
     if (g.members) {
       // filter members with same id as groupid to prevent infinite loop (should only occur when data is manipulated)
-      g.members=g.members.filter(m=>m.teamid!=groupid);
-      g.members.sort((a,b)=>{return (a.teamid>b.teamid)?1:-1});
+      g.members=g.members.filter(m=>m.id!=groupid);
+      //g.members.sort((a,b)=>{return (a.id>b.id)?1:-1});
       if (!g.members.length) {g.members=undefined};
     }
     return g;
@@ -245,7 +272,12 @@ WissenWerKommt.prototype.load_from_file = function(filepath,filename,callback) {
       try {data = JSON.parse(data_encrypted)} catch (err) {data={}};
       if (data.hasOwnProperty('groups')) {
         data.groups.forEach((g)=>{
-          let group=this.addGroup(g);
+          var group=this.addGroup(g);
+          if (g.hasOwnProperty('members')) {
+            g.members.forEach((m)=>{
+              group.addMember(m);
+            })
+          }
         });
       }
       if (data.hasOwnProperty('teams')) {

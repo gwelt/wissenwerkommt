@@ -252,14 +252,12 @@ function updateView(json) {
   if ((group)&&(group.userlevel)&&(group.userlevel>1)) {
     admin_menu+='<div class="divider">Teams in der Sparte</div>';
     // ADMIN_MENU:ADD TEAM
-    // TODO: show_groupAddMember_prompt()
     admin_menu+='<div class="options_option"><button aria-label="Team aufnehmen" class="option_button" onclick="show_groupAddMember_prompt()"></button><div class="option_text">Team aufnehmen</div></div>';
     // ADMIN_MENU:REMOVE TEAM
     // TODO: show_groupRemoveMember_prompt()
     admin_menu+='<div class="options_option"><button aria-label="Team entfernen" class="option_button" onclick="show_groupRemoveMember_prompt()"></button><div class="option_text">Team entfernen</div></div>';
     admin_menu+='<div class="divider">Sparte</div>';
     // ADMIN_MENU:GROUP-NAME
-    // TODO: show_groupPreference_prompt()
     admin_menu+='<div class="options_option"><button aria-label="Name der Sparte" class="option_button" onclick="show_groupPreference_prompt(\'<b>Name</b> der Sparte:\',\'name\',\''+(group.name?group.name:'')+'\',\'\');"></button><div class="option_text">Name der Sparte:<br><b>'+(group.name?group.name:'Sparte '+group.groupid)+'</b></div></div>';
     // ADMIN_MENU:GROUP-ID
     admin_menu+='<div class="options_option"><button aria-label="Sparten-ID" class="option_button" onclick="show_groupPreference_prompt(\'<b>Sparten-ID</b> / Aufruf-URL:\',\'new_groupid\',\''+(group.groupid?group.groupid:'')+'\',\'Achtung! Mit der Sparten-ID veränderst du auch den Aufruf-Link (URL) für diese Sparte!\');"></button><div class="option_text">ID der Sparte:<br><b>'+group.groupid+'</b></div></div>';
@@ -268,7 +266,6 @@ function updateView(json) {
     // ADMIN_MENU:TEAM-TOKEN
     admin_menu+='<div class="options_option"><button aria-label="Team-Token" class="option_button" onclick="show_groupPreference_prompt(\'<b>Team-Token</b>:\',\'teamtoken\',\''+(group.teamtoken?group.teamtoken:'')+'\',\'Vergiss nicht, deinem Team den neuen Team-Token mitzuteilen!\');"></button><div class="option_text">Team-Token:'+(group.teamtoken?'<br><b>'+group.teamtoken+'</b>':' keiner<br>Inhalt ist öffentlich.')+'</div></div>';
     // ADMIN_MENU:DELETE GROUP
-    // TODO: show_groupDeleteGroup_prompt()
     admin_menu+='<div class="options_option"><button aria-label="Sparte löschen" class="option_button" onclick="show_groupDeleteGroup_prompt()"></button><div class="option_text">Sparte löschen</div></div>';
     admin_menu+='<div class="divider"></div>';
   }
@@ -461,9 +458,23 @@ function show_teamDeleteTeam_prompt() {
 }
 function show_groupDeleteGroup_prompt() {
   var e=document.getElementById('mobile_prompt');
-  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">Möchtest du diese Sparte unwiderruflich <b>löschen</b>?<br><br><i>'+(group.name?group.name:'Team '+group.groupid)+'</i></div><input type="hidden" id="teamid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><button aria-label="ok" class="button_ok" onclick="deleteGroup();hide_prompt();">Sparte löschen</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
+  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">Möchtest du diese Sparte unwiderruflich <b>löschen</b>?<br><br><i>'+(group.name?group.name:'Team '+group.groupid)+'</i></div><input type="hidden" id="groupid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><button aria-label="ok" class="button_ok" onclick="deleteGroup();hide_prompt();">Sparte löschen</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
   document.getElementById('mobile_inner').style.display='none';
   e.style.display='block';
+}
+function show_groupAddMember_prompt() {
+  var e=document.getElementById('mobile_prompt');
+  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">Bitte gib die <b>Team-ID</b> des Teams an, das du der Sparte hinzufügen möchtest:</div><input type="hidden" id="groupid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><input type="text" id="memberid" maxlength=16 value="" placeholder="Team-ID" autocomplete="off"><div class="prompt_text_top"><b>Team-Token</b> des Teams:</div><input type="text" id="membertoken" maxlength=16 value="" placeholder="Team-Token" autocomplete="off"><button aria-label="ok" class="button_ok" onclick="addMember();hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
+  document.getElementById('mobile_inner').style.display='none';
+  e.style.display='block';
+  document.getElementById('memberid').focus();
+}
+function show_groupRemoveMember_prompt() {
+  var e=document.getElementById('mobile_prompt');
+  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">Bitte gib die <b>Team-ID</b> des Teams an, das du aus der Sparte entfernen möchtest:</div><input type="hidden" id="groupid" value="'+window.location.pathname.substr(1)+'" autocomplete="off"><input type="text" id="memberid" maxlength=16 value="" placeholder="Team-ID" autocomplete="off"><button aria-label="ok" class="button_ok" onclick="removeMember();hide_prompt();">ok</button><div style=clear:both></div><div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div></div>';
+  document.getElementById('mobile_inner').style.display='none';
+  e.style.display='block';
+  document.getElementById('memberid').focus();
 }
 function show_teamAddEvent_prompt() {
   var e=document.getElementById('mobile_prompt');
@@ -550,15 +561,15 @@ function getTeam(teamid) {
 }
 
 function updateStatus(json) {
-  // updateStatus will reload team-data after a change
+  // updateStatus will reload team/group-data after a change
   message('',false);
   debug(json);
   // call getTeam if socket will not take care of updateView (because it has not been loaded yet)
   // OR to URL-relocate if teamid changed (getTeam will take care of that)
   var o=JSON.parse(json);
-  if ( (!socket) || ((team.teamid!=o.teamid)&&(o.teamid!=undefined)) ) {
+  if ( (!socket) || ((team.teamid!=o.teamid)&&(o.teamid!=undefined)) || ((group.groupid!=o.groupid)&&(o.groupid!=undefined)) ) {
     //SocketIO();
-    getTeam(o.teamid?o.teamid:'');
+    getTeam((o.teamid||o.groupid)?(o.teamid||o.groupid):'');
   }
 }
 
@@ -629,6 +640,14 @@ function deleteGroup() {
 
 function addEvent() {
   serverRequest('addEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:document.getElementById('datetime').value,comment:document.getElementById('comment').value},function (r){updateStatus(r);toggleView();});
+}
+
+function addMember() {
+  serverRequest('addMember',{token:getCookie('token',true),groupid:window.location.pathname.substr(1),memberid:document.getElementById('memberid').value,membertoken:document.getElementById('membertoken').value},function (r){updateStatus(r);toggleView();});
+}
+
+function removeMember() {
+  serverRequest('removeMember',{token:getCookie('token',true),groupid:window.location.pathname.substr(1),memberid:document.getElementById('memberid').value},function (r){updateStatus(r);toggleView();});
 }
 
 function cancelORreviveEvent(datetime) {
