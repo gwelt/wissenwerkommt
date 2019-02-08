@@ -18,7 +18,7 @@ function Group(json) {
   this.admintoken=validateString('token',json.admintoken,res);
   this.teamtoken=validateString('token',json.teamtoken,res);
   this.name=validateString('name',json.name,res);
-  this.members=[];
+  this.members=undefined;
   _debug('GROUP '+this.groupid+' >> '+res);
 }
 // Member (Mitglied / Team einer Sparte)
@@ -155,17 +155,32 @@ WissenWerKommt.prototype.getTeam = function(teamid,backfill) {
     return t;
   }
   // if id is not a teamid - it maybe is a groupid ... try it
-  return this.getGroup(teamid);
+  //return this.getGroup(teamid);
+  return false;
 }
 
 WissenWerKommt.prototype.getGroup = function(groupid) {
-  let g=this.findGroup(groupid);
+  // get a copy of this group because data has to be added in return-value
+  let g=JSON.parse(JSON.stringify(this.findGroup(groupid)));
   if (g) {
     if (g.members) {
-      // filter members with same id as groupid to prevent infinite loop (should only occur when data is manipulated)
-      g.members=g.members.filter(m=>m.id!=groupid);
-      //g.members.sort((a,b)=>{return (a.id>b.id)?1:-1});
-      if (!g.members.length) {g.members=undefined};
+      if (!g.members.length) {g.members=undefined} else {
+        // get data from all member-teams
+        g.teams=[];
+        g.members.forEach((m)=>{
+          if (this.getUserLevel(m.id,m.token)>0) {
+            // get a copy of this team because data has to be removed in return-value
+            let t=JSON.parse(JSON.stringify(this.getTeam(m.id)));
+            if (t) {
+              // t will be false, if id refers to a group
+              // remove admintoken and teamtoken
+              t.admintoken=undefined;
+              t.teamtoken=undefined;
+              g.teams.push(t);
+            }
+          }
+        });
+      }
     }
     return g;
   }
