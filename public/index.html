@@ -14,7 +14,7 @@ var socket=false;
 var currentView=undefined;
 var is_mobile=1;
 var QRCode=undefined;
-var useSocketIO=false;
+var useSocketIO=true;
 
 // Polyfills
 if ((!Array.prototype.includes)||(!Array.prototype.find)) {loadScript('polyfills.js',function(){})}
@@ -762,7 +762,7 @@ function check_mobile()
   var old_mobile_status=is_mobile;
   var width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
   var height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
-  if ( (width<=980) && (is_mobile!=-1) )//|| ((display_state(document.getElementById('mobile'))==='block')&&(is_mobile!=-1)) )
+  if ( ((width<=980) || (height<=600)) && (is_mobile!=-1) )//|| ((display_state(document.getElementById('mobile'))==='block')&&(is_mobile!=-1)) )
   {
     is_mobile=1;
     //console.log('mobile YES');
@@ -796,8 +796,8 @@ function check_mobile()
     var mwidth=380;
     document.getElementById('mobile').style.maxWidth=mwidth+'px';
     document.getElementById('mobile').style.left=(mwidth+58)/2+'px';
-    document.getElementById('mobile').style.height='85%';
-    document.getElementById('mobile').style.top='8%';
+    document.getElementById('mobile').style.height=height*0.85+'px';
+    document.getElementById('mobile').style.top=height*0.08+'px';
     document.getElementById('under_mobile').style.backgroundSize=mwidth+58+'px 100%';
     document.getElementById('under_mobile').style.backgroundPosition=width/2+'px 0';
     document.getElementById('bigscreen').style.backgroundImage="url('/images/rawpixel-603019-unsplash.jpg')";
@@ -1065,7 +1065,7 @@ function _ondblclick(dblclick) {
   }
 
 @media only screen and (max-width: 320px) {body{font-size:1.4em}}
-@media only screen and (min-width: 980px) {
+@media only screen and (min-width: 980px) and (min-height: 600px) {
   body {
     background-image:linear-gradient(#7F7F7F 78%, #696969 0%);
   }
@@ -1076,7 +1076,7 @@ function _ondblclick(dblclick) {
     display:block;
   }
 }
-@media only screen and (min-width: 1180px) {
+@media only screen and (min-width: 1180px) and (min-height: 600px) {
   body {
     background-image:linear-gradient(#7F7F7F 78%, #696969 0%);
   }
@@ -1087,7 +1087,7 @@ function _ondblclick(dblclick) {
     display:block;
   }
 }
-@media only screen and (min-width: 1600px) {
+@media only screen and (min-width: 1440px) and (min-height: 600px) {
   body {
     background-image:linear-gradient(#7F7F7F 78%, #696969 0%);
   }
@@ -1109,7 +1109,7 @@ function _ondblclick(dblclick) {
   <div class="under_mobile_footer_block"></div>
   <div id="under_mobile" class="under_mobile" display="none">
     <div class="under_mobile_teaser">
-      &nbsp; <span class="teaser">immer besser</span><span class="teaser">wissenwerkommt</span><p/>
+      &nbsp; <span class="teaser">immer besser</span><br><span class="teaser">wissenwerkommt</span><p/>
       Zusagen/Absagen-Sammler für Termine<br>z.B. für deine Sportmannschaft
       <ul>
         <li>ohne Anmeldung</li>
