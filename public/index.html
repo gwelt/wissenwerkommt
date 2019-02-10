@@ -762,7 +762,7 @@ function check_mobile()
   var old_mobile_status=is_mobile;
   var width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
   var height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
-  if ( (width<=800) && (is_mobile!=-1) )//|| ((display_state(document.getElementById('mobile'))==='block')&&(is_mobile!=-1)) )
+  if ( (width<=980) && (is_mobile!=-1) )//|| ((display_state(document.getElementById('mobile'))==='block')&&(is_mobile!=-1)) )
   {
     is_mobile=1;
     //console.log('mobile YES');
@@ -770,6 +770,7 @@ function check_mobile()
     document.getElementById('mobile').style.maxWidth='100vw';
     document.getElementById('mobile').style.height='100vh';
     document.getElementById('mobile').style.top=0;
+    document.getElementById('mobile').style.left=0;
     document.querySelector("meta[name=viewport]").setAttribute('content','initial-scale=1');
   }
   else
@@ -792,11 +793,13 @@ function check_mobile()
       //<img src="/images/logout.svg" style="position:fixed;bottom:10px;right:10px;width:60px">
     }
 
-    var width=380;
-    document.getElementById('mobile').style.maxWidth=width+'px';
-    document.getElementById('under_mobile').style.backgroundSize=width+58+'px 100%';
+    var mwidth=380;
+    document.getElementById('mobile').style.maxWidth=mwidth+'px';
+    document.getElementById('mobile').style.left=(mwidth+58)/2+'px';
     document.getElementById('mobile').style.height='85%';
     document.getElementById('mobile').style.top='8%';
+    document.getElementById('under_mobile').style.backgroundSize=mwidth+58+'px 100%';
+    document.getElementById('under_mobile').style.backgroundPosition=width/2+'px 0';
     document.querySelector("meta[name=viewport]").setAttribute('content','width=800,initial-scale=1');
   }
   if (old_mobile_status!=is_mobile) {}
@@ -871,6 +874,9 @@ function _ondblclick(dblclick) {
   .bigscreen {
     height:100vh;
     position:relative;
+    background-image: url("/images/rawpixel-603019-unsplash.jpg");
+    //background-image: url("/images/sandro-schuh-80814-unsplash.jpg");
+    background-size: cover;
   }
   .under_mobile {
     display:none;
@@ -879,6 +885,38 @@ function _ondblclick(dblclick) {
     background-repeat: no-repeat;
     background-position: top center;
     background-size: 490px 100%;
+  }
+  .teaser {
+    font-size: 1.8em;
+    padding: 0 30px 0 20px;
+    margin:0 0 12px 0;
+    transform: rotate(-3deg);
+    display:inline-block;
+    nobackground-color:#222;
+    color:#fff;
+    font-weight: bold;
+    letter-spacing:0px;
+    box-shadow: 5px 2px 35px #000;
+    overflow:hidden;
+  } 
+  .under_mobile_teaser {
+    position:fixed;
+    width:50%; height:100%;
+    padding:80px 42px 20px 12%;
+    color:#fff;
+  }
+  .under_mobile_teaser_inner_footer {
+    position:fixed;
+    font-size:0.5em;
+    bottom:0px;
+    padding:0px 52% 40px 40px;
+    color:#ccc;
+  }
+  .under_mobile_footer_block {
+    position:fixed;
+    bottom:0px;
+    width:100%; height:18%;
+    background-color:rgba(25, 25, 25, .8) ;
   }
   .mobile {z-index:1; background-color: #c2c2c2; padding:0; position:relative; overflow:auto; margin:auto;}
   .mobile_prompt {
@@ -897,7 +935,7 @@ function _ondblclick(dblclick) {
     .footer {}
 
   a {color:inherit}
-  a:hover {color:rgb(0,0,0)}
+  //a:hover {color:rgb(0,0,0)}
   select, input, button {font-family: 'Roboto', serif; font-size: 1em; padding: 0 0.5em 0 0.5em; border-style: none; border-radius: 0.1em; background-color:rgb(235,235,235); outline:0; height:50px; margin:0 0 0.4em 0;}
 
   input {display:inline; width:100%}
@@ -1027,7 +1065,17 @@ function _ondblclick(dblclick) {
   }
 
 @media only screen and (max-width: 320px) {body{font-size:1.4em}}
-@media only screen and (min-width: 800px) {
+@media only screen and (min-width: 980px) {
+  body {
+    background-image:linear-gradient(#7F7F7F 78%, #696969 0%);
+  }
+  .mobile {
+  }
+  .under_mobile {
+    display:block;
+  }
+}
+@media only screen and (min-width: 1280px) {
   body {
     background-image:linear-gradient(#7F7F7F 78%, #696969 0%);
   }
@@ -1044,7 +1092,25 @@ function _ondblclick(dblclick) {
 <body onload="getTeam();check_mobile();" onresize="check_mobile()">
 
 <div id="bigscreen" class="bigscreen">
-  <div id="under_mobile" class="under_mobile" display="none"></div>
+
+  <div class="under_mobile_footer_block"></div>
+  <div id="under_mobile" class="under_mobile" display="none">
+    <div class="under_mobile_teaser">
+      &nbsp; <span class="teaser">immer besser</span><span class="teaser">wissenwerkommt</span><p/>
+      Zusagen/Absagen-Sammler für Termine<br>z.B. für deine Sportmannschaft
+      <ul>
+        <li>ohne Anmeldung</li>
+        <li>einfache Anlage von Terminserien</li>
+        <li>für dein Smartphone</li>
+      </ul>
+      ... ist noch nicht fertig.<br>Du kannst es aber schon <a href=/>ausprobieren</a>.
+    </div>    
+    <div class="under_mobile_teaser_inner_footer">
+      <br><b>Datenschutz</b>: Dein Teilnahme-Name oder -Pseudonym wird verschlüsselt übertragen und gespeichert, nicht weitergegeben oder zu kommerziellen Zwecken genutzt. Der Zugriff ist allerdings lediglich durch die URL und ggf. einen nicht personalisierten Token geschützt - deine Teammitglieder sollen schließlich sehen können, dass du an einem Termin teilnimmst.
+      Es erfolgt kein IP-Logging, kein Nutzertracking und es werden keine Inhalte externer Seiten nachgeladen.
+    </div>
+  </div>
+
   <div id="mobile" class="mobile">
     <div id="mobile_prompt" class="mobile_prompt"></div>
     <div id="mobile_inner" class="mobile_inner">
@@ -1061,6 +1127,7 @@ function _ondblclick(dblclick) {
       </footer>
     </div>
   </div>
+
 </div>
 
 </body>
