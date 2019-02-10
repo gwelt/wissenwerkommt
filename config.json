@@ -7,5 +7,6 @@
   "maxGroups": 100,
   "maxTeams": 250,
   "maxEvents": 100,
-  "maxIndications": 250
+  "maxIndications": 250,
+  "imprint": "<b>Imprint</b>: Your contact-data here"
 }

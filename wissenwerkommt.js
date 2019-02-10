@@ -137,6 +137,8 @@ WissenWerKommt.prototype.getAllIDs = function() {
   return {"groups":groups,"teams":teams};
 }
 
+WissenWerKommt.prototype.getTeamOrGroup = function (id) {return (this.getTeam(id)||this.getGroup(id));}
+
 WissenWerKommt.prototype.getTeam = function(teamid,backfill) {
   let t=this.findTeam(teamid);
   if (t) {

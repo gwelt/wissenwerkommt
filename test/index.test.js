@@ -63,10 +63,10 @@ describe ('OPEN REST-REQUESTS', function() {
 // TEAM REST-REQUESTS
 describe ('TEAM REST-REQUESTS', function() {
 
-  describe('GET /api/getTeam', function() {
-    it('should get /api/getTeam of teamG20', function(done) {
+  describe('GET /api/get', function() {
+    it('should get /api/get of teamG20', function(done) {
       request(app)
-        .get('/api/getTeam')
+        .get('/api/get')
         .send({teamid:'teamG20',token:'123'})
         .set('Accept', 'application/json')
         .expect(200)

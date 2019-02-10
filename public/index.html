@@ -27,12 +27,14 @@ if (window.location.pathname.substr(1)) {
   document.getElementsByTagName('head')[0].appendChild(link);
 }
 
-// load socket.io after waiting for a second ... let the first getTeam be operated by AJAX to have a quick start before socket.io loads
+// load socket.io after waiting for a second ... let the first getTeamOrGroup be operated by AJAX to have a quick start before socket.io loads
 if (useSocketIO) {setTimeout(function(){SocketIO()},1000)};
 function SocketIO() {if (!socket) {loadScript('/socket.io/socket.io.js', function() {
   socket=io();
-  socket.on('update', function (json) {if (json.teamid==team.teamid) {getTeam(team.teamid)}});
-  socket.on('team', function (json) {updateView(json)});
+  socket.on('update', function (json) {
+    if (json.id==(team.teamid||group.groupid)) {getTeamOrGroup(json.id)};
+  });
+  socket.on('data', function (json) {updateView(json)});
 })}};
 
 // Service-Worker
@@ -197,7 +199,7 @@ function updateView(json) {
     document.title='wissenwerkommt';
     message('',false);
     mobile_head.innerHTML="<div class='head_wrapper'><button aria-label='toggleView' class='option_button' onclick=toggleView();>"+svg_menu+"</button><a href=/ style=text-decoration:none;font-weight:bold>wissenwerkommt</a><br><div style=font-size:0.7em>Startseite</div></div>";
-    mobile_main.innerHTML='<div id="main01"><div class="form_wrapper"><input type="text" id="visitteamid" maxlength=16 value="'+window.location.pathname.substr(1)+'" placeholder="Team-ID" autocomplete="off"><button aria-label="Team aufrufen" id="team_aufrufen" class="button_ok" onclick=getTeam(document.getElementById("visitteamid").value)>Team aufrufen</button></div><br><div class="textblock_wrapper"></div><div class="form_wrapper"><button aria-label="Team anlegen" class="button_ok" onclick="document.getElementById(\'main02\').style.display=\'block\';document.getElementById(\'main01\').style.display=\'none\';document.getElementById(\'main03\').style.display=\'none\'">neues Team</button></div><br><div class="textblock_wrapper"></div><div class="form_wrapper"><button aria-label="Sparte anlegen" class="button_ok" onclick="document.getElementById(\'main03\').style.display=\'block\';document.getElementById(\'main01\').style.display=\'none\';document.getElementById(\'main02\').style.display=\'none\'">neue Sparte</button></div><br><div class="textblock_wrapper" id="teamlist"></div><div class="textblock_wrapper" id="stats"></div></div><div id="main02" style=display:none><div class="form_wrapper"><input type="text" id="name" maxlength=24 value="" placeholder="Name deines Teams" autocomplete="off"><br>'+get_team_weekdaytime_selection(team)+'<br><input type="text" id="teamid" maxlength=16 value="'+window.location.pathname.substr(1)+'" placeholder="Team-ID *" autocomplete="off"><br><input type="text" id="admintoken" maxlength=16 value="'+(team.admintoken||'')+'" placeholder="Admin-Token" autocomplete="off"><input type="hidden" id="teamtoken" maxlength=16 value="'+(team.teamtoken||'')+'" autocomplete="off"><br><button aria-label="Team erstellen" class="button_ok" onclick=addTeam()>Team erstellen</button><br></div></div><div id="main03" style=display:none><div class="form_wrapper"><input type="text" id="group_name" maxlength=24 value="" placeholder="Name der Sparte" autocomplete="off"><br><input type="text" id="groupid" maxlength=16 value="'+window.location.pathname.substr(1)+'" placeholder="ID *" autocomplete="off"><br><input type="text" id="group_admintoken" maxlength=16 value="" placeholder="Admin-Token" autocomplete="off"><input type="hidden" id="group_teamtoken" maxlength=16 value="" autocomplete="off"><br><button aria-label="Sparte erstellen" class="button_ok" onclick=addGroup()>Sparte erstellen</button><br></div></div>';
+    mobile_main.innerHTML='<div id="main01"><div class="form_wrapper"><input type="text" id="visitteamid" maxlength=16 value="'+window.location.pathname.substr(1)+'" placeholder="Team-ID" autocomplete="off"><button aria-label="Team aufrufen" id="team_aufrufen" class="button_ok" onclick=getTeamOrGroup(document.getElementById("visitteamid").value)>Team aufrufen</button></div><br><div class="textblock_wrapper"></div><div class="form_wrapper"><button aria-label="Team anlegen" class="button_ok" onclick="document.getElementById(\'main02\').style.display=\'block\';document.getElementById(\'main01\').style.display=\'none\';document.getElementById(\'main03\').style.display=\'none\'">neues Team</button></div><br><div class="textblock_wrapper"></div><div class="form_wrapper"><button aria-label="Sparte anlegen" class="button_ok" onclick="document.getElementById(\'main03\').style.display=\'block\';document.getElementById(\'main01\').style.display=\'none\';document.getElementById(\'main02\').style.display=\'none\'">neue Sparte</button></div><br><div class="textblock_wrapper" id="teamlist"></div><div class="textblock_wrapper" id="stats"></div></div><div id="main02" style=display:none><div class="form_wrapper"><input type="text" id="name" maxlength=24 value="" placeholder="Name deines Teams" autocomplete="off"><br>'+get_team_weekdaytime_selection(team)+'<br><input type="text" id="teamid" maxlength=16 value="'+window.location.pathname.substr(1)+'" placeholder="Team-ID *" autocomplete="off"><br><input type="text" id="admintoken" maxlength=16 value="'+(team.admintoken||'')+'" placeholder="Admin-Token" autocomplete="off"><input type="hidden" id="teamtoken" maxlength=16 value="'+(team.teamtoken||'')+'" autocomplete="off"><br><button aria-label="Team erstellen" class="button_ok" onclick=addTeam()>Team erstellen</button><br></div></div><div id="main03" style=display:none><div class="form_wrapper"><input type="text" id="group_name" maxlength=24 value="" placeholder="Name der Sparte" autocomplete="off"><br><input type="text" id="groupid" maxlength=16 value="'+window.location.pathname.substr(1)+'" placeholder="ID *" autocomplete="off"><br><input type="text" id="group_admintoken" maxlength=16 value="" placeholder="Admin-Token" autocomplete="off"><input type="hidden" id="group_teamtoken" maxlength=16 value="" autocomplete="off"><br><button aria-label="Sparte erstellen" class="button_ok" onclick=addGroup()>Sparte erstellen</button><br></div></div>';
     mobile_footer.innerHTML="";
     addOnKeyCode13EventListener('visitteamid','team_aufrufen');
 
@@ -222,6 +224,7 @@ function updateView(json) {
           if (r.groups.length>0) {document.getElementById('teamlist').innerHTML+=' Groups: '};
           r.groups.forEach(function(g) {document.getElementById('teamlist').innerHTML+='<a href=/'+g+'>'+g+'</a> '});
         }
+        document.getElementById('teamlist').innerHTML+='<br>Admin: <a href=javascript:getLog()>getLog()</a>, <a href=javascript:dump()>dump()</a>';
       }
     });
 
@@ -244,7 +247,7 @@ function updateView(json) {
   // MENU:TOKEN
   cookie=getCookie("token",true);
   //text='Hier kannst du einen Token-Code eingeben.';
-  text='Zur Team-Administration musst du einen Token angeben.';
+  text='Zur Administration musst du einen Token angeben.';
   if (cookie) {text='Dein Token:<br><b>'+cookie+'</b>'}
   svg='';
   menu+='<div class="options_option"><button aria-label="Token" class="option_button" onclick="show_cookie_prompt(\'token\');">'+svg+'</button><div class="option_text">'+text+'</div></div>';
@@ -300,7 +303,7 @@ function updateView(json) {
 
   // showtime...
   mobile_options.innerHTML='<div class="options_wrapper">'+menu+admin_menu+promo+'</div>';
-  if (currentView=='mobile_options') {showQRcode(""+window.location)};
+  if (currentView=='mobile_options') {showQRcode(document.getElementById('qrcode'),""+window.location)};
 
   console.log('updateView: '+stopwatch(time)+'ms');
 }
@@ -520,7 +523,7 @@ function showView(view_to_display) {
   if (currentView=='mobile_options') {
     document.getElementById('mobile_options').style.display='block';
     document.getElementById('mobile_main').style.display='none';
-    showQRcode(""+window.location);
+    showQRcode(document.getElementById('qrcode'),""+window.location);
   } else {
     document.getElementById('mobile_main').style.display='block';
     document.getElementById('mobile_options').style.display='none';
@@ -542,19 +545,20 @@ function serverRequest(apicall,json,callback) {
   req.send(JSON.stringify(json));
 }
 
-function getTeam(teamid) {
-  if (!teamid) {teamid=window.location.pathname.substr(1).toLowerCase()}
-  if (teamid) {
-    // check if current URL matches with requested teamid
-    if (teamid!=window.location.pathname.substr(1)) {
+function getTeamOrGroup(id) {
+  // will get team or group
+  if (!id) {id=window.location.pathname.substr(1).toLowerCase()}
+  if (id) {
+    // check if current URL matches with requested id
+    if (id!=window.location.pathname.substr(1)) {
       // if not, relocate
-      window.location.href=window.location.href.split('/')[0]+teamid;
+      window.location.href=window.location.href.split('/')[0]+id;
     } else {
       // else, request team-data
       if (socket) {
-        setTimeout(function(){socket.emit('getTeam',{token:getCookie('token',true),teamid:teamid})},0);
+        setTimeout(function(){socket.emit('get',{token:getCookie('token',true),id:id})},0);
       } else {
-        serverRequest('getTeam',{token:getCookie('token',true),teamid:teamid},function (r){updateView(r)});
+        serverRequest('get',{token:getCookie('token',true),id:id},function (r){updateView(r)});
       }
     }
   } else {updateView()}
@@ -564,12 +568,12 @@ function updateStatus(json) {
   // updateStatus will reload team/group-data after a change
   message('',false);
   debug(json);
-  // call getTeam if socket will not take care of updateView (because it has not been loaded yet)
-  // OR to URL-relocate if teamid changed (getTeam will take care of that)
+  // call getTeamOrGroup if socket will not take care of updateView (because it has not been loaded yet)
+  // OR to URL-relocate if teamid changed (getTeamOrGroup will take care of that)
   var o=JSON.parse(json);
   if ( (!socket) || ((team.teamid!=o.teamid)&&(o.teamid!=undefined)) || ((group.groupid!=o.groupid)&&(o.groupid!=undefined)) ) {
     //SocketIO();
-    getTeam((o.teamid||o.groupid)?(o.teamid||o.groupid):'');
+    getTeamOrGroup((o.teamid||o.groupid)?(o.teamid||o.groupid):'');
   }
 }
 
@@ -679,11 +683,22 @@ function save() {
 }
 
 function dump() {
-  serverRequest('dump',{token:getCookie('token',true)},function (r){document.open();document.write('<code>'+r+'</code>');document.close()}); //console.log(r)
+  serverRequest('dump',{token:getCookie('token',true)},function (r){showOnLeftSide(r)});
 }
 
 function getLog() {
-  serverRequest('getLog',{token:getCookie('token',true)},function(r){document.open();document.write('<pre>'+r+'</pre>');document.close()}); //console.log(r)
+  serverRequest('getLog',{token:getCookie('token',true)},function(r){showOnLeftSide(r)});
+}
+
+function showOnLeftSide(data) {
+  document.getElementById('under_mobile_teaser_inner_footer').style.display='none';
+  var e=document.getElementById('under_mobile_teaser');
+  e.style.padding='20px';
+  e.style.fontSize='0.5em';
+  e.style.maxWidth='50%';
+  e.style.whiteSpace='pre-wrap';
+  e.style.overflow='auto';
+  e.innerHTML='<code>'+data+'</code>';
 }
 
 function getDateString(d) {
@@ -692,11 +707,13 @@ function getDateString(d) {
   return (new Date(d-tzoffset)).toISOString().slice(0, -14);
 }
 
-function showQRcode(url) {
+function showQRcode(element,url,options) {
   if (typeof QRCode == 'undefined') {
-    loadScript('/qrcode.min.js',function(url){showQRcode(url)});
-  } else {QRCode.toCanvas(document.getElementById('qrcode'), url, function (error) {if (error) console.error(error)})}
-  document.getElementById('qrcode').style.display='inline';
+    loadScript('/qrcode.min.js',function(){showQRcode(element,url,options)});
+  } else {
+    QRCode.toCanvas(element,url,options,function (error) {if (error) console.error(error)})
+  }
+  element.style.display='inline';
 }
 
 function getCookie(cname,dontask) {
@@ -745,7 +762,7 @@ function setCookie(cname, cvalue, exdays, dontgetteam) {
     expires = "expires="+d.toUTCString();
   }
   document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
-  if (!dontgetteam) {getTeam()};
+  if (!dontgetteam) {getTeamOrGroup()};
   return getCookie(cname,true);
 }
 
@@ -784,13 +801,23 @@ function check_mobile()
       img.id='logoutIMG';
       img.src='/images/logout.svg';
       img.style.position='fixed';
-      img.style.bottom='10px';
-      img.style.right='10px';
+      img.style.bottom='40px';
+      img.style.right='20px';
       img.style.width='60px';
       img.addEventListener('click',function(e){window.open('/','_self').close();});
       img.style.cursor='pointer';
       document.getElementById('under_mobile').appendChild(img);
       //<img src="/images/logout.svg" style="position:fixed;bottom:10px;right:10px;width:60px">
+    }
+    if (0) { //(!document.getElementById("qrcode2")) {
+      var canvas = document.createElement("canvas");
+      canvas.id='qrcode2';
+      canvas.style.position='fixed';
+      canvas.style.bottom='40px';
+      canvas.style.right='20px';
+      canvas.style.width='60px';
+      document.getElementById('under_mobile').appendChild(canvas);
+      showQRcode(document.getElementById('qrcode2'),(""+window.location),{scale:1,width:60,margin:0,color:{light:'#ffffff00',dark:'#000000a0'}});
     }
 
     var mwidth=380;
@@ -910,7 +937,7 @@ function _ondblclick(dblclick) {
     font-size:0.5em;
     bottom:0px;
     padding:0px 52% 40px 40px;
-    color:#ccc;
+    color:#ddd;
   }
   .under_mobile_footer_block {
     position:fixed;
@@ -1102,25 +1129,26 @@ function _ondblclick(dblclick) {
 </style>
 
 </head>
-<body onload="getTeam();check_mobile();" onresize="check_mobile()">
+<body onload="getTeamOrGroup();check_mobile();" onresize="check_mobile()">
 
 <div id="bigscreen" class="bigscreen">
 
   <div class="under_mobile_footer_block"></div>
   <div id="under_mobile" class="under_mobile" display="none">
-    <div class="under_mobile_teaser">
-      &nbsp; <span class="teaser">immer besser</span><br><span class="teaser">wissenwerkommt</span><p/>
+    <div id="under_mobile_teaser" class="under_mobile_teaser">
+      &nbsp; <a href=/><span class="teaser">immer besser</span><br><span class="teaser">wissenwerkommt</span></a><p/>
       Zusagen/Absagen-Sammler für Termine<br>z.B. für deine Sportmannschaft
       <ul>
         <li>ohne Anmeldung</li>
         <li>einfache Anlage von Terminserien</li>
         <li>für dein Smartphone</li>
       </ul>
-      ... ist noch nicht fertig.<br>Du kannst es aber schon <a href=/>ausprobieren</a>.
+      ... ist noch nicht fertig.<br>Du kannst es aber schon <a href=/tagesschau>ausprobieren</a>.
     </div>
-    <div class="under_mobile_teaser_inner_footer">
+    <div id="under_mobile_teaser_inner_footer" class="under_mobile_teaser_inner_footer">
       <br><b>Datenschutz</b>: Dein Teilnahme-Name oder -Pseudonym wird verschlüsselt übertragen und gespeichert, nicht weitergegeben oder zu kommerziellen Zwecken genutzt. Der Zugriff ist allerdings lediglich durch die URL und ggf. einen nicht personalisierten Token geschützt. Die Löschung der Daten erfolgt automatisch jeweils am Tag nach dem Termin.
       Es erfolgt kein IP-Logging, kein Nutzertracking und es werden keine Inhalte externer Seiten nachgeladen.
+      <span id="imprint" onclick="serverRequest('imprint',{},function (r){if (typeof r!='undefined') {document.getElementById('imprint').innerHTML=JSON.parse(r).imprint}})"><a href=javascript:void(0)>Impressum</a></span>
     </div>
   </div>
 

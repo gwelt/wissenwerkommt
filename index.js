@@ -43,23 +43,23 @@ server {
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use('/:t/manifest.json', function (req, res) {
-  let team=db.getTeam(req.params.t);
+app.use('/:id/manifest.json', function (req, res) {
+  let tg=db.getTeamorGroup(req.params.id);
   res.json({
-    "short_name": team.name||"wissenwerkommt",
-    "name": team.name||"wissenwerkommt",
+    "short_name": tg.name||"wissenwerkommt",
+    "name": tg.name||"wissenwerkommt",
     "icons": [
       {"src":"../images/wissenwerkommt192.png","sizes": "192x192","type": "image/png"},
       {"src": "../images/wissenwerkommt512.png","sizes": "512x512","type": "image/png"},
       {"src": "../images/wissenwerkommt1024.png","sizes": "1024x1024","type": "image/png"}
     ],
-    "start_url": "/"+req.params.t,
+    "start_url": "/"+req.params.id,
     "background_color": "#fff",
     "theme_color": "#000",
     "display": "standalone"
   });
 });
-app.use('/api/:r/:t?', function (req, res) {
+app.use('/api/:r/:id?', function (req, res) {
 
   if (['attend','refuse','undecided'].find((a)=>a==req.params.r)) {log.add(req.params,req.body)}
 
@@ -75,34 +75,29 @@ app.use('/api/:r/:t?', function (req, res) {
     case 'stats':
       res.json(db.getStats(io));
       break;
+    case 'imprint':
+      res.json({'imprint':config.imprint});
+      break;
 
     // team members only
-    case 'getTeam':
-    case 'getGroup':
+    case 'get':
+    //case 'getTeam':
+    //case 'getGroup':
+    //case 'getTeamOrGroup':
       let userlevel=getUserLevel(req);
       if (userlevel>0) {
-        // getTeam
-        let team=db.getTeam(req.params.t||req.body.teamid);
+        let id=(req.params.id||req.body.id||req.body.teamid||req.body.groupid);
+        let tg=db.getTeamOrGroup(id);
         let result=false;
-        if (team) {
-          result=JSON.parse(JSON.stringify(team));
-          // remove admin token from return-value if userlevel is < 2
-          if ((!userlevel)||(userlevel<2)) {result.admintoken=undefined;}
+        if (tg) {
+          result=JSON.parse(JSON.stringify(tg));
+          // remove admin token and member-list (in case of a group it includes token) from return-value if userlevel is < 2
+          if ((!userlevel)||(userlevel<2)) {result.admintoken=undefined;result.members=undefined;}
           // add userlevel-information to result
           result.userlevel=userlevel;
-        } else {
-          // getGroup
-          let group=db.getGroup(req.params.t||req.body.teamid);
-          if (group) {
-            result=JSON.parse(JSON.stringify(group));
-            // remove admin token and member-list (includes token) from return-value if userlevel is < 2
-            if ((!userlevel)||(userlevel<2)) {result.admintoken=undefined;result.members=undefined;}
-            // add userlevel-information to result
-            result.userlevel=userlevel;
-          }
-        }
+        } 
         res.json(result);
-      } else {res.status(401).json({'error':'not sufficient rights to get team or team does not exist'})}
+      } else {res.status(401).json({'error':'not sufficient rights to get team or group or team or group does not exist'})}
       break;
     case 'attend':
       if (getUserLevel(req)>0) {
@@ -233,48 +228,34 @@ io.on('connection', function (socket) {
   // socket.broadcast.emit = reply to all clients except the one who asked
   // io.sockets.emit = reply to all clients (including the one who asked)
   //socket.emit('data',{welcomemessage: 'Welcome!'});
-  socket.on('getTeam', function (req) {
+  socket.on('get', function (req) {
     let userlevel=getUserLevel(req);
     if (userlevel>0) {
-      let team=db.getTeam(req.teamid);
-      let teamCopy=false;
-      if (team) {
-        teamCopy=JSON.parse(JSON.stringify(team));
+      let tg=db.getTeamOrGroup(req.id);
+      let tgCopy=false;
+      if (tg) {
+        tgCopy=JSON.parse(JSON.stringify(tg));
         // remove admin token from return-value if userlevel is < 2
-        if ((!userlevel)||(userlevel<2)) {teamCopy.admintoken=undefined;}
+        if ((!userlevel)||(userlevel<2)) {tgCopy.admintoken=undefined;}
         // add userlevel-information to result
-        teamCopy.userlevel=userlevel;
+        tgCopy.userlevel=userlevel;
       }
-      socket.emit('team', JSON.stringify(teamCopy));
+      socket.emit('data', JSON.stringify(tgCopy));
     } else {
-      socket.emit('team', JSON.stringify({'error':'not sufficient rights to get team or team does not exist'}));
+      socket.emit('data', JSON.stringify({'error':'not sufficient rights to get team or group or team or group does not exist'}));
     }
   });
 });
 
-function emitUpdate(teamid) {
-  io.sockets.emit('update',{teamid:teamid});
+function emitUpdate(id) {
+  io.sockets.emit('update',{id:id});
 }
 
 function getUserLevel(req) {
-  if ((typeof req=='object')&&(req.body)&&(req.params)) {
-    let id=req.params.t||req.body.teamid||req.params.g||req.body.groupid;
-    let token=req.body.token;
-    if ((token==config.sysoptoken) && (token!==undefined)) {return 3}
-    return db.getUserLevel(id,token);
-  }
-  else if (req.teamid) {
-    let teamid=req.teamid;
-    let token=req.token;
-    if ((token==config.sysoptoken) && (token!==undefined)) {return 3}
-    return db.getUserLevel(teamid,token);
-  }
-  else if (req.groupid) {
-    let groupid=req.groupid;
-    let token=req.token;
-    if ((token==config.sysoptoken) && (token!==undefined)) {return 3}
-    return db.getUserLevel(groupid,token);
-  }
+  let id=( (req.params?req.params.id:false) || (req.body?(req.body.id||req.body.teamid||req.body.groupid):false) || (req.id?req.id:false) ); // URL-param|JSON-param|Socket-param
+  let token=( (req.body?req.body.token:false) || (req.token?req.token:false) );
+  if ((token!==undefined)&&(token==config.sysoptoken)) {return 3}
+  return db.getUserLevel(id,token);      
 }
 
 var log=new Logger(100);
