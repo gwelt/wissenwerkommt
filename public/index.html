@@ -800,6 +800,8 @@ function check_mobile()
     document.getElementById('mobile').style.top='8%';
     document.getElementById('under_mobile').style.backgroundSize=mwidth+58+'px 100%';
     document.getElementById('under_mobile').style.backgroundPosition=width/2+'px 0';
+    document.getElementById('bigscreen').style.backgroundImage="url('/images/rawpixel-603019-unsplash.jpg')";
+    //background-image: url("/images/sandro-schuh-80814-unsplash.jpg");
     document.querySelector("meta[name=viewport]").setAttribute('content','width=800,initial-scale=1');
   }
   if (old_mobile_status!=is_mobile) {}
@@ -874,8 +876,6 @@ function _ondblclick(dblclick) {
   .bigscreen {
     height:100vh;
     position:relative;
-    background-image: url("/images/rawpixel-603019-unsplash.jpg");
-    //background-image: url("/images/sandro-schuh-80814-unsplash.jpg");
     background-size: cover;
   }
   .under_mobile {
@@ -898,11 +898,11 @@ function _ondblclick(dblclick) {
     letter-spacing:0px;
     box-shadow: 5px 2px 35px #000;
     overflow:hidden;
-  } 
+  }
   .under_mobile_teaser {
     position:fixed;
     width:50%; height:100%;
-    padding:80px 42px 20px 12%;
+    padding:80px 42px 20px 8%;
     color:#fff;
   }
   .under_mobile_teaser_inner_footer {
@@ -916,7 +916,7 @@ function _ondblclick(dblclick) {
     position:fixed;
     bottom:0px;
     width:100%; height:18%;
-    background-color:rgba(25, 25, 25, .8) ;
+    background-color:rgba(25, 25, 25, .5) ;
   }
   .mobile {z-index:1; background-color: #c2c2c2; padding:0; position:relative; overflow:auto; margin:auto;}
   .mobile_prompt {
@@ -1072,16 +1072,29 @@ function _ondblclick(dblclick) {
   .mobile {
   }
   .under_mobile {
+    font-size: 0.8em;
     display:block;
   }
 }
-@media only screen and (min-width: 1280px) {
+@media only screen and (min-width: 1180px) {
   body {
     background-image:linear-gradient(#7F7F7F 78%, #696969 0%);
   }
   .mobile {
   }
   .under_mobile {
+    font-size: 0.9em;
+    display:block;
+  }
+}
+@media only screen and (min-width: 1600px) {
+  body {
+    background-image:linear-gradient(#7F7F7F 78%, #696969 0%);
+  }
+  .mobile {
+  }
+  .under_mobile {
+    font-size: 1em;
     display:block;
   }
 }
@@ -1104,9 +1117,9 @@ function _ondblclick(dblclick) {
         <li>für dein Smartphone</li>
       </ul>
       ... ist noch nicht fertig.<br>Du kannst es aber schon <a href=/>ausprobieren</a>.
-    </div>    
+    </div>
     <div class="under_mobile_teaser_inner_footer">
-      <br><b>Datenschutz</b>: Dein Teilnahme-Name oder -Pseudonym wird verschlüsselt übertragen und gespeichert, nicht weitergegeben oder zu kommerziellen Zwecken genutzt. Der Zugriff ist allerdings lediglich durch die URL und ggf. einen nicht personalisierten Token geschützt - deine Teammitglieder sollen schließlich sehen können, dass du an einem Termin teilnimmst.
+      <br><b>Datenschutz</b>: Dein Teilnahme-Name oder -Pseudonym wird verschlüsselt übertragen und gespeichert, nicht weitergegeben oder zu kommerziellen Zwecken genutzt. Der Zugriff ist allerdings lediglich durch die URL und ggf. einen nicht personalisierten Token geschützt. Die Löschung der Daten erfolgt automatisch jeweils am Tag nach dem Termin.
       Es erfolgt kein IP-Logging, kein Nutzertracking und es werden keine Inhalte externer Seiten nachgeladen.
     </div>
   </div>
