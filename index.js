@@ -43,8 +43,9 @@ server {
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use('/:id/manifest.json', function (req, res) {
-  let tg=db.getTeamorGroup(req.params.id);
+app.use('/:id?/manifest.json', function (req, res) {
+  let id=(req.params.id)||'';
+  let tg=db.getTeamOrGroup(id);
   res.json({
     "short_name": tg.name||"wissenwerkommt",
     "name": tg.name||"wissenwerkommt",
@@ -53,7 +54,7 @@ app.use('/:id/manifest.json', function (req, res) {
       {"src": "../images/wissenwerkommt512.png","sizes": "512x512","type": "image/png"},
       {"src": "../images/wissenwerkommt1024.png","sizes": "1024x1024","type": "image/png"}
     ],
-    "start_url": "/"+req.params.id,
+    "start_url": "/"+id,
     "background_color": "#fff",
     "theme_color": "#000",
     "display": "standalone"
