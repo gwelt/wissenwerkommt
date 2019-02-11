@@ -20,7 +20,7 @@ var useSocketIO=true;
 if ((!Array.prototype.includes)||(!Array.prototype.find)) {loadScript('polyfills.js',function(){})}
 
 // dynamically add manifest.json because it has to be delivered from team-subdirectory
-if (window.location.pathname.substr(1)) {
+if (1) { //(window.location.pathname.substr(1)) {
   link=document.createElement('link');
   link.href=window.location.pathname.substr(1)+'/manifest.json';
   link.rel='manifest';
@@ -795,7 +795,7 @@ function check_mobile()
     if (is_mobile>0) {is_mobile=0}
     //console.log('mobile NO');
     //document.getElementById('under_mobile').style.display='block';
-    document.getElementById('under_mobile').style.backgroundImage='url(images/phone.svg)';
+    document.getElementById('under_mobile').style.backgroundImage='url(/images/phone.svg)';
     if (!document.getElementById("logoutIMG")) {
       var img = document.createElement("IMG");
       img.id='logoutIMG';

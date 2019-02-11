@@ -50,9 +50,9 @@ app.use('/:id?/manifest.json', function (req, res) {
     "short_name": tg.name||"wissenwerkommt",
     "name": tg.name||"wissenwerkommt",
     "icons": [
-      {"src":"../images/wissenwerkommt192.png","sizes": "192x192","type": "image/png"},
-      {"src": "../images/wissenwerkommt512.png","sizes": "512x512","type": "image/png"},
-      {"src": "../images/wissenwerkommt1024.png","sizes": "1024x1024","type": "image/png"}
+      {"src": "/images/wissenwerkommt192.png","sizes": "192x192","type": "image/png"},
+      {"src": "/images/wissenwerkommt512.png","sizes": "512x512","type": "image/png"},
+      {"src": "/images/wissenwerkommt1024.png","sizes": "1024x1024","type": "image/png"}
     ],
     "start_url": "/"+id,
     "background_color": "#fff",
