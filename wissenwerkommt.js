@@ -281,6 +281,7 @@ WissenWerKommt.prototype.getStats = function(io) {
 }
 
 WissenWerKommt.prototype.load_from_file = function(filepath,filename,callback) {
+  this.groups=[];
   this.teams=[];
   fs.readFile(filepath+'/'+filename, 'utf8', (err, data_encrypted)=>{
     if (err){console.log('No data-file.')} else {
@@ -290,7 +291,7 @@ WissenWerKommt.prototype.load_from_file = function(filepath,filename,callback) {
       if (data.hasOwnProperty('groups')) {
         data.groups.forEach((g)=>{
           var group=this.addGroup(g);
-          if (g.hasOwnProperty('members')) {
+          if ((group)&&(g.hasOwnProperty('members'))) {
             g.members.forEach((m)=>{
               group.addMember(m);
             })
