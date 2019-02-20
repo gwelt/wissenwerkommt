@@ -81,9 +81,9 @@ function updateView(json) {
     // MAIN-page if a team or group is requested but not found or not allowed
     document.title='wissenwerkommt';
     message('',false); // don't want the message here...
-    mobile_head.innerHTML="<div class='head_wrapper'><button aria-label='toggleView' class='option_button' onclick=toggleView();>"+svg_menu+"</button><a href=/ style=text-decoration:none;font-weight:bold>wissenwerkommt</a><br><div style=font-size:0.7em>/<a href=/"+window.location.pathname.substr(1)+">"+window.location.pathname.substr(1)+"</a></div></div>";
+    mobile_head.innerHTML="<div class='head_wrapper'><button aria-label='toggleView' class='option_button' onclick=toggleView();>"+svg_menu+"</button><a href=/ style=text-decoration:none;font-weight:bold>wissenwerkommt</a><br><div class='titlesub'>/<a href=/"+window.location.pathname.substr(1)+">"+window.location.pathname.substr(1)+"</a></div></div>";
     mobile_main.innerHTML='<div class="error_wrapper"><div class="error_text" style=padding-bottom:12px>Das Team hat einen Code für den Zugriff vereinbart:</div><button aria-label="Token eingeben" style="width:100%" onclick=show_cookie_prompt(\'token\')>Token eingeben</button></div>';
-    mobile_footer.innerHTML="<div id='footer_wrapper' class='footer_wrapper'><div style=font-size:0.7em;text-align:center>Immer besser zu <a href=/>wissenwerkommt</a>.</div></div>";
+    mobile_footer.innerHTML="<div id='footer_wrapper' class='footer_wrapper'><div class='titlesubcenter'>Immer besser zu <a href=/>wissenwerkommt</a>.</div></div>";
   }
 
   if (group) {
@@ -98,9 +98,16 @@ function updateView(json) {
       setCookie('myteams',myteams.toString(),365,true);
     };
 
-    mobile_head.innerHTML="<div class='head_wrapper'><button aria-label='toggleView' class='option_button' onclick=toggleView();>"+svg_menu+"</button><a href=/"+group.groupid+" style=text-decoration:none;font-weight:bold>"+(!!group.name?group.name:'Sparte '+group.groupid)+"</a><br><div style=font-size:0.7em>"+group.groupid+"</div></div>";
-    mobile_main.innerHTML='<div class="statusbutton_wrapper">'+JSON.stringify(group)+'</div>';
-    mobile_footer.innerHTML="<div id='footer_wrapper' class='footer_wrapper'><div style=font-size:0.7em;text-align:center>Immer besser zu <a href=/>wissenwerkommt</a>.</div></div>";
+    mobile_head.innerHTML="<div class='head_wrapper'><button aria-label='toggleView' class='option_button' onclick=toggleView();>"+svg_menu+"</button><a href=/"+group.groupid+" style=text-decoration:none;font-weight:bold>"+(!!group.name?group.name:'Sparte '+group.groupid)+"</a><br><div class='titlesub'>"+group.groupid+"</div></div>";
+    
+    var teamlist='';
+    group.teams?group.teams.forEach(function (t) {
+      teamlist+=(t.teamid?t.teamid:'')+' - ';
+    }):1;
+    mobile_main.innerHTML+='<div class="statusbutton_wrapper">'+teamlist+'</div>';
+
+    mobile_main.innerHTML+='<div class="statusbutton_wrapper">'+JSON.stringify(group)+'</div>';
+    mobile_footer.innerHTML="<div id='footer_wrapper' class='footer_wrapper'><div class='titlesubcenter'>Immer besser zu <a href=/>wissenwerkommt</a>.</div></div>";
   }
 
   if (team) {
@@ -118,7 +125,7 @@ function updateView(json) {
     // create readable string for recurrence of events
     var teams_weekday_time=get_teams_weekday_time(team);
 
-    mobile_head.innerHTML="<div class='head_wrapper'><button aria-label='toggleView' class='option_button' onclick=toggleView();>"+svg_menu+"</button><a href=/"+team.teamid+" style=text-decoration:none;font-weight:bold"+((!teams_weekday_time.length)?';position:relative;top:10px':'')+">"+(!!team.name?team.name:'Team '+team.teamid)+"</a><br><div style=font-size:0.7em>"+teams_weekday_time+"</div></div>";
+    mobile_head.innerHTML="<div class='head_wrapper'><button aria-label='toggleView' class='option_button' onclick=toggleView();>"+svg_menu+"</button><a href=/"+team.teamid+" style=text-decoration:none;font-weight:bold"+((!teams_weekday_time.length)?';position:relative;top:10px':'')+">"+(!!team.name?team.name:'Team '+team.teamid)+"</a><br><div class='titlesub'>"+teams_weekday_time+"</div></div>";
 
     //---------- EVENTS ----------//
     mobile_main.innerHTML='';
@@ -187,18 +194,18 @@ function updateView(json) {
       else if (e.refusals&&e.refusals.includes(name)) {document.getElementById('status'+e.datetime).className='statusbutton_refused'}
       else {document.getElementById('status'+e.datetime).className='statusbutton_undecided'}
 
-      if ((!name)&&(currentView!='mobile_options')) {message('Klicke einen <span style="background-image:linear-gradient(#ffbf00 84%,#efaf00 0%)">Termin</span> 1x an um deine <u>Teilnahme</u> mitzuteilen. Klicke erneut für eine <u>Absage</u>.')}
+      if ((!name)&&(currentView!='mobile_options')) {message('Klicke einen <span style="background-image:linear-gradient(#ffbf00 100%,#efaf00 0%)">&nbsp;Termin&nbsp;</span> 1x an um deine <u>Teilnahme</u> mitzuteilen. Klicke erneut für eine <u>Absage</u>.')}
 
     }):false;
 
-    mobile_footer.innerHTML="<div id='footer_wrapper' class='footer_wrapper'><div style=font-size:0.7em;text-align:center>Immer besser zu <a href=/>wissenwerkommt</a>.</div></div>";
+    mobile_footer.innerHTML="<div id='footer_wrapper' class='footer_wrapper'><div class='titlesubcenter'>Immer besser zu <a href=/>wissenwerkommt</a>.</div></div>";
   }
 
   if ((!team)&&(!group)&&(!temp_obj.error)) {
     // NO TEAM / NO GROUP
     document.title='wissenwerkommt';
     message('',false);
-    mobile_head.innerHTML="<div class='head_wrapper'><button aria-label='toggleView' class='option_button' onclick=toggleView();>"+svg_menu+"</button><a href=/ style=text-decoration:none;font-weight:bold>wissenwerkommt</a><br><div style=font-size:0.7em>Startseite</div></div>";
+    mobile_head.innerHTML="<div class='head_wrapper'><button aria-label='toggleView' class='option_button' onclick=toggleView();>"+svg_menu+"</button><a href=/ style=text-decoration:none;font-weight:bold>wissenwerkommt</a><br><div class='titlesub'>Startseite</div></div>";
     mobile_main.innerHTML='<div id="main01"><div class="form_wrapper"><input type="text" id="visitteamid" maxlength=16 value="'+window.location.pathname.substr(1)+'" placeholder="Team-ID" autocomplete="off"><button aria-label="Team aufrufen" id="team_aufrufen" class="button_ok" onclick=getTeamOrGroup(document.getElementById("visitteamid").value)>Team aufrufen</button></div><br><div class="textblock_wrapper"></div><div class="form_wrapper"><button aria-label="Team anlegen" class="button_ok" onclick="document.getElementById(\'main02\').style.display=\'block\';document.getElementById(\'main01\').style.display=\'none\';document.getElementById(\'main03\').style.display=\'none\'">neues Team</button></div><br><div class="textblock_wrapper"></div><div class="form_wrapper"><button aria-label="Sparte anlegen" class="button_ok" onclick="document.getElementById(\'main03\').style.display=\'block\';document.getElementById(\'main01\').style.display=\'none\';document.getElementById(\'main02\').style.display=\'none\'">neue Sparte</button></div><br><div class="textblock_wrapper" id="teamlist"></div><div class="textblock_wrapper" id="stats"></div></div><div id="main02" style=display:none><div class="form_wrapper"><input type="text" id="name" maxlength=24 value="" placeholder="Name deines Teams" autocomplete="off"><br>'+get_team_weekdaytime_selection(team)+'<br><input type="text" id="teamid" maxlength=16 value="'+window.location.pathname.substr(1)+'" placeholder="Team-ID *" autocomplete="off"><br><input type="text" id="admintoken" maxlength=16 value="'+(team.admintoken||'')+'" placeholder="Admin-Token" autocomplete="off"><input type="hidden" id="teamtoken" maxlength=16 value="'+(team.teamtoken||'')+'" autocomplete="off"><br><button aria-label="Team erstellen" class="button_ok" onclick=addTeam()>Team erstellen</button><br></div></div><div id="main03" style=display:none><div class="form_wrapper"><input type="text" id="group_name" maxlength=24 value="" placeholder="Name der Sparte" autocomplete="off"><br><input type="text" id="groupid" maxlength=16 value="'+window.location.pathname.substr(1)+'" placeholder="ID *" autocomplete="off"><br><input type="text" id="group_admintoken" maxlength=16 value="" placeholder="Admin-Token" autocomplete="off"><input type="hidden" id="group_teamtoken" maxlength=16 value="" autocomplete="off"><br><button aria-label="Sparte erstellen" class="button_ok" onclick=addGroup()>Sparte erstellen</button><br></div></div>';
     mobile_footer.innerHTML="";
     addOnKeyCode13EventListener('visitteamid','team_aufrufen');
@@ -1022,8 +1029,14 @@ function _ondblclick(dblclick) {
   div.option_text {
     font-size:0.7em; padding:0px 0px 4px 0px;
   }
+  div.titlesub {
+    font-size:0.7em; margin-top:-3px;
+  }
+  div.titlesubcenter {
+    font-size:0.7em; margin-top:-3px; text-align:center;
+  }
   button.option_button {
-    float:right; margin:0px 0px 0px 8px; height: 50px; width: 50px;
+    float:right; margin:2px 0px 0px 8px; height: 50px; width: 50px;
   }
   div.divider {
     border-radius: 0.1em; margin:0px 0px 0px 0px; padding: 9px 9px 9px 9px; min-height:10px; overflow: wrap; font-size: 0.7em;
