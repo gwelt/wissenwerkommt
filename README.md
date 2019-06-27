@@ -24,7 +24,7 @@ adds a new team with id `teamID` to the list of teams
 returns the team-data or  
 returns false, if something went wrong (i.e. team already exists)  
   
-Example output: `{"id":"abc","name":"Football","recurrence":[{"weekday":4,"time":"18:30"}]}`  
+Example output: `{"teamid":"fbhh","name":"football","recurrence":[{"weekday":4,"time":"18:30"}]}`  
   
 ### addEvent
 `/api/addEvent` + `{"teamid":"[teamID]","datetime":"[datetime]","comment":"[comment]"}`  
