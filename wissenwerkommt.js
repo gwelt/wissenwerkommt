@@ -4,94 +4,15 @@ var crypto = require('crypto');
 var config = {};
 try {config=require('./config.json')} catch(err){};
 
+
+
+// ====================================================================================================
+// CLASSES
+// ====================================================================================================
+
 function WissenWerKommt() {
-  this.groups=[]; // Sparten
   this.teams=[]; // Mannschaften
 }
-
-// Group/Sparte <n:n> Team/Mannschaft <1:n> Event/Termin
-
-// Group (Sparte)
-function Group(json) {
-  let res=[];
-  this.groupid=validateString('id',json.groupid,res);
-  this.admintoken=validateString('token',json.admintoken,res);
-  this.teamtoken=validateString('token',json.teamtoken,res);
-  this.name=validateString('name',json.name,res);
-  this.members=undefined;
-  _debug('GROUP '+this.groupid+' >> '+res);
-}
-// Member (Mitglied / Team einer Sparte)
-function Member(json) {
-  let res=[];
-  this.id=validateString('id',json.id,res);
-  this.token=validateString('token',json.token,res);
-  _debug('MEMBER '+this.id+' >> '+res);
-}
-
-Group.prototype.addMember = function(json) {
-  // add member (team) to group
-  let member=new Member(json);
-  if ( (typeof member.id !== 'undefined') && (member.id!=this.groupid) && ((!this.members) || (!this.members.find(m=>m.id==member.id))) )
-  {
-    if (!(this.members instanceof Array)) {this.members=[]};
-    if (this.members.length<(config.maxTeams||250)) {this.members.push(member); this.members.sort((a,b)=>{return (a.id>b.id)?1:-1});} else {return false}
-    return member;
-  } else {
-    return false;
-  }
-}
-
-Group.prototype.removeMember = function(json) {
-  // remove member (team) from group
-  if ( (json.hasOwnProperty('id')) && (this.members) )  {
-    this.members=this.members.filter(m=>m.id!==json.id);
-    return true;
-  } else {return false}
-}
-
-WissenWerKommt.prototype.addGroup = function(json) {
-  let group=new Group(json);
-  if ( (typeof group.groupid !== 'undefined') && (!this.findTeam(group.groupid)) && (!this.findGroup(group.groupid)) )
-  {
-    if (!(this.groups instanceof Array)) {this.groups=[]};
-    if (this.groups.length<(config.maxGroups||100)) {this.groups.push(group)} else {return false}
-    return group;
-  } else {
-    return false;
-  }
-}
-
-WissenWerKommt.prototype.editGroup = function(json) {
-  // create a temporary group-object to make use of data-checks in constructor
-  let editGroup=new Group(json);
-  let group=this.findGroup(editGroup.groupid);
-  if (group) {
-    // exceptional case: new_groupid changes existing groupid (only, if new_groupid does not exist yet)
-    if (json['new_groupid']!==undefined) {
-      // generate temporary group with new_groupid to check validity and availability of new groupid
-      let temp_group=new Group({'groupid':json['new_groupid']});
-      if ( (typeof temp_group.groupid !== 'undefined') && (!this.findTeam(temp_group.groupid)) && (!this.findGroup(temp_group.groupid)) ) {
-        editGroup.groupid=temp_group.groupid;
-      } else {return false}
-      json['new_groupid']=undefined;
-    }
-    // check for each property, if json-key (!) is not undefined
-    // that way, a string with no length ('') can delete/undefine a current string
-    for (let key of Object.keys(editGroup)) {if (json[key]!==undefined) {group[key]=editGroup[key]}};
-    return group;
-  } else {
-    return false;
-  }
-}
-
-WissenWerKommt.prototype.deleteGroup = function(json) {
-  if ( (json.hasOwnProperty('groupid')) && (this.findGroup(json.groupid)) ) {
-    this.groups=this.groups.filter(g=>g.groupid!==json.groupid);
-    return true;
-  } else {return false}
-}
-
 
 // Team (Mannschaft)
 function Team(json) {
@@ -125,19 +46,11 @@ function Event(json) {
   _debug('EVENT '+this.datetime+' >> '+res);
 }
 
-WissenWerKommt.prototype.getAllIDs = function() {
-  var groups=[];
-  if (this.groups instanceof Array) {
-    groups=this.groups.map(g=>g.groupid).sort();
-  }
-  var teams=[];
-  if (this.teams instanceof Array) {
-    teams=this.teams.map(t=>t.teamid).sort();
-  }
-  return {"groups":groups,"teams":teams};
-}
 
-WissenWerKommt.prototype.getTeamOrGroup = function (id) {return (this.getTeam(id)||this.getGroup(id));}
+
+// ====================================================================================================
+// METHODS: WissenWerKommt
+// ====================================================================================================
 
 WissenWerKommt.prototype.getTeam = function(teamid,backfill) {
   let t=this.findTeam(teamid);
@@ -156,36 +69,6 @@ WissenWerKommt.prototype.getTeam = function(teamid,backfill) {
     if (!t.events.length) {t.events=undefined};
     return t;
   }
-  // if id is not a teamid - it maybe is a groupid ... try it
-  //return this.getGroup(teamid);
-  return false;
-}
-
-WissenWerKommt.prototype.getGroup = function(groupid) {
-  // get a copy of this group because data has to be added in return-value
-  let g=JSON.parse(JSON.stringify(this.findGroup(groupid)));
-  if (g) {
-    if (g.members) {
-      if (!g.members.length) {g.members=undefined} else {
-        // get data from all member-teams
-        g.teams=[];
-        g.members.forEach((m)=>{
-          if (this.getUserLevel(m.id,m.token)>0) {
-            // get a copy of this team because data has to be removed in return-value
-            let t=JSON.parse(JSON.stringify(this.getTeam(m.id)));
-            if (t) {
-              // t will be false, if id refers to a group
-              // remove admintoken and teamtoken
-              t.admintoken=undefined;
-              t.teamtoken=undefined;
-              g.teams.push(t);
-            }
-          }
-        });
-      }
-    }
-    return g;
-  }
   return false;
 }
 
@@ -197,7 +80,7 @@ WissenWerKommt.prototype.groomTeams = function(backfill) {
 
 WissenWerKommt.prototype.addTeam = function(json) {
   let team=new Team(json);
-  if ( (typeof team.teamid !== 'undefined') && (!this.findTeam(team.teamid)) && (!this.findGroup(team.teamid)) )
+  if ( (typeof team.teamid !== 'undefined') && (!this.findTeam(team.teamid)) )
   {
     if (!(this.teams instanceof Array)) {this.teams=[]};
     if (this.teams.length<(config.maxTeams||250)) {this.teams.push(team)} else {return false}
@@ -238,6 +121,17 @@ WissenWerKommt.prototype.deleteTeam = function(json) {
   } else {return false}
 }
 
+WissenWerKommt.prototype.findTeam = function(teamid) {
+  if ((typeof teamid=='string') && this.teams instanceof Array && teamid) {
+    return this.teams.find(t => t.teamid==teamid.toLowerCase())||false;
+  } else {return false}
+}
+
+WissenWerKommt.prototype.findEvent = function(teamid,datetime) {
+  let team=this.findTeam(teamid);
+  if (team) {return team.findEvent(datetime)} else {return false}
+}
+
 WissenWerKommt.prototype.getUserLevel = function(id,token) {
   let t=this.findTeam(id);
   let userLevel=0; // not a member
@@ -272,12 +166,11 @@ WissenWerKommt.prototype.getStats = function(io) {
   let eventCount=0;
   let attendCount=0;
   let refusalCount=0;
-  try {groupCount=this.groups.length} catch(e) {};
   try {teamCount=this.teams.length} catch(e) {};
   eventCount=this.teams.reduce((a,t)=>a+=t.events?t.events.length:0,0);
   attendCount=this.teams.reduce((a,t)=>a+=t.events?t.events.reduce((b,u)=>b+=u.attendees?u.attendees.length:0,0):0,0);
   refusalCount=this.teams.reduce((a,t)=>a+=t.events?t.events.reduce((b,u)=>b+=u.refusals?u.refusals.length:0,0):0,0);
-  return {"groups":groupCount,"teams":teamCount,"events":eventCount,"attendees":attendCount,"refusals":refusalCount,"md5":hash(JSON.stringify(this)),"kb":Math.round(JSON.stringify(this).length/1024),"users":io.engine.clientsCount+1};
+  return {"teams":teamCount,"events":eventCount,"attendees":attendCount,"refusals":refusalCount,"md5":hash(JSON.stringify(this)),"kb":Math.round(JSON.stringify(this).length/1024),"users":io.engine.clientsCount+1};
 }
 
 WissenWerKommt.prototype.load_from_file = function(filepath,filename,callback) {
@@ -330,39 +223,11 @@ WissenWerKommt.prototype.save_to_file = function(filepath,filename,callback,back
   });
 }
 
-function encrypt(text) {
- let iv=crypto.randomBytes(16);
- let cipher = crypto.createCipheriv('aes-256-cbc', getCipherKey(process.env.SECRET||config.cryptosecret), iv);
- let encrypted = cipher.update(text);
- encrypted = Buffer.concat([encrypted, cipher.final()]);
- return JSON.stringify({ iv: iv.toString('hex'), encryptedData: encrypted.toString('hex') });
-}
-function decrypt(text) {
- let iv = Buffer.from(text.iv, 'hex');
- let encryptedText = Buffer.from(text.encryptedData, 'hex');
- let decipher = crypto.createDecipheriv('aes-256-cbc', getCipherKey(process.env.SECRET||config.cryptosecret), iv);
- let decrypted = decipher.update(encryptedText);
- decrypted = Buffer.concat([decrypted, decipher.final()]);
- return decrypted.toString();
-}
-function getCipherKey(key) {if ((typeof key!= 'string')||(key.length<1)) {key="nosecret"}; while (key.length<32) {key+=key}; while (key.length>32) {key=key.slice(0,-1)}; return key;}
 
-WissenWerKommt.prototype.findGroup = function(groupid) {
-  if ((typeof groupid=='string') && this.groups instanceof Array && groupid) {
-    return this.groups.find(g => g.groupid==groupid.toLowerCase())||false;
-  } else {return false}
-}
 
-WissenWerKommt.prototype.findTeam = function(teamid) {
-  if ((typeof teamid=='string') && this.teams instanceof Array && teamid) {
-    return this.teams.find(t => t.teamid==teamid.toLowerCase())||false;
-  } else {return false}
-}
-
-WissenWerKommt.prototype.findEvent = function(teamid,datetime) {
-  let team=this.findTeam(teamid);
-  if (team) {return team.findEvent(datetime)} else {return false}
-}
+// ====================================================================================================
+// METHODS: Team
+// ====================================================================================================
 
 Team.prototype.generateNextRecurringEvents = function(count) {
   if (this.recurrence instanceof Array) {
@@ -415,6 +280,12 @@ Team.prototype.findEvent = function(datetime) {
   } else {return false}
 }
 
+
+
+// ====================================================================================================
+// METHODS: Event
+// ====================================================================================================
+
 Event.prototype.attend = function(name) {
   name=validateString('name',name);
   if (typeof name=='string') {
@@ -458,6 +329,29 @@ Event.prototype.reviveEvent = function() {
   this.cancelled=undefined;
   return this;
 }
+
+
+
+// ====================================================================================================
+// HELPER-FUNCTIONS
+// ====================================================================================================
+
+function encrypt(text) {
+ let iv=crypto.randomBytes(16);
+ let cipher = crypto.createCipheriv('aes-256-cbc', getCipherKey(process.env.SECRET||config.cryptosecret), iv);
+ let encrypted = cipher.update(text);
+ encrypted = Buffer.concat([encrypted, cipher.final()]);
+ return JSON.stringify({ iv: iv.toString('hex'), encryptedData: encrypted.toString('hex') });
+}
+function decrypt(text) {
+ let iv = Buffer.from(text.iv, 'hex');
+ let encryptedText = Buffer.from(text.encryptedData, 'hex');
+ let decipher = crypto.createDecipheriv('aes-256-cbc', getCipherKey(process.env.SECRET||config.cryptosecret), iv);
+ let decrypted = decipher.update(encryptedText);
+ decrypted = Buffer.concat([decrypted, decipher.final()]);
+ return decrypted.toString();
+}
+function getCipherKey(key) {if ((typeof key!= 'string')||(key.length<1)) {key="nosecret"}; while (key.length<32) {key+=key}; while (key.length>32) {key=key.slice(0,-1)}; return key;}
 
 function validateString(propertyname,string,res) {
   if (typeof res!='object') {res=[]}

@@ -45,7 +45,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/:id?/manifest.json', function (req, res) {
   let id=(req.params.id)||'';
-  let tg=db.getTeamOrGroup(id);
+  let tg=db.getTeam(id);
   res.json({
     "short_name": tg.name||"wissenwerkommt",
     "name": tg.name||"wissenwerkommt",
@@ -67,9 +67,6 @@ app.use('/api/:r/:id?', function (req, res) {
   switch (req.params.r) {
 
     // open
-    case 'addGroup':
-      res.json(db.addGroup(req.body)||{'error':'groupid invalid or existing'});
-      break;
     case 'addTeam':
       res.json(db.addTeam(req.body)||{'error':'teamid invalid or existing'});
       break;
@@ -82,13 +79,10 @@ app.use('/api/:r/:id?', function (req, res) {
 
     // team members only
     case 'get':
-    //case 'getTeam':
-    //case 'getGroup':
-    //case 'getTeamOrGroup':
       let userlevel=getUserLevel(req);
       if (userlevel>0) {
         let id=(req.params.id||req.body.id||req.body.teamid||req.body.groupid);
-        let tg=db.getTeamOrGroup(id);
+        let tg=db.getTeam(id);
         let result=false;
         if (tg) {
           result=JSON.parse(JSON.stringify(tg));
@@ -98,7 +92,7 @@ app.use('/api/:r/:id?', function (req, res) {
           result.userlevel=userlevel;
         } 
         res.json(result);
-      } else {res.status(401).json({'error':'not sufficient rights to get team or group or team or group does not exist'})}
+      } else {res.status(401).json({'error':'not sufficient rights to get team or team does not exist'})}
       break;
     case 'attend':
       if (getUserLevel(req)>0) {
@@ -126,30 +120,6 @@ app.use('/api/:r/:id?', function (req, res) {
       break;
 
     // admins only
-    case 'editGroup':
-      if (getUserLevel(req)>1) {
-        res.json(db.editGroup(req.body));
-        emitUpdate(req.body.groupid);
-      } else {res.status(401).json({'error':'not sufficient rights to edit group'})}
-      break;
-    case 'addMember':
-      if (getUserLevel(req)>1) {
-        let agroup=db.findGroup(req.body.groupid);
-        if (agroup) {res.json(agroup.addMember({"id":req.body.memberid,"token":req.body.membertoken}));emitUpdate(req.body.groupid)} else {res.json(false)}
-      } else {res.status(401).json({'error':'not sufficient rights to add member'})}
-      break;
-    case 'removeMember':
-      if (getUserLevel(req)>1) {
-        let agroup=db.findGroup(req.body.groupid);
-        if (agroup) {res.json(agroup.removeMember({"id":req.body.memberid}));emitUpdate(req.body.groupid)} else {res.json(false)}
-      } else {res.status(401).json({'error':'not sufficient rights to remove member'})}
-      break;
-    case 'deleteGroup':
-      if (getUserLevel(req)>1) {
-        res.json(db.deleteGroup(req.body));
-        emitUpdate(req.body.groupid);
-      } else {res.status(401).json({'error':'not sufficient rights to delete group'})}
-      break;
     case 'editTeam':
       if (getUserLevel(req)>1) {
         res.json(db.editTeam(req.body));
@@ -205,11 +175,6 @@ app.use('/api/:r/:id?', function (req, res) {
         db.groomTeams(true);
       } else {res.status(401).json({'error':'not sufficient rights to do that (dump)'})}
       break;
-    case 'getAllIDs':
-      if (getUserLevel(req)>2) {
-        res.json(db.getAllIDs());
-      } else {res.status(401).json({'error':'not sufficient rights to do that (getAllIDs)'})}
-      break;
     case 'getLog':
       if (getUserLevel(req)>2) {
         res.send(log.read());
@@ -232,7 +197,7 @@ io.on('connection', function (socket) {
   socket.on('get', function (req) {
     let userlevel=getUserLevel(req);
     if (userlevel>0) {
-      let tg=db.getTeamOrGroup(req.id);
+      let tg=db.getTeam(req.id);
       let tgCopy=false;
       if (tg) {
         tgCopy=JSON.parse(JSON.stringify(tg));
@@ -243,7 +208,7 @@ io.on('connection', function (socket) {
       }
       socket.emit('data', JSON.stringify(tgCopy));
     } else {
-      socket.emit('data', JSON.stringify({'error':'not sufficient rights to get team or group or team or group does not exist'}));
+      socket.emit('data', JSON.stringify({'error':'not sufficient rights to get team or team does not exist'}));
     }
   });
 });

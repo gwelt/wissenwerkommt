@@ -1,7 +1,7 @@
 {
   "name": "wissenwerkommt",
-  "version": "1.0.0",
-  "description": "Simple attending|not_attending-service for reoccuring team-events with REST-API.",
+  "version": "1.1.0",
+  "description": "Attendance-confirmation-service with REST-API",
   "main": "index.js",
   "scripts": {
     "testall": "mocha test",
