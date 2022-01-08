@@ -43,9 +43,9 @@ server {
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use('/:id?/manifest.json', function (req, res) {
-  let id=(req.params.id)||'';
-  let tg=db.getTeam(id);
+app.use('/:teamid?/manifest.json', function (req, res) {
+  let teamid=(req.params.teamid)||'';
+  let tg=db.getTeam(teamid);
   res.json({
     "short_name": tg.name||"wissenwerkommt",
     "name": tg.name||"wissenwerkommt",
@@ -54,13 +54,13 @@ app.use('/:id?/manifest.json', function (req, res) {
       {"src": "/images/wissenwerkommt512.png","sizes": "512x512","type": "image/png"},
       {"src": "/images/wissenwerkommt1024.png","sizes": "1024x1024","type": "image/png"}
     ],
-    "start_url": "/"+id,
+    "start_url": "/"+teamid,
     "background_color": "#fff",
     "theme_color": "#000",
     "display": "standalone"
   });
 });
-app.use('/api/:r/:id?', function (req, res) {
+app.use('/api/:r/:teamid?', function (req, res) {
 
   if (['attend','refuse','undecided'].find((a)=>a==req.params.r)) {log.add(req.params,req.body)}
 
@@ -81,13 +81,12 @@ app.use('/api/:r/:id?', function (req, res) {
     case 'get':
       let userlevel=getUserLevel(req);
       if (userlevel>0) {
-        let id=(req.params.id||req.body.id||req.body.teamid||req.body.groupid);
-        let tg=db.getTeam(id);
+        let tg=db.getTeam((req.params.teamid||req.body.teamid));
         let result=false;
         if (tg) {
           result=JSON.parse(JSON.stringify(tg));
-          // remove admin token and member-list (in case of a group it includes token) from return-value if userlevel is < 2
-          if ((!userlevel)||(userlevel<2)) {result.admintoken=undefined;result.members=undefined;}
+          // remove admin token and member-list from return-value if userlevel is < 2
+          if ((!userlevel)||(userlevel<2)) {result.admintoken=undefined}
           // add userlevel-information to result
           result.userlevel=userlevel;
         } 
@@ -178,7 +177,13 @@ app.use('/api/:r/:id?', function (req, res) {
     case 'getLog':
       if (getUserLevel(req)>2) {
         res.send(log.read());
-      } else {res.status(400).json({'error':'not a valid API-call'})}
+      } else {res.status(401).json({'error':'not sufficient rights to do that (getLog)'})}
+      break;
+    case 'getAllIDs':
+      if (getUserLevel(req)>2) {
+        res.json(db.getAllIDs());
+      //} else {res.status(401).json({'error':'not sufficient rights to do that (getAllIDs)'})}
+      } else {res.status(200).json({})}
       break;
 
     default:
@@ -197,7 +202,7 @@ io.on('connection', function (socket) {
   socket.on('get', function (req) {
     let userlevel=getUserLevel(req);
     if (userlevel>0) {
-      let tg=db.getTeam(req.id);
+      let tg=db.getTeam(req.teamid);
       let tgCopy=false;
       if (tg) {
         tgCopy=JSON.parse(JSON.stringify(tg));
@@ -213,15 +218,15 @@ io.on('connection', function (socket) {
   });
 });
 
-function emitUpdate(id) {
-  io.sockets.emit('update',{id:id});
+function emitUpdate(teamid) {
+  io.sockets.emit('update',{teamid:teamid});
 }
 
 function getUserLevel(req) {
-  let id=( (req.params?req.params.id:false) || (req.body?(req.body.id||req.body.teamid||req.body.groupid):false) || (req.id?req.id:false) ); // URL-param|JSON-param|Socket-param
+  let teamid=( (req.params?req.params.teamid:false) || (req.body?(req.body.teamid):false) || (req.teamid?req.teamid:false) ); // URL-param|JSON-param|Socket-param
   let token=( (req.body?req.body.token:false) || (req.token?req.token:false) );
   if ((token!==undefined)&&(token==config.sysoptoken)) {return 3}
-  return db.getUserLevel(id,token);      
+  return db.getUserLevel(teamid,token);      
 }
 
 var log=new Logger(100);

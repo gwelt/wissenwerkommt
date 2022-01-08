@@ -32,6 +32,7 @@ function Team(json) {
     });
     if (!this.recurrence.length) {this.recurrence=undefined}
   } else {this.recurrence=undefined}
+  this.events=[];
   _debug('TEAM '+this.teamid+' >> '+res);
 }
 
@@ -99,7 +100,7 @@ WissenWerKommt.prototype.editTeam = function(json) {
     if (json['new_teamid']!==undefined) {
       // generate temporary team with new_teamid to check validity and availability of new teamid
       let temp_team=new Team({'teamid':json['new_teamid']});
-      if ( (typeof temp_team.teamid !== 'undefined') && (!this.findTeam(temp_team.teamid)) && (!this.findGroup(temp_team.teamid)) ) {
+      if ( (typeof temp_team.teamid !== 'undefined') && (!this.findTeam(temp_team.teamid)) ) {
         editTeam.teamid=temp_team.teamid;
       } else {return false}
       json['new_teamid']=undefined;
@@ -144,24 +145,11 @@ WissenWerKommt.prototype.getUserLevel = function(id,token) {
         if (!t.admintoken) {userLevel=2} // team-admin
       }
     }
-  } else {
-    let g=this.findGroup(id);
-    if (g) {
-      if ((g.admintoken)&&(token==g.admintoken)) {
-        userLevel=2; // group-admin
-      } else {
-        if ((!g.teamtoken)||(token==g.teamtoken)) {
-          userLevel=1;  // group-member
-          if (!g.admintoken) {userLevel=2} // group-admin
-        }
-      }
-    }
   }
   return userLevel;
 };
 
 WissenWerKommt.prototype.getStats = function(io) {
-  let groupCount=0;
   let teamCount=0;
   let eventCount=0;
   let attendCount=0;
@@ -173,24 +161,17 @@ WissenWerKommt.prototype.getStats = function(io) {
   return {"teams":teamCount,"events":eventCount,"attendees":attendCount,"refusals":refusalCount,"md5":hash(JSON.stringify(this)),"kb":Math.round(JSON.stringify(this).length/1024),"users":io.engine.clientsCount+1};
 }
 
+WissenWerKommt.prototype.getAllIDs = function() {
+  return {"teams":this.teams.map(t=>t.teamid).sort()};
+}
+
 WissenWerKommt.prototype.load_from_file = function(filepath,filename,callback) {
-  this.groups=[];
   this.teams=[];
   fs.readFile(filepath+'/'+filename, 'utf8', (err, data_encrypted)=>{
     if (err){console.log('No data-file.')} else {
       // decrypt
       try {data_encrypted=decrypt(JSON.parse(data_encrypted))} catch (err) {console.log('decryption failed',err)}
       try {data = JSON.parse(data_encrypted)} catch (err) {data={}};
-      if (data.hasOwnProperty('groups')) {
-        data.groups.forEach((g)=>{
-          var group=this.addGroup(g);
-          if ((group)&&(g.hasOwnProperty('members'))) {
-            g.members.forEach((m)=>{
-              group.addMember(m);
-            })
-          }
-        });
-      }
       if (data.hasOwnProperty('teams')) {
         data.teams.forEach((t)=>{
           let team=this.addTeam(t);
