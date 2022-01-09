@@ -82,7 +82,7 @@ app.use('/api/:r/:teamid?', function (req, res) {
       let userlevel=getUserLevel(req);
       if (userlevel>0) {
         let tg=db.getTeam((req.params.teamid||req.body.teamid));
-        let result=false;
+        let result={'error':'team does not exist'};
         if (tg) {
           result=JSON.parse(JSON.stringify(tg));
           // remove admin token and member-list from return-value if userlevel is < 2
@@ -219,7 +219,7 @@ io.on('connection', function (socket) {
 });
 
 function emitUpdate(teamid) {
-  io.sockets.emit('update',{teamid:teamid});
+  io.sockets.emit('update', JSON.stringify({teamid:teamid}));
 }
 
 function getUserLevel(req) {
