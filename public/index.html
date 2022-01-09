@@ -4,9 +4,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" type="image/png" href="images/wissenwerkommt180.png">
 <link rel="apple-touch-icon" sizes="180x180" href="images/wissenwerkommt180.png">
-<meta name="theme-color" content="#000">
+<meta name="theme-color" content="#000000">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#000000">
 <meta name="Description" content="wissenwerkommt">
-<title>wissenwerkommt</title>
+<title></title>
 <script>
 var team=false;
 var group=false;
@@ -32,10 +34,20 @@ if (useSocketIO) {setTimeout(function(){SocketIO()},1000)};
 function SocketIO() {if (!socket) {loadScript('/socket.io/socket.io.js', function() {
   socket=io();
   socket.on('update', function (json) {
+    debug(JSON.stringify(json));
     if (json.teamid==(team.teamid||group.groupid)) {getTeamOrGroup(json.teamid)};
   });
   socket.on('data', function (json) {updateView(json)});
 })}};
+
+function serverRequest(apicall,json,callback) {
+  var t=stopwatch();
+  var req = new XMLHttpRequest();
+  req.onreadystatechange = function() {if (this.readyState == 4) {console.log(apicall+': '+stopwatch(t)+'ms'); if (this.status<500) {callback(this.responseText)} else {callback()}}};
+  req.open("POST","/api/"+apicall,true);
+  req.setRequestHeader("Content-Type","application/json;charset=UTF-8");
+  req.send(JSON.stringify(json));
+}
 
 // Service-Worker
 //registerServiceWorker();
@@ -60,7 +72,7 @@ function addOnKeyCode13EventListener(id_of_element_to_listen_to,id_of_element_to
 function updateView(json) {
   var time=stopwatch();
 
-  var svg_menu='<svg xmlns="http://www.w3.org/2000/svg" id="svg_menu" fill="#000" width="24px" height="18px" viewBox="0 0 24 24"><path d="M24 6h-24v-4h24v4zm0 4h-24v4h24v-4zm0 8h-24v4h24v-4z"/></svg>';
+  var svg_menu='<svg xmlns="http://www.w3.org/2000/svg" id="svg_menu" fill="#555" width="24px" height="18px" viewBox="0 0 24 24"><path d="M24 6h-24v-4h24v4zm0 4h-24v4h24v-4zm0 8h-24v4h24v-4z"/></svg>';
 
   var mobile_head=document.getElementById('mobile_head');
   var mobile_main=document.getElementById('mobile_main');
@@ -68,37 +80,46 @@ function updateView(json) {
   var mobile_footer=document.getElementById('mobile_footer');
 
   // identify TEAM or GROUP
-  var temp_obj=json?JSON.parse(json):false;
+  var temp_obj=json?JSON.parse(json):{};
   if (temp_obj.hasOwnProperty('groupid')) {group=temp_obj; team=false;} else {group=false}
   if (temp_obj.hasOwnProperty('teamid')) {team=temp_obj; group=false;} else {team=false}
   message('',false); // reset
   debug(JSON.stringify(temp_obj));
 
-  // read myteams-cookie
-  var myteams=(getCookie('myteams',true)||'').split(",");
-
   if (temp_obj.error) {
     // MAIN-page if a team or group is requested but not found or not allowed
     document.title='wissenwerkommt';
     message('',false); // don't want the message here...
-    mobile_head.innerHTML="<div class='head_wrapper'><button aria-label='toggleView' class='option_button' onclick=toggleView();>"+svg_menu+"</button><a href=/ style=text-decoration:none;font-weight:bold>wissenwerkommt</a><br><div class='titlesub'>/<a href=/"+window.location.pathname.substr(1)+">"+window.location.pathname.substr(1)+"</a></div></div>";
+    mobile_head.innerHTML="<div class='head_wrapper'><button aria-label='toggleView' class='option_button_head' onclick=toggleView();>"+svg_menu+"</button><a href=/ style=text-decoration:none;font-weight:bold>wissenwerkommt</a><br><div class='titlesub'><a href=/"+window.location.pathname.substr(1)+">"+window.location.pathname.substr(1)+"</a></div></div>";
+
+    message('Dieses Team hat einen Token für den Zugriff vereinbart:</div><button class="button_InsideMessage" onclick=show_cookie_prompt(\'token\')>Token eingeben</button>');
+    /*
     mobile_main.innerHTML='<div class="error_wrapper"><div class="error_text" style=padding-bottom:12px>Das Team hat einen Code für den Zugriff vereinbart:</div><button aria-label="Token eingeben" style="width:100%" onclick=show_cookie_prompt(\'token\')>Token eingeben</button></div>';
+    */
     mobile_footer.innerHTML="<div id='footer_wrapper' class='footer_wrapper'><div class='titlesubcenter'>Immer besser zu <a href=/>wissenwerkommt</a>.</div></div>";
   }
+
+  /*
+  // read myteams-cookie
+  var myteams=getCookie('myteams',true);
+  if (myteams) {myteams=myteams.split(",")} else {myteams=[]}
+  */
 
   if (group) {
     // GROUP
     // MAIN-page if a group is requested
     document.title=(!!group.name?group.name:'Sparte '+group.groupid);
 
+    /*
     // add groupid to myteams-cookie
     if ((group.groupid)&&(myteams.indexOf(group.groupid)<0)) {
       myteams.push(group.groupid);
       myteams.sort();
       setCookie('myteams',myteams.toString(),365,true);
     };
+    */
 
-    mobile_head.innerHTML="<div class='head_wrapper'><button aria-label='toggleView' class='option_button' onclick=toggleView();>"+svg_menu+"</button><a href=/"+group.groupid+" style=text-decoration:none;font-weight:bold>"+(!!group.name?group.name:'Sparte '+group.groupid)+"</a><br><div class='titlesub'>"+group.groupid+"</div></div>";
+    mobile_head.innerHTML="<div class='head_wrapper'><button aria-label='toggleView' class='option_button_head' onclick=toggleView();>"+svg_menu+"</button><a href=/"+group.groupid+" style=text-decoration:none;font-weight:bold>"+(!!group.name?group.name:'Sparte '+group.groupid)+"</a><br><div class='titlesub'>"+group.groupid+"</div></div>";
     
     var teamlist='';
     group.teams?group.teams.forEach(function (t) {
@@ -115,17 +136,19 @@ function updateView(json) {
     // MAIN-page if a team is requested
     document.title=(!!team.name?team.name:'Team '+team.teamid);
 
+    /*
     // add teamid to myteams-cookie
     if ((team.teamid)&&(myteams.indexOf(team.teamid)<0)) {
       myteams.push(team.teamid);
       myteams.sort();
       setCookie('myteams',myteams.toString(),365,true);
     };
+    */
 
     // create readable string for recurrence of events
     var teams_weekday_time=get_teams_weekday_time(team);
 
-    mobile_head.innerHTML="<div class='head_wrapper'><button aria-label='toggleView' class='option_button' onclick=toggleView();>"+svg_menu+"</button><a href=/"+team.teamid+" style=text-decoration:none;font-weight:bold"+((!teams_weekday_time.length)?';position:relative;top:10px':'')+">"+(!!team.name?team.name:'Team '+team.teamid)+"</a><br><div class='titlesub'>"+teams_weekday_time+"</div></div>";
+    mobile_head.innerHTML="<div class='head_wrapper'><button aria-label='toggleView' class='option_button_head' onclick=toggleView();>"+svg_menu+"</button><a href=/"+team.teamid+" style=text-decoration:none;font-weight:bold"+((!teams_weekday_time.length)?';position:relative;top:10px':'')+">"+(!!team.name?team.name:'Team '+team.teamid)+"</a><br><div class='titlesub'>"+teams_weekday_time+"</div></div>";
 
     //---------- EVENTS ----------//
     mobile_main.innerHTML='';
@@ -194,7 +217,7 @@ function updateView(json) {
       else if (e.refusals&&e.refusals.includes(name)) {document.getElementById('status'+e.datetime).className='statusbutton_refused'}
       else {document.getElementById('status'+e.datetime).className='statusbutton_undecided'}
 
-      if ((!name)&&(currentView!='mobile_options')) {message('Klicke einen <span style="background-image:linear-gradient(#ffbf00 100%,#efaf00 0%)">&nbsp;Termin&nbsp;</span> 1x an um deine <u>Teilnahme</u> mitzuteilen. Klicke erneut für eine <u>Absage</u>.')}
+      if ((!name)&&(currentView!='mobile_options')) {message('<span style=font-weight:bold>Willkommen!</span><br>Klicke einen <span noclass="statusbutton_undecided">Termin</span> 1x an um deine <span noclass="statusbutton_attending">Teilnahme</span> mitzuteilen. Klicke erneut für eine <span noclass="statusbutton_refused">Absage</span>.<br><button aria-label="ok" class="button_InsideMessage" id="okInfo">Verstanden!</button><br>')}
 
     }):false;
 
@@ -205,18 +228,19 @@ function updateView(json) {
     // NO TEAM / NO GROUP
     document.title='wissenwerkommt';
     message('',false);
-    mobile_head.innerHTML="<div class='head_wrapper'><button aria-label='toggleView' class='option_button' onclick=toggleView();>"+svg_menu+"</button><a href=/ style=text-decoration:none;font-weight:bold>wissenwerkommt</a><br><div class='titlesub'>Startseite</div></div>";
-    mobile_main.innerHTML='<div id="main01"><div class="form_wrapper"><input type="text" id="visitteamid" maxlength=16 value="'+window.location.pathname.substr(1)+'" placeholder="Team-ID" autocomplete="off"><button aria-label="Team aufrufen" id="team_aufrufen" class="button_ok" onclick=getTeamOrGroup(document.getElementById("visitteamid").value)>Team aufrufen</button></div><br><div class="textblock_wrapper"></div><div class="form_wrapper"><button aria-label="Team anlegen" class="button_ok" onclick="document.getElementById(\'main02\').style.display=\'block\';document.getElementById(\'main01\').style.display=\'none\';document.getElementById(\'main03\').style.display=\'none\'">neues Team</button></div><br><div class="textblock_wrapper"></div><div class="textblock_wrapper" id="teamlist"></div><div class="textblock_wrapper" id="stats"></div></div><div id="main02" style=display:none><div class="form_wrapper"><input type="text" id="name" maxlength=24 value="" placeholder="Name deines Teams" autocomplete="off"><br>'+get_team_weekdaytime_selection(team)+'<br><input type="text" id="teamid" maxlength=16 value="'+window.location.pathname.substr(1)+'" placeholder="Team-ID *" autocomplete="off"><br><input type="text" id="admintoken" maxlength=16 value="'+(team.admintoken||'')+'" placeholder="Admin-Token" autocomplete="off"><input type="hidden" id="teamtoken" maxlength=16 value="'+(team.teamtoken||'')+'" autocomplete="off"><br><button aria-label="Team erstellen" class="button_ok" onclick=addTeam()>Team erstellen</button><br></div></div><div id="main03" style=display:none><div class="form_wrapper"><input type="text" id="group_name" maxlength=24 value="" placeholder="Name der Sparte" autocomplete="off"><br><input type="text" id="groupid" maxlength=16 value="'+window.location.pathname.substr(1)+'" placeholder="ID *" autocomplete="off"><br><input type="text" id="group_admintoken" maxlength=16 value="" placeholder="Admin-Token" autocomplete="off"><input type="hidden" id="group_teamtoken" maxlength=16 value="" autocomplete="off"><br><button aria-label="Sparte erstellen" class="button_ok" onclick=addGroup()>Sparte erstellen</button><br></div></div>';
+    mobile_head.innerHTML="<div class='head_wrapper'><button aria-label='toggleView' class='option_button_head' onclick=toggleView();>"+svg_menu+"</button><a href=/ style=text-decoration:none;font-weight:bold>wissenwerkommt</a><br><div class='titlesub'>Startseite</div></div>";
+    mobile_main.innerHTML='<div id="main01"><div class="form_wrapper"><input type="text" id="visitteamid" maxlength=16 value="'+window.location.pathname.substr(1)+'" placeholder="Team-ID" autocomplete="off"><button aria-label="Team aufrufen" id="team_aufrufen" class="button_ok" onclick=getTeamOrGroup(document.getElementById("visitteamid").value)>Team aufrufen</button></div><br><div class="textblock_wrapper"></div><div class="form_wrapper"><button aria-label="Team anlegen" class="button_ok" onclick="document.getElementById(\'main02\').style.display=\'block\';document.getElementById(\'main01\').style.display=\'none\';document.getElementById(\'main03\').style.display=\'none\';document.getElementById(\'teamid\').value=document.getElementById(\'visitteamid\').value">neues Team</button></div><br><div class="textblock_wrapper"></div><div class="textblock_wrapper" id="teamlist"></div><div class="textblock_wrapper" id="stats"></div></div><div id="main02" style=display:none><div class="form_wrapper"><input type="text" id="name" maxlength=24 value="" placeholder="Name deines Teams" autocomplete="off"><br>'+get_team_weekdaytime_selection(team)+'<br><input type="text" id="teamid" maxlength=16 value="'+window.location.pathname.substr(1)+'" placeholder="Team-ID *" autocomplete="off"><input type="hidden" id="admintoken" maxlength=16 value="'+(team.admintoken||'')+'" placeholder="Admin-Token" autocomplete="off"><input type="hidden" id="teamtoken" maxlength=16 value="'+(team.teamtoken||'')+'" autocomplete="off"><br><button aria-label="Team erstellen" class="button_ok" onclick=addTeam()>Team erstellen</button><br></div></div><div id="main03" style=display:none><div class="form_wrapper"><input type="text" id="group_name" maxlength=24 value="" placeholder="Name der Sparte" autocomplete="off"><br><input type="text" id="groupid" maxlength=16 value="'+window.location.pathname.substr(1)+'" placeholder="ID *" autocomplete="off"><br><input type="text" id="group_admintoken" maxlength=16 value="" placeholder="Admin-Token" autocomplete="off"><input type="hidden" id="group_teamtoken" maxlength=16 value="" autocomplete="off"><br><button aria-label="Sparte erstellen" class="button_ok" onclick=addGroup()>Sparte erstellen</button><br></div></div>';
     mobile_footer.innerHTML="";
     addOnKeyCode13EventListener('visitteamid','team_aufrufen');
 
-    // stats
-    serverRequest('stats',{},function (r){if (typeof r!='undefined') {document.getElementById('stats').innerHTML=r} else {message('<span style=color:#f00>=== API is offline! ===</span>')}});
-
+    /*
     // team-favourites (from myteams-cookie)
-    document.getElementById('teamlist').innerHTML+='Lieblingsteams:<br>';
-    myteams.forEach(function(t) {document.getElementById('teamlist').innerHTML+='<a href=/'+t+'>'+t+'</a> '});
-    document.getElementById('teamlist').innerHTML+=' (<a href=/ onclick=setCookie("myteams","",365,true)>löschen</a>)';
+    if (myteams.length>0) {
+      document.getElementById('teamlist').innerHTML+='<br>Zuletzt aufgerufen: ';
+      myteams.forEach(function(t) {document.getElementById('teamlist').innerHTML+='<a href=/'+t+'>'+t+'</a> '});
+      document.getElementById('teamlist').innerHTML+='<br><a href=/ onclick=setCookie("myteams","",0,true)>Diese Liste löschen</a>';
+    }
+    */
 
     // admins get all the IDs
     serverRequest('getAllIDs',{"token":getCookie("token",true)},function (r){
@@ -232,9 +256,12 @@ function updateView(json) {
           r.groups.forEach(function(g) {document.getElementById('teamlist').innerHTML+='<a href=/'+g+'>'+g+'</a> '});
         }
         document.getElementById('teamlist').innerHTML+='<br>Admin: <a href=javascript:getLog()>getLog()</a>, <a href=javascript:dump()>dump()</a>';
+
+        // stats
+        serverRequest('stats',{},function (r){if (typeof r!='undefined') {document.getElementById('stats').innerHTML=r} else {message('<span style=color:#f00>=== API is offline! ===</span>')}});
+
       }
     });
-
   }
 
   //---------- MENU ----------//
@@ -281,14 +308,16 @@ function updateView(json) {
   }
 
   if ((team)&&(team.userlevel)&&(team.userlevel>1)) {
-    admin_menu+='<div class="divider">Termine</div>';
+    //admin_menu+='<div class="divider">Termine</div>';
+    admin_menu+='<div class="divider"></div>';
     // ADMIN_MENU:NEW EVENT
     admin_menu+='<div class="options_option"><button aria-label="Termin hinzufügen" class="option_button" onclick="show_teamAddEvent_prompt()"></button><div class="option_text">Termin hinzufügen</div></div>';
     // ADMIN_MENU:DELETE EVENT
-    admin_menu+='<div class="options_option"><button aria-label="Termin bearbeiten" class="option_button" onclick="show_teamDeleteEvent_prompt()"></button><div class="option_text">Termin bearbeiten / absagen</div></div>';
+    admin_menu+='<div class="options_option"><button aria-label="Termin bearbeiten" class="option_button" onclick="show_teamDeleteEvent_prompt()"></button><div class="option_text">Termin bearbeiten</div></div>';
     // ADMIN_MENU:DATETIME
     admin_menu+='<div class="options_option"><button aria-label="Terminserie" class="option_button" onclick="show_teamPreferenceWeekdayTime_prompt(team)"></button><div class="option_text">Terminserie:<br><b>'+(teams_weekday_time.length?teams_weekday_time:'keine (unregelmäßig)')+'</b></div></div>';
-    admin_menu+='<div class="divider">Team</div>';
+    //admin_menu+='<div class="divider">Team</div>';
+    admin_menu+='<div class="divider"></div>';
     // ADMIN_MENU:TEAM-NAME
     admin_menu+='<div class="options_option"><button aria-label="Name des Teams" class="option_button" onclick="show_teamPreference_prompt(\'<b>Name</b> des Teams:\',\'name\',\''+(team.name?team.name:'')+'\',\'\');"></button><div class="option_text">Name des Teams:<br><b>'+(team.name?team.name:'Team '+team.teamid)+'</b></div></div>';
     // ADMIN_MENU:TEAM-ID
@@ -310,7 +339,9 @@ function updateView(json) {
 
   // showtime...
   mobile_options.innerHTML='<div class="options_wrapper">'+menu+admin_menu+promo+'</div>';
-  if (currentView=='mobile_options') {showQRcode(document.getElementById('qrcode'),""+window.location)};
+  if (currentView=='mobile_options') {showView('mobile_options')}
+  //showQRcode(document.getElementById('qrcode'),""+window.location,{scale:1,width:100,margin:0,color:{light:'#ffffff00',dark:'#000000ff'}})};
+  
 
   console.log('updateView: '+stopwatch(time)+'ms');
 }
@@ -530,7 +561,7 @@ function showView(view_to_display) {
   if (currentView=='mobile_options') {
     document.getElementById('mobile_options').style.display='block';
     document.getElementById('mobile_main').style.display='none';
-    showQRcode(document.getElementById('qrcode'),""+window.location);
+    showQRcode(document.getElementById('qrcode'),""+window.location,{scale:1,width:160,margin:4,color:{light:'#ffffff00',dark:'#000000ff'}});
   } else {
     document.getElementById('mobile_main').style.display='block';
     document.getElementById('mobile_options').style.display='none';
@@ -541,15 +572,6 @@ function stopwatch(time) {
   if (typeof time != 'undefined') {
     return new Date()-time;
   } else {return new Date()}
-}
-
-function serverRequest(apicall,json,callback) {
-  var t=stopwatch();
-  var req = new XMLHttpRequest();
-  req.onreadystatechange = function() {if (this.readyState == 4) {console.log(apicall+': '+stopwatch(t)+'ms'); if (this.status<500) {callback(this.responseText)} else {callback()}}};
-  req.open("POST","/api/"+apicall,true);
-  req.setRequestHeader("Content-Type","application/json;charset=UTF-8");
-  req.send(JSON.stringify(json));
 }
 
 function getTeamOrGroup(teamid) {
@@ -776,8 +798,8 @@ function setCookie(cname, cvalue, exdays, dontgetteam) {
 function debug(text) {
   console.log(text);
   if ((text=='false')||(JSON.parse(text).hasOwnProperty('error'))) {
-    message('<span style=color:#f00>Das hat leider nicht funktioniert.</span>')
-    if (JSON.parse(text).hasOwnProperty('error')) {message('<span style=color:#f00>'+JSON.parse(text).error+'</span>')}
+    message('<span nostyle=color:#f00>Das hat leider nicht funktioniert.</span><button aria-label="ok" class="button_InsideMessage" id="okInfo">Verstanden!</button>')
+    if (JSON.parse(text).hasOwnProperty('error')) {message('<span style=font-weight:bold>Ups!</span><br><span nostyle=color:#f00>'+JSON.parse(text).error+'</span><button aria-label="ok" class="button_InsideMessage" id="okInfo">Verstanden!</button>')}
   }
 }
 
@@ -803,6 +825,7 @@ function check_mobile()
     //console.log('mobile NO');
     //document.getElementById('under_mobile').style.display='block';
     document.getElementById('under_mobile').style.backgroundImage='url(/images/phone.svg)';
+    /*
     if (!document.getElementById("logoutIMG")) {
       var img = document.createElement("IMG");
       img.id='logoutIMG';
@@ -816,7 +839,8 @@ function check_mobile()
       document.getElementById('under_mobile').appendChild(img);
       //<img src="/images/logout.svg" style="position:fixed;bottom:10px;right:10px;width:60px">
     }
-    if (0) { //(!document.getElementById("qrcode2")) {
+    */
+    if (!document.getElementById("qrcode2")) {
       var canvas = document.createElement("canvas");
       canvas.id='qrcode2';
       canvas.style.position='fixed';
@@ -824,7 +848,7 @@ function check_mobile()
       canvas.style.right='20px';
       canvas.style.width='60px';
       document.getElementById('under_mobile').appendChild(canvas);
-      showQRcode(document.getElementById('qrcode2'),(""+window.location),{scale:1,width:60,margin:0,color:{light:'#ffffff00',dark:'#000000a0'}});
+      showQRcode(document.getElementById('qrcode2'),(""+window.location),{scale:1,width:80,margin:0,color:{light:'#ffffff00',dark:'#ffffff55'}});
     }
 
     var mwidth=380;
@@ -939,7 +963,7 @@ function _ondblclick(dblclick) {
   }
   .under_mobile_teaser_inner_footer {
     position:fixed;
-    font-size:0.5em;
+    font-size:0.6em;
     bottom:0px;
     padding:0px 52% 40px 40px;
     color:#ddd;
@@ -950,7 +974,7 @@ function _ondblclick(dblclick) {
     width:100%; height:18%;
     background-color:rgba(25, 25, 25, .5) ;
   }
-  .mobile {z-index:1; background-color: #c2c2c2; padding:0; position:relative; overflow:auto; margin:auto;}
+  .mobile {z-index:1; background-color: #fafafa; padding:0; position:relative; overflow:auto; margin:auto;}
   .mobile_prompt {
     z-index:2;
     overflow:auto;
@@ -976,7 +1000,8 @@ function _ondblclick(dblclick) {
   button {
     border-radius: 0.1em;
     position: relative; overflow: hidden; display:inline-block; cursor: pointer;
-    background-color:#A2A2A2; background-image:linear-gradient(#A2A2A2 84%,#A2A2A2 0%);
+    color:#fff;
+    background-color:#3a577e; background-image:linear-gradient(#3a577e 84%,#3a577e 0%);
     margin: 0 0px 0px 0;
     height:50px; letter-spacing: -0.9px; text-align: center;
     box-shadow: 0 1px 1px rgba(0, 0, 0, 0.16), 0 1px 1px rgba(0, 0, 0, 0.1);
@@ -1009,7 +1034,7 @@ function _ondblclick(dblclick) {
     border-radius: 0.1em; margin: 20px 6px 20px 6px; padding: 0px 9px 0px 9px; text-align: left; font-size: 0.7em;
   }
   div.error_wrapper {
-    border-radius: 0.1em; border-style:solid; border-width:0px; border-color:#9E090D; margin: 0px 6px 12px 6px; padding:28px 22px 42px 22px; background-color:#fff; text-align: center;
+    border-radius: 0.1em; border-style:solid; border-width:0px; border-color:#9E090D; margin: 0px 6px 12px 6px; padding:28px 22px 42px 22px; nobackground-color:#fff; text-align: center;
   }
   div.error_text {
     font-size: 0.7em;
@@ -1021,10 +1046,10 @@ function _ondblclick(dblclick) {
     border-radius: 0.1em; margin: 0px 6px 18px 6px; padding: 0px 0px 0px 0px; text-align: left;
   }
   div.options_option {
-    border-radius: 0.1em; margin:0px 0px 9px 0px; padding: 9px 9px 9px 9px; background-color: #fff; min-height:68px; overflow: wrap;
+    border-radius: 0.1em; margin:0px 0px 9px 0px; padding: 9px 9px 9px 9px; background-color: #ddd; min-height:72px; overflow: wrap;
   }
   div.options_promo {
-    border-radius: 0.1em; margin:0px 0px 9px 0px; padding: 9px 9px 18px 9px; background-color: #fff; min-height:68px; overflow: wrap; text-align:center;
+    border-radius: 0.1em; margin:0px 0px 9px 0px; padding: 9px 9px 18px 9px; nobackground-color: #fff; min-height:70px; overflow: wrap; text-align:center;
   }
   div.option_text {
     font-size:0.7em; padding:0px 0px 4px 0px;
@@ -1037,6 +1062,13 @@ function _ondblclick(dblclick) {
   }
   button.option_button {
     float:right; margin:2px 0px 0px 8px; height: 50px; width: 50px;
+    color:#fff;
+    background-color:#eee; background-image:linear-gradient(#eee 84%,#eee 0%);
+  }
+  button.option_button_head {
+    float:right; margin:2px 0px 0px 8px; height: 50px; width: 50px;
+    color:#fff;
+    background-color:#eee; background-image:linear-gradient(#eee 84%,#eee 0%);
   }
   div.divider {
     border-radius: 0.1em; margin:0px 0px 0px 0px; padding: 9px 9px 9px 9px; min-height:10px; overflow: wrap; font-size: 0.7em;
@@ -1048,10 +1080,10 @@ function _ondblclick(dblclick) {
     padding: 6px 6px; text-align: center; font-size:1em;
   }
   div.comment_wrapper {
-    background-color: #fff; margin: 0px 0px 6px 0px; padding: 0px; text-align: center; display:inline-block; width:90%;
+    nobackground-color: #eee; margin: 0px 0px 6px 0px; padding: 0px; text-align: center; display:inline-block; width:90%;
   }
   div.comment_important {
-    border-radius: 0.1em; background-color:#E81B20; color:#fff; margin: 0px 0px 6px 0px; padding: 5px; text-align: center; display:inline-block; width:80%;
+    border-radius: 0.1em; background-color:#E81B20; color:#eee; margin: 0px 0px 6px 0px; padding: 5px; text-align: center; display:inline-block; width:80%;
   }
   div.comment_hint {
     border-radius: 0.1em; background-color:#ff0; margin: 0px 0px 6px 0px; padding: 5px; text-align: center; display:inline-block; width:80%;
@@ -1060,10 +1092,10 @@ function _ondblclick(dblclick) {
     border-radius: 0.1em; margin: 6px 6px 20px 6px; padding: 9px 9px 9px 9px; text-align: left;
   }
   div.statusbutton_wrapper {
-    border-radius: 0.1em; margin: 0px 6px 12px 6px; padding: 20px 0 10px 0; background-color:#fff; text-align: center; font-size:0.7em;
+    border-radius: 0.1em; margin: 0px 6px 12px 6px; padding: 20px 0 10px 0; background-color:#ddd; text-align: center; font-size:0.7em;
   }
   div.prompt_wrapper {
-    border-radius: 0.1em; margin: 12px 6px 12px 6px; padding: 20px 16px 20px 16px; background-color:#fff; text-align: left;
+    border-radius: 0.1em; margin: 12px 6px 12px 6px; padding: 20px 16px 20px 16px; background-color:#ddd; text-align: left;
   }
   div.prompt_text_top {
     font-size:0.7em; width:100%; text-align:left; padding:0px 10px 10px 10px;
@@ -1084,23 +1116,24 @@ function _ondblclick(dblclick) {
   button.button_ok {float:right; margin-right:0px; width:100%;}
 
   div.statusbutton_wrapper_attendees_first {padding:8px;}
-  div.statusbutton_wrapper_attendees_following {background-color: #fff; padding:8px 8px 0px 8px;}
-  div.attendee_item, div.attendee_limited_item, div.refusal_item {display:inline-block; white-space: nowrap; background-color:#ddd; border:2px solid #ddd; border-radius: 0.1em; padding:4px; margin:0px 4px 8px 4px;}
+  div.statusbutton_wrapper_attendees_following {nobackground-color: #eee; padding:8px 8px 0px 8px;}
+  div.attendee_item, div.attendee_limited_item, div.refusal_item {display:inline-block; white-space: nowrap; background-color:#eee; border:2px solid #fafafa; border-radius: 0.1em; padding:4px; margin:0px 4px 8px 4px;}
   div.attendee_item {}
-  div.attendee_limited_item {color:#888; background-color:#fff; border:2px dashed #ddd;}
-  div.refusal_item {color:#888; text-decoration:line-through; background-color:#fff; border:2px solid #ddd;}
+  div.attendee_limited_item {color:#888; background-color:#eee; border:2px dashed #fafafa;}
+  div.refusal_item {color:#888; text-decoration:line-through; background-color:#ddd; border:2px solid #ccc;}
 
   div.message {
-    border-radius: 0.1em; margin: 0px 21px 15px 21px; padding:0px 22px 12px 22px; background-color:#fff; color:#000; text-align:left; font-size: 0.7em; cursor:pointer; top:-24px; display:none;
+    border-radius: 0.1em; margin: 0px 6px 12px 6px; padding:10px 22px 22px 22px; background-color:#ddd; color:#000; text-align:left; font-size: 0.7em; cursor:pointer; display:none;
   }
   #triangle-up {
     width: 0; height: 0;
-    border-left: 10px solid transparent;
-    border-right: 10px solid transparent;
-    border-bottom: 12px solid #fff;
-    top:-12px;
+    border-left: 6px solid transparent;
+    border-right: 18px solid transparent;
+    border-bottom: 12px solid #ddd;
+    top:-22px;
     position:relative;
   }
+  button.button_InsideMessage {cursor: pointer; width:100%; margin:18px 0px 8px 0px; font-size:1.4em;}
 
 @media only screen and (max-width: 320px) {body{font-size:1.4em}}
 @media only screen and (min-width: 980px) and (min-height: 600px) {
@@ -1148,17 +1181,15 @@ function _ondblclick(dblclick) {
   <div id="under_mobile" class="under_mobile" display="none">
     <div id="under_mobile_teaser" class="under_mobile_teaser">
       &nbsp; <a href=/><span class="teaser">immer besser</span><br><span class="teaser">wissenwerkommt</span></a><p/>
-      Zusagen/Absagen-Sammler für Termine<br>z.B. für deine Sportmannschaft
+      Zusagen-/Absagen-Sammler für Termine<br>z.B. für deine Sportmannschaft
       <ul>
-        <li>ohne Anmeldung</li>
-        <li>einfache Anlage von Terminserien</li>
+        <li>keine Anmeldung notwendig</li>
+        <li>Terminserien möglich</li>
         <li>für dein Smartphone</li>
       </ul>
-      <!--<a href=/tagesschau>ausprobieren</a>-->
     </div>
     <div id="under_mobile_teaser_inner_footer" class="under_mobile_teaser_inner_footer">
-      <br><b>Datenschutz</b>: Dein Teilnahme-Name oder -Pseudonym wird verschlüsselt übertragen und gespeichert, nicht weitergegeben oder zu kommerziellen Zwecken genutzt. Der Zugriff ist allerdings lediglich durch die URL und ggf. einen nicht personalisierten Token geschützt. Die Löschung der Daten erfolgt automatisch jeweils am Tag nach dem Termin.
-      Es erfolgt kein IP-Logging, kein Nutzertracking und es werden keine Inhalte externer Seiten nachgeladen.
+      <br><b>Datenschutz</b>: Alle Daten werden verschlüsselt übertragen und gespeichert. Der Zugriff ist durch die nur dir/euch bekannte Adresse (URL) und ggf. einen nicht personalisierten Token geschützt. Termindaten werden am Tag nach dem Termin automatisch gelöscht.<br>
       <span id="imprint" onclick="serverRequest('imprint',{},function (r){if (typeof r!='undefined') {document.getElementById('imprint').innerHTML=JSON.parse(r).imprint}})"><a href=javascript:void(0)>Impressum</a></span>
     </div>
   </div>
