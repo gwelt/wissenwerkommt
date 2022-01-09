@@ -255,7 +255,7 @@ function updateView(json) {
           if (r.groups.length>0) {document.getElementById('teamlist').innerHTML+=' Groups: '};
           r.groups.forEach(function(g) {document.getElementById('teamlist').innerHTML+='<a href=/'+g+'>'+g+'</a> '});
         }
-        document.getElementById('teamlist').innerHTML+='<br>Admin: <a href=javascript:getLog()>getLog()</a>, <a href=javascript:dump()>dump()</a>';
+        document.getElementById('teamlist').innerHTML+='<br>Admin: <a href=javascript:getLog()>getLog()</a>, <a href=javascript:dump()>dump()</a>, <a href=javascript:save()>save()</a>, <a href=javascript:load()>load()</a>';
 
         // stats
         serverRequest('stats',{},function (r){if (typeof r!='undefined') {document.getElementById('stats').innerHTML=r} else {message('<span style=color:#f00>=== API is offline! ===</span>')}});
@@ -704,7 +704,9 @@ function deleteEvent(datetime) {
 }
 
 function load() {
-  serverRequest('load',{token:getCookie('token',true)},function (r){console.log(r)});
+  if (window.confirm("Warning!\nLoading data will overwrite current data!\nDo you really want to load data?")) {
+    serverRequest('load',{token:getCookie('token',true)},function (r){console.log(r)});
+  }
 }
 
 function save() {
