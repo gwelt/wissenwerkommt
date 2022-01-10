@@ -35,6 +35,8 @@ document.getElementsByTagName('head')[0].appendChild(link);
 // load socket.io after waiting for a second ... let the first getTeam be operated by AJAX to have a quick start before socket.io loads
 if (useSocketIO) {setTimeout(function(){SocketIO()},1000)};
 
+var fallback_scenario=setTimeout(()=>{updateView()},500);
+
 // ==================================================================================================================================================
 // ==================================================================================================================================================
 // SERVER CONNECT
@@ -47,6 +49,7 @@ function SocketIO() {if (!socket) {loadScript('/socket.io/socket.io.js', functio
     // filter for current teamid
     var o=JSON.parse(json);
     if (o.teamid==team.teamid) {getTeam(o.teamid)};
+    display_socketTrafficIndicator(500);
   });
   socket.on('data', function (json) {
     console.log('RECEIVED_SOCKET get');
@@ -59,16 +62,21 @@ function serverRequest(apicall,json,callback) {
   var t=stopwatch();
   var req = new XMLHttpRequest();
   req.onreadystatechange = function() {if (this.readyState == 4) {
+    //clearTimeout(fallback_scenario);
     console.log('RECEIVED '+apicall+': '+stopwatch(t)+'ms');
-    if ([200,401].includes(this.status)) {
+    if (199<this.status<500) {
       callback(this.responseText);
     } else {
       callback(JSON.stringify({'error':'Es gibt leider ein Problem mit dem Server. (statuscode: '+this.status+')'}));
+      useSocketIO=false;
+      socket=false;
     }
   }};
   req.open("POST","/api/"+apicall,true);
   req.setRequestHeader("Content-Type","application/json;charset=UTF-8");
-  req.send(JSON.stringify(json));
+  setTimeout(()=>{ 
+    req.send(JSON.stringify(json));
+  },0); // set a delay here to test slow connection
 }
 
 function parseServerResponse(json) {
@@ -76,14 +84,18 @@ function parseServerResponse(json) {
   var response=json?JSON.parse(json):{};
   if (response.hasOwnProperty('teamid')) {
     team=response;
+    // create readable string for recurrence of events
+    team.teams_weekday_time=get_teams_weekday_time(team);
     updateView();
   } else {
     if (response.hasOwnProperty('error')) {
-      if (response.error=="not sufficient rights to get team or team does not exist") {
+      if (response.error=="unauthorized (401) - not sufficient rights to get team or team does not exist") {
         display_message('Dieses Team hat einen Token für den Zugriff vereinbart.','Token eingeben','display_message();show_cookie_prompt(\'token\')');
+        team=false;
         updateView();
       } else {
         display_message('<span style=font-weight:bold>Ups!</span><br>'+response.error);
+        //updateView();
       }
     } else {
       // If there is no teamid in data then something might have changed. > Update team-data with getTeam().
@@ -119,7 +131,7 @@ function changeStatus(status,datetime) {
     var timeout=setTimeout(function() {
       var e=document.getElementById('status'+datetime);
       e.className='statusbutton_wait';
-      e.innerHTML='connecting ...'
+      e.innerHTML='connecting ...';
     },250);
     serverRequest(status,{token:getCookie('token',!team.teamtoken),teamid:window.location.pathname.substr(1),datetime:datetime,name:getCookie('name')},function (r){clearTimeout(timeout); parseServerResponse(r);});
   }
@@ -218,9 +230,21 @@ function get_admin_stats() {
 // ==================================================================================================================================================
 // ==================================================================================================================================================
 
-function display_header(title,subtitle) {
+function display_header() {
   var e=document.getElementById('mobile_header');
+  var title='<span style=cursor:pointer;font-weight:bold; onclick=getTeam()>wissenwerkommt</span>';
+  var subtitle='Startseite';
   var svg_menu='<svg xmlns="http://www.w3.org/2000/svg" id="svg_menu" fill="#555" width="24px" height="18px" viewBox="0 0 24 24"><path d="M24 6h-24v-4h24v4zm0 4h-24v4h24v-4zm0 8h-24v4h24v-4z"/></svg>';
+  document.title=(!team)?'wissenwerkommt':(!!team.name?team.name:'Team '+team.teamid);
+  if (window.location.pathname.substr(1)) {
+    if (team) {
+      title='<span style=cursor:pointer;font-weight:bold'+((team.teams_weekday_time)&&(!team.teams_weekday_time.length)?';position:relative;top:10px':'')+' onclick=getTeam()>'+(!!team.name?team.name:'Team '+team.teamid)+'</span>';
+      subtitle=team.teams_weekday_time;
+    } else {
+      title='<a href=/ style=text-decoration:none;font-weight:bold>wissenwerkommt</a>';
+      subtitle='<a href=/'+window.location.pathname.substr(1)+'>'+window.location.pathname.substr(1)+'</a>';
+    }
+  }
   e.innerHTML="<div class='head_wrapper'><button aria-label='toggleView' class='option_button_head' onclick=toggleView();>"+svg_menu+"</button>"+title+"<br><div class='titlesub'>"+subtitle+"</div></div>";
 }
 
@@ -235,9 +259,16 @@ function display_footer(c) {
   e.innerHTML="<div id='footer_wrapper' class='footer_wrapper'><div class='titlesubcenter'>"+(c?c:'')+"</div></div>";
 }
 
-function display_startpage() {
+function display_socketTrafficIndicator(duration) {
+  if (document.getElementById('stats')) {
+    document.getElementById('stats').innerHTML=((duration)?'.':'');
+  }
+  if (duration) {setTimeout(()=>{display_socketTrafficIndicator()},duration)}
+}
+
+function build_startpage() {
   document.title='wissenwerkommt';
-  display_header('<span style=cursor:pointer;font-weight:bold; onclick=getTeam()>wissenwerkommt</span>','Startseite');
+  display_header();
   display_message();
   mobile_main.innerHTML='<div id="main01"><div class="form_wrapper"><input type="text" id="visitteamid" maxlength=16 value="'+window.location.pathname.substr(1)+'" placeholder="Team-ID" autocomplete="off"><button aria-label="Team aufrufen" id="team_aufrufen" class="button_ok" onclick=getTeam(document.getElementById("visitteamid").value)>Team aufrufen</button></div><br><div class="textblock_wrapper"></div><div class="form_wrapper"><button aria-label="Team anlegen" class="button_ok" onclick="document.getElementById(\'main02\').style.display=\'block\';document.getElementById(\'main01\').style.display=\'none\';document.getElementById(\'main03\').style.display=\'none\';document.getElementById(\'teamid\').value=document.getElementById(\'visitteamid\').value">neues Team</button></div><br><div class="textblock_wrapper"></div><div class="textblock_wrapper" id="teamlist"></div><div class="textblock_wrapper" id="stats"></div></div><div id="main02" style=display:none><div class="form_wrapper"><input type="text" id="name" maxlength=24 value="" placeholder="Name deines Teams" autocomplete="off"><br>'+get_team_weekdaytime_selection(team)+'<br><input type="text" id="teamid" maxlength=16 value="'+window.location.pathname.substr(1)+'" placeholder="Team-ID *" autocomplete="off"><input type="hidden" id="admintoken" maxlength=16 value="'+(team.admintoken||'')+'" placeholder="Admin-Token" autocomplete="off"><input type="hidden" id="teamtoken" maxlength=16 value="'+(team.teamtoken||'')+'" autocomplete="off"><br><button aria-label="Team erstellen" class="button_ok" onclick=addTeam()>Team erstellen</button><br></div></div><div id="main03" style=display:none><div class="form_wrapper"><input type="text" id="group_name" maxlength=24 value="" placeholder="Name der Sparte" autocomplete="off"><br><input type="text" id="groupid" maxlength=16 value="'+window.location.pathname.substr(1)+'" placeholder="ID *" autocomplete="off"><br><input type="text" id="group_admintoken" maxlength=16 value="" placeholder="Admin-Token" autocomplete="off"><input type="hidden" id="group_teamtoken" maxlength=16 value="" autocomplete="off"><br><button aria-label="Sparte erstellen" class="button_ok" onclick=addGroup()>Sparte erstellen</button><br></div></div>';
   addOnKeyCode13EventListener('visitteamid','team_aufrufen');
@@ -247,22 +278,14 @@ function display_startpage() {
 function updateView() {
   console.log('START updateView');
   var time=stopwatch();
-  var teams_weekday_time=undefined;
+
+  display_header();
 
   var mobile_main=document.getElementById('mobile_main');
   var mobile_options=document.getElementById('mobile_options');
 
   if (window.location.pathname.substr(1)) {
 
-    if (team) {
-      document.title=(!!team.name?team.name:'Team '+team.teamid);
-      // create readable string for recurrence of events
-      teams_weekday_time=get_teams_weekday_time(team);
-      display_header('<span style=cursor:pointer;font-weight:bold'+((!teams_weekday_time.length)?';position:relative;top:10px':'')+' onclick=getTeam()>'+(!!team.name?team.name:'Team '+team.teamid)+'</span>',teams_weekday_time);
-    } else {
-      document.title='wissenwerkommt';
-      display_header('<a href=/ style=text-decoration:none;font-weight:bold>wissenwerkommt</a>','<a href=/'+window.location.pathname.substr(1)+'>'+window.location.pathname.substr(1)+'</a>');
-    }
 
     //---------- EVENTS ----------//
     mobile_main.innerHTML='';
@@ -292,7 +315,7 @@ function updateView() {
         });
       };
 
-      if (cc) {comment_inline+='<div class="comment_wrapper">'+(cc?cc:'')+'</div>';}
+      if (cc) {comment_inline+='<div class=comment_wrapper>'+cc+'</div>';}
       if (e.cancelled) {comment_important+='<div class=comment_important>TERMIN FÄLLT AUS</div>';}
       // check if event is NOT a recurring event
       if (!(team.recurrence?team.recurrence.filter(function(r){return (((r.weekday==new Date(e.datetime).getDay())||(r.weekday==7))&&(r.time==e.datetime.substring(11,16)))}):[1]).length) {
@@ -335,11 +358,11 @@ function updateView() {
 
     }):false;
 
-    display_footer('Immer besser zu <a href=/>wissenwerkommt</a>.')
+    display_footer('Immer besser zu <a href=/>wissenwerkommt</a>.');
   
   } else {
 
-    display_startpage();
+    build_startpage();
 
   }
 
@@ -373,7 +396,7 @@ function updateView() {
     // ADMIN_MENU:DELETE EVENT
     admin_menu+='<div class="options_option"><button aria-label="Termin bearbeiten" class="option_button" onclick="show_teamEditEvent_prompt()"></button><div class="option_text">Termin bearbeiten</div></div>';
     // ADMIN_MENU:DATETIME
-    admin_menu+='<div class="options_option"><button aria-label="Terminserie" class="option_button" onclick="show_teamPreferenceWeekdayTime_prompt(team)"></button><div class="option_text">Terminserie:<br><b>'+(teams_weekday_time.length?teams_weekday_time:'keine (unregelmäßig)')+'</b></div></div>';
+    admin_menu+='<div class="options_option"><button aria-label="Terminserie" class="option_button" onclick="show_teamPreferenceWeekdayTime_prompt(team)"></button><div class="option_text">Terminserie:<br><b>'+(team.teams_weekday_time.length?team.teams_weekday_time:'keine (unregelmäßig)')+'</b></div></div>';
     //admin_menu+='<div class="divider">Team</div>';
     admin_menu+='<div class="divider"></div>';
     // ADMIN_MENU:TEAM-NAME
@@ -392,7 +415,7 @@ function updateView() {
   // QR-code and link
   var l=""+window.location;
   team_name_and_recurrence='';
-  if (team.teamid!=undefined) {team_name_and_recurrence+='<br><b>'+(!!team.name?team.name:'Team '+team.teamid)+'</b><br>'+((teams_weekday_time!='')?teams_weekday_time+'<br>':'')}
+  if (team.teamid!=undefined) {team_name_and_recurrence+='<br><b>'+(!!team.name?team.name:'Team '+team.teamid)+'</b><br>'+((team.teams_weekday_time.length)?team.teams_weekday_time+'<br>':'')}
   var promo='<div class="options_promo"><div class="option_text"><a href='+l+'><canvas id="qrcode" style=display:none></canvas></a>'+team_name_and_recurrence+'<br><a href='+l+'>'+l.substring(0,l.lastIndexOf("/")+1)+'<br>'+window.location.pathname.substr(1)+'</a></div></div>';
 
   // showtime...
@@ -561,7 +584,7 @@ function show_teamAddEvent_prompt() {
 }
 function show_teamEditEvent_prompt() {
   var e=document.getElementById('mobile_prompt');
-  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">Mit einem <b>Doppelklick auf einen Termin</b> kannst du einen Dialog öffnen. Administratoren können dort<ul><li>einen Hinweis zum Termin hinterlegen oder</li><li>den Termin absagen.</li></ul>Hinweis: Termine, die nicht zu einer Serie gehören, werden automatisch gelöscht, wenn keine Zusagen, Absagen oder Hinweise vorhanden sind. Serientermine können nur abgesagt (nicht gelöscht) werden.<p></div><button aria-label="ok" class="button_ok" onclick="hide_prompt();">ok</button><div style=clear:both></div><!--<div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div>--></div>';
+  e.innerHTML='<div class="prompt_wrapper"><div class="prompt_text_top">Ein <b>Doppelklick</b> auf einen Termin öffnet einen Dialog. Administratoren können dort<ul><li>einen Hinweis zum Termin hinterlegen oder</li><li>den Termin absagen.</li></ul>Hinweis: Termine, die nicht zu einer Serie gehören, werden automatisch gelöscht, wenn keine Zusagen, Absagen oder Hinweise vorhanden sind. Serientermine können nur abgesagt (nicht gelöscht) werden.<p></div><button aria-label="ok" class="button_ok" onclick="hide_prompt();">ok</button><div style=clear:both></div><!--<div class="prompt_text_bottom"><br><a href=javascript:hide_prompt()>Abbrechen</a></div>--></div>';
   document.getElementById('mobile_inner').style.display='none';
   e.style.display='block';
 }
@@ -1141,8 +1164,8 @@ function _ondblclick(dblclick) {
       </header>
       <main>
         <div id="mobile_message" class="message"></div>
-        <div id="mobile_options" class="options"></div>
         <div id="mobile_main" class="main"></div>
+        <div id="mobile_options" class="options"></div>
       </main>
       <footer>
         <div id="mobile_footer" class="footer"></div>

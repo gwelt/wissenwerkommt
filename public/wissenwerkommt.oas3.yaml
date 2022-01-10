@@ -1,0 +1,487 @@
+openapi: 3.0.1
+info:
+  title: wissenwerkommt
+  version: 1.1
+  description: Zusagen-/Absagen-Sammler für Termine
+  contact:
+    name: github repository
+    url: https://github.com/gwelt/wissenwerkommt
+paths:
+  /api/get/{teamid}:
+    get:
+      tags:
+        - Team
+      summary: Get all information about a public team.
+      parameters:
+      - name: teamid
+        in: path
+        description: ID of team
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: returns team information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+                x-content-type: application/json
+        401:
+          description: unauthorized (401) - not sufficient rights to get team or team does not exist
+    post:
+      tags:
+        - Team
+      summary: Get all information about a team.
+      parameters:
+      - name: teamid
+        in: path
+        description: ID of team
+        required: false
+        schema:
+          type: string
+      requestBody:
+        description: ID and token of team
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                teamid:
+                  type: string
+                token:
+                  type: string
+      responses:
+        200:
+          description: returns team information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+                x-content-type: application/json
+        401:
+          description: unauthorized (401) - not sufficient rights to get team or team does not exist
+  /api/addTeam:
+    post:
+      tags:
+        - Team
+      summary: Add a new team.
+      requestBody:
+        description: team data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Team'
+        required: true
+      responses:
+        201:
+          description: created - returns team information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+                x-content-type: application/json
+        409:
+          description: conflict - teamid invalid or existing
+  /api/addEvent:
+    post:
+      tags:
+        - Event
+      summary: Add a new event.
+      requestBody:
+        description: event data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventEditRequest'
+        required: true
+      responses:
+        201:
+          description: created - returns event information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+                x-content-type: application/json
+        401:
+          description: unauthorized (401) - not sufficient rights to add event
+  /api/attend:
+    put:
+      tags:
+        - Event
+      summary: Announce to attend an event.
+      requestBody:
+        description: team, datetime and name
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                teamid:
+                  type: string
+                datetime:
+                  type: string
+                name:
+                  type: string
+      responses:
+        200:
+          description: returns updated event
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+                x-content-type: application/json
+        401:
+          description: unauthorized (401) - not sufficient rights to attend
+        403:
+          description: forbidden (403) - event not found
+  /api/refuse:
+    put:
+      tags:
+        - Event
+      summary: Announce to refuse an event.
+      requestBody:
+        description: team, datetime and name
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                teamid:
+                  type: string
+                datetime:
+                  type: string
+                name:
+                  type: string
+      responses:
+        200:
+          description: returns updated event
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+                x-content-type: application/json
+        401:
+          description: unauthorized (401) - not sufficient rights to refuse
+        403:
+          description: forbidden (403) - event not found
+  /api/undecided:
+    put:
+      tags:
+        - Event
+      summary: Announce to be undecided about participation.
+      requestBody:
+        description: team, datetime and name
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                teamid:
+                  type: string
+                datetime:
+                  type: string
+                name:
+                  type: string
+      responses:
+        200:
+          description: returns updated event
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+                x-content-type: application/json
+        401:
+          description: unauthorized (401) - not sufficient rights to undecide
+        403:
+          description: forbidden (403) - event not found
+  /api/commentEvent:
+    put:
+      tags:
+        - Event
+      summary: Post/change the comment for an event.
+      description: Will overwrite existing comment.
+      requestBody:
+        description: team, datetime, token and comment
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                teamid:
+                  type: string
+                datetime:
+                  type: string
+                token:
+                  type: string
+                comment:
+                  type: string
+      responses:
+        200:
+          description: returns updated event
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+                x-content-type: application/json
+        401:
+          description: unauthorized (401) - not sufficient rights to comment event
+        403:
+          description: forbidden (403) - event not found
+  /api/cancelEvent:
+    put:
+      tags:
+        - Event
+      summary: Cancel an event.
+      requestBody:
+        description: team, datetime and token
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                teamid:
+                  type: string
+                datetime:
+                  type: string
+                token:
+                  type: string
+      responses:
+        200:
+          description: returns updated event
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+                x-content-type: application/json
+        401:
+          description: unauthorized (401) - not sufficient rights to cancel event
+  /api/reviveEvent:
+    put:
+      tags:
+        - Event
+      summary: Revive an event.
+      requestBody:
+        description: team, datetime and token
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                teamid:
+                  type: string
+                datetime:
+                  type: string
+                token:
+                  type: string
+      responses:
+        200:
+          description: returns updated event
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+                x-content-type: application/json
+        401:
+          description: unauthorized (401) - not sufficient rights to revive event
+  /api/deleteEvent:
+    delete:
+      tags:
+        - Event
+      summary: Delete an event.
+      requestBody:
+        description: team, datetime and token
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                teamid:
+                  type: string
+                datetime:
+                  type: string
+                token:
+                  type: string
+      responses:
+        200:
+          description: returns list of remaining events
+        401:
+          description: unauthorized (401) - not sufficient rights to delete event
+  /api/editTeam:
+    put:
+      tags:
+        - Team
+      summary: Edit a team.
+      requestBody:
+        description: team data and token
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeamEditRequest'
+              x-content-type: application/json
+        required: true
+      responses:
+        200:
+          description: returns team information after change
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+                x-content-type: application/json
+        401:
+          description: unauthorized (401) - not sufficient rights to edit team
+  /api/deleteTeam:
+    delete:
+      tags:
+        - Team
+      summary: Delete a team.
+      requestBody:
+        description: teamid and token
+        content:
+          application/json:
+            schema:
+              properties:
+                teamid:
+                  type: string
+                token:
+                  type: string
+        required: true
+      responses:
+        200:
+          description: returns if delete was successful
+          schema:
+            type: string
+        401:
+          description: unauthorized (401) - not sufficient rights to delete team
+  /api/stats:
+    get:
+      tags:
+        - Info
+      summary: Get status.
+      operationId: getStats
+      responses:
+        200:
+          description: returns status information
+          content:
+            application/json:
+              schema:
+                x-content-type: application/json
+  /api/imprint:
+    get:
+      tags:
+        - Info
+      summary: Get imprint.
+      operationId: imprint
+      responses:
+        200:
+          description: returns imprint
+          content:
+            application/json:
+              schema:
+                x-content-type: application/json
+components:
+  schemas:
+    Team:
+      type: object
+      properties:
+        teamid:
+          type: string
+          example: 'tagesschau'
+        name:
+          type: string
+          example: 'Tagesschau'
+        recurrence:
+          type: array
+          items:
+            $ref: '#/components/schemas/recurrence'
+        teamtoken:
+          type: string
+          example: '123'
+        admintoken:
+          type: string
+          example: '321'
+    TeamEditRequest:
+      type: object
+      properties:
+        teamid:
+          type: string
+          example: 'tagesschau'
+        name:
+          type: string
+          example: 'Tagesschau'
+        recurrence:
+          type: array
+          items:
+            $ref: '#/components/schemas/recurrence'
+        teamtoken:
+          type: string
+          example: '123'
+        admintoken:
+          type: string
+          example: '321'
+        token:
+          type: string
+          example: '321'
+          description: 'Token to authorize your change to team data. It has to be equal to the existing admintoken of this team - if there is one.'
+    recurrence:
+      type: object
+      properties:
+        weekday:
+          type: string
+          example: '7'
+          description: 'format: has to have value 0 to 7 (7 = every day)'
+        time:
+          type: string
+          example: '20:00'
+          description: 'format: \d{2}:\d{2}'
+    Event:
+      type: object
+      properties:
+        datetime:
+          type: string
+          description: 'format: YYYY-MM-DDTHH:MM'
+          example: '2022-08-17T20:00'
+        attendees:
+          type: array
+          items:
+            type: string
+        refusals:
+          type: array
+          items:
+            type: string
+        cancelled:
+          type: boolean
+        comment:
+          type: string
+      example:
+        datetime: 2022-08-17T20:00
+        attendees: ['Sven','Beatrice']
+        refusals: ['Tom','Nick']
+        cancelled: false
+        comment: 'Wir treffen uns auf der Couch.'
+    EventEditRequest:
+      type: object
+      properties:
+        datetime:
+          type: string
+          description: 'format: YYYY-MM-DDTHH:MM'
+          example: '2022-08-17T20:00'
+        attendees:
+          type: array
+          items:
+            type: string
+        refusals:
+          type: array
+          items:
+            type: string
+        cancelled:
+          type: boolean
+        comment:
+          type: string
+        teamid:
+          type: string
+          description: 'ID of the the team this event should be added to.'
+        token:
+          type: string
+          example: '321'
+          description: 'Token to authorize your add/edit. It has to be equal to the admintoken of the team - if the team has one.'

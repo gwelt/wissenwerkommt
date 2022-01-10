@@ -42,7 +42,7 @@ function Event(json) {
   this.datetime=validateString('datetime',json.datetime);
   this.attendees=convertToListOfValidNames(json.attendees);
   this.refusals=convertToListOfValidNames(json.refusals);
-  this.cancelled=json.hasOwnProperty('cancelled')&&(json.cancelled===true)?json.cancelled:undefined;
+  this.cancelled=json.hasOwnProperty('cancelled')&&(json.cancelled==true)?json.cancelled:undefined;
   this.comment=validateString('comment',json.comment);
   _debug('EVENT '+this.datetime+' >> '+res);
 }
@@ -367,7 +367,7 @@ function validateString(propertyname,string,res) {
       if ((/^\d$/i.test(s))&&(s<=7)) {
         return s;
       } else {
-        res.push(propertyname+" has to have value 1 to 7");
+        res.push(propertyname+" has to have value 0 to 7 (7 = every day)");
       }
       break;
     case 'time':

@@ -68,13 +68,18 @@ app.use('/api/:r/:teamid?', function (req, res) {
 
     // open
     case 'addTeam':
-      res.json(db.addTeam(req.body)||{'error':'teamid invalid or existing'});
+      let r=db.addTeam(req.body);
+      if (r) {
+        res.status(201).json(db.addTeam(req.body));
+      } else {
+        res.status(409).json({'error':'conflict (409) - teamid invalid or existing'});
+      }
       break;
     case 'stats':
-      res.json(db.getStats(io));
+      res.status(200).json(db.getStats(io));
       break;
     case 'imprint':
-      res.json({'imprint':config.imprint});
+      res.status(200).json({'imprint':config.imprint});
       break;
 
     // team members only
@@ -90,98 +95,98 @@ app.use('/api/:r/:teamid?', function (req, res) {
           // add userlevel-information to result
           result.userlevel=userlevel;
         } 
-        res.json(result);
-      } else {res.status(401).json({'error':'not sufficient rights to get team or team does not exist'})}
+        res.status(200).json(result);
+      } else {res.status(401).json({'error':'unauthorized (401) - not sufficient rights to get team or team does not exist'})}
       break;
     case 'attend':
       if (getUserLevel(req)>0) {
         let aevent=db.findEvent(req.body.teamid,req.body.datetime);
-        if (aevent) {res.json(aevent.attend(req.body.name));emitUpdate(req.body.teamid)} else {res.status(403).json({'error':'event not found'})}
+        if (aevent) {res.status(200).json(aevent.attend(req.body.name));emitUpdate(req.body.teamid)} else {res.status(403).json({'error':'event not found'})}
       } else {res.status(401).json({'error':'not sufficient rights to attend'})}
       break;
     case 'refuse':
       if (getUserLevel(req)>0) {
         let revent=db.findEvent(req.body.teamid,req.body.datetime);
-        if (revent) {res.json(revent.refuse(req.body.name));emitUpdate(req.body.teamid)} else {res.status(403).json({'error':'event not found'})}
+        if (revent) {res.status(200).json(revent.refuse(req.body.name));emitUpdate(req.body.teamid)} else {res.status(403).json({'error':'event not found'})}
       } else {res.status(401).json({'error':'not sufficient rights to refuse'})}
       break;
     case 'undecided':
       if (getUserLevel(req)>0) {
         let uevent=db.findEvent(req.body.teamid,req.body.datetime);
-        if (uevent) {res.json(uevent.undecided(req.body.name));emitUpdate(req.body.teamid)} else {res.status(403).json({'error':'event not found'})}
+        if (uevent) {res.status(200).json(uevent.undecided(req.body.name));emitUpdate(req.body.teamid)} else {res.status(403).json({'error':'event not found'})}
       } else {res.status(401).json({'error':'not sufficient rights to undecide'})}
       break;
     case 'commentEvent':
       if (getUserLevel(req)>0) {
         let cevent=db.findEvent(req.body.teamid,req.body.datetime);
-        if (cevent) {res.json(cevent.commentEvent(req.body.comment));emitUpdate(req.body.teamid)} else {res.status(403).json({'error':'event not found'})}
+        if (cevent) {res.status(200).json(cevent.commentEvent(req.body.comment));emitUpdate(req.body.teamid)} else {res.status(403).json({'error':'event not found'})}
       } else {res.status(401).json({'error':'not sufficient rights to comment event'})}
       break;
 
     // admins only
     case 'editTeam':
       if (getUserLevel(req)>1) {
-        res.json(db.editTeam(req.body));
+        res.status(200).json(db.editTeam(req.body));
         emitUpdate(req.body.teamid);
       } else {res.status(401).json({'error':'not sufficient rights to edit team'})}
       break;
     case 'deleteTeam':
       if (getUserLevel(req)>1) {
-        res.json(db.deleteTeam(req.body));
+        res.status(200).json(db.deleteTeam(req.body));
         emitUpdate(req.body.teamid);
       } else {res.status(401).json({'error':'not sufficient rights to delete team'})}
       break;
     case 'addEvent':
       if (getUserLevel(req)>1) {
         let ateam=db.findTeam(req.body.teamid);
-        if (ateam) {res.json(ateam.addEvent({"datetime":req.body.datetime,"comment":req.body.comment}));emitUpdate(req.body.teamid)} else {res.json(false)}
+        if (ateam) {res.status(201).json(ateam.addEvent({"datetime":req.body.datetime,"comment":req.body.comment}));emitUpdate(req.body.teamid)} else {res.status(200).json(false)}
       } else {res.status(401).json({'error':'not sufficient rights to add event'})}
       break;
     case 'cancelEvent':
       if (getUserLevel(req)>1) {
         let devent=db.findEvent(req.body.teamid,req.body.datetime);
-        if (devent) {res.json(devent.cancelEvent());emitUpdate(req.body.teamid)} else {res.json(false)}
+        if (devent) {res.status(200).json(devent.cancelEvent());emitUpdate(req.body.teamid)} else {res.status(200).json(false)}
       } else {res.status(401).json({'error':'not sufficient rights to cancel event'})}
       break;
     case 'reviveEvent':
       if (getUserLevel(req)>1) {
         let vevent=db.findEvent(req.body.teamid,req.body.datetime);
-        if (vevent) {res.json(vevent.reviveEvent());emitUpdate(req.body.teamid)} else {res.json(false)}
+        if (vevent) {res.status(200).json(vevent.reviveEvent());emitUpdate(req.body.teamid)} else {res.status(200).json(false)}
       } else {res.status(401).json({'error':'not sufficient rights to revive event'})}
       break;
     case 'deleteEvent':
       if (getUserLevel(req)>1) {
         let dteam=db.findTeam(req.body.teamid);
-        if (dteam) {res.json(dteam.deleteEvent({"datetime":req.body.datetime}));emitUpdate(req.body.teamid)} else {res.json(false)}
+        if (dteam) {res.status(200).json(dteam.deleteEvent({"datetime":req.body.datetime}));emitUpdate(req.body.teamid)} else {res.status(200).json(false)}
       } else {res.status(401).json({'error':'not sufficient rights to delete event'})}
       break;
 
     // sysops only
     case 'load':
       if (getUserLevel(req)>2) {
-        db.load_from_file(config.datafilepath,config.datafile,(db)=>{res.json(db)});
+        db.load_from_file(config.datafilepath,config.datafile,(db)=>{res.status(200).json(db)});
       } else {res.status(401).json({'error':'not sufficient rights to do that (load)'})}
       break;
     case 'save':
       if (getUserLevel(req)>2) {
-        db.save_to_file(config.datafilepath,config.datafile,(db)=>{res.json(db)},true);
+        db.save_to_file(config.datafilepath,config.datafile,(db)=>{res.status(200).json(db)},true);
       } else {res.status(401).json({'error':'not sufficient rights to do that (save)'})}
       break;
     case 'dump':
       if (getUserLevel(req)>2) {
         db.groomTeams(false);
-        res.json(db);
+        res.status(200).json(db);
         db.groomTeams(true);
       } else {res.status(401).json({'error':'not sufficient rights to do that (dump)'})}
       break;
     case 'getLog':
       if (getUserLevel(req)>2) {
-        res.send(log.read());
+        res.status(200).send(log.read());
       } else {res.status(401).json({'error':'not sufficient rights to do that (getLog)'})}
       break;
     case 'getAllIDs':
       if (getUserLevel(req)>2) {
-        res.json(db.getAllIDs());
+        res.status(200).json(db.getAllIDs());
       //} else {res.status(401).json({'error':'not sufficient rights to do that (getAllIDs)'})}
       } else {res.status(200).json({})}
       break;
