@@ -218,7 +218,7 @@ io.on('connection', function (socket) {
       }
       socket.emit('data', JSON.stringify(tgCopy));
     } else {
-      socket.emit('data', JSON.stringify({'error':'not sufficient rights to get team or team does not exist'}));
+      socket.emit('data', JSON.stringify({'error':'unauthorized (401) - not sufficient rights to get team or team does not exist'}));
     }
   });
 });

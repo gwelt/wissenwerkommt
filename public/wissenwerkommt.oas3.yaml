@@ -353,6 +353,93 @@ paths:
             type: string
         401:
           description: unauthorized (401) - not sufficient rights to delete team
+  /api/load:
+    post:
+      tags:
+        - Administration / Test
+      summary: Overwrite memory (current data) with stored data from disk.
+      description: Attention! Current memory (current data) will be overwritten! Automatically used at service-startup to load data to memory. Don't fire during runtime unless you know what you're doing!
+      parameters:
+      - name: token
+        in: path
+        description: token to authorize system-operation-tasks
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: returns all data
+          content:
+            application/json:
+              schema:
+                x-content-type: application/json
+        401:
+          description: unauthorized (401) - not sufficient rights to do that (load)
+  /api/save:
+    post:
+      tags:
+        - Administration / Test
+      summary: Store memory (current data) to disk.
+      description: Attention! Data on disk will be overwritten! Will also be stored as a backup in backup-folder if configured in service.
+      parameters:
+      - name: token
+        in: path
+        description: token to authorize system-operation-tasks
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: returns all data
+          content:
+            application/json:
+              schema:
+                x-content-type: application/json
+        401:
+          description: unauthorized (401) - not sufficient rights to do that (save)
+  /api/dump:
+    post:
+      tags:
+        - Administration / Test
+      summary: Output/dump memory (current data).
+      description: Data will be groomed before dump. Recurring events that do not contain additional data will be deleted. (When requesting events next time, all missing events will be added/created again.)
+      parameters:
+      - name: token
+        in: path
+        description: token to authorize system-operation-tasks
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: returns all data
+          content:
+            application/json:
+              schema:
+                x-content-type: application/json
+        401:
+          description: unauthorized (401) - not sufficient rights to do that (save)
+  /api/getAllIDs:
+    post:
+      tags:
+        - Administration / Test
+      summary: Get all team-IDs.
+      parameters:
+      - name: token
+        in: path
+        description: token to authorize system-operation-tasks
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: returns all team-IDs
+          content:
+            application/json:
+              schema:
+                x-content-type: application/json
+        401:
+          description: unauthorized (401) - not sufficient rights to do that (getAllIDs)
   /api/stats:
     get:
       tags:

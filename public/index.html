@@ -35,8 +35,6 @@ document.getElementsByTagName('head')[0].appendChild(link);
 // load socket.io after waiting for a second ... let the first getTeam be operated by AJAX to have a quick start before socket.io loads
 if (useSocketIO) {setTimeout(function(){SocketIO()},1000)};
 
-var fallback_scenario=setTimeout(()=>{updateView()},500);
-
 // ==================================================================================================================================================
 // ==================================================================================================================================================
 // SERVER CONNECT
@@ -59,10 +57,15 @@ function SocketIO() {if (!socket) {loadScript('/socket.io/socket.io.js', functio
 
 function serverRequest(apicall,json,callback) {
   console.log('REQUEST '+apicall+': '+JSON.stringify(json));
+  var fallback_scenario=setTimeout(function(){
+    display_header();
+    display_message('<b>Entschuldigung.</b><br>Es dauert wohl etwas länger. Bitte hab ein bisschen Geduld - und dann versuche es mit einem Reload!','Reload','"javascript:location.reload()"');
+    display_footer();
+  },500);
   var t=stopwatch();
   var req = new XMLHttpRequest();
   req.onreadystatechange = function() {if (this.readyState == 4) {
-    //clearTimeout(fallback_scenario);
+    clearTimeout(fallback_scenario);
     console.log('RECEIVED '+apicall+': '+stopwatch(t)+'ms');
     if (199<this.status<500) {
       callback(this.responseText);
@@ -89,13 +92,12 @@ function parseServerResponse(json) {
     updateView();
   } else {
     if (response.hasOwnProperty('error')) {
+      team=false;
+      updateView();
       if (response.error=="unauthorized (401) - not sufficient rights to get team or team does not exist") {
         display_message('Dieses Team hat einen Token für den Zugriff vereinbart.','Token eingeben','display_message();show_cookie_prompt(\'token\')');
-        team=false;
-        updateView();
       } else {
         display_message('<span style=font-weight:bold>Ups!</span><br>'+response.error);
-        //updateView();
       }
     } else {
       // If there is no teamid in data then something might have changed. > Update team-data with getTeam().
@@ -114,9 +116,9 @@ function getTeam(teamid) {
     if (teamid!='') {
       // request team-data
       if (socket) {
-        setTimeout(function(){socket.emit('get',{token:getCookie('token',true),teamid:teamid})},0);
+        setTimeout(function(){socket.emit('get',{token:getCookie('token'),teamid:teamid})},0);
       } else {
-        serverRequest('get',{token:getCookie('token',true),teamid:teamid},function (r){parseServerResponse(r)});
+        serverRequest('get',{token:getCookie('token'),teamid:teamid},function (r){parseServerResponse(r)});
       }
     } else {updateView()}
   }
@@ -125,7 +127,7 @@ function getTeam(teamid) {
 function changeStatus(status,datetime) {
   // prompt for name if name is not set
   // since this DOM-client-prompt-fake does not have a callback-option, recall this function via js-injection
-  if (!getCookie('name',true)) {
+  if (!getCookie('name')) {
     show_cookie_prompt('name','changeStatus(\''+status+'\',\''+datetime+'\');');
   } else {
     var timeout=setTimeout(function() {
@@ -133,7 +135,7 @@ function changeStatus(status,datetime) {
       e.className='statusbutton_wait';
       e.innerHTML='connecting ...';
     },250);
-    serverRequest(status,{token:getCookie('token',!team.teamtoken),teamid:window.location.pathname.substr(1),datetime:datetime,name:getCookie('name')},function (r){clearTimeout(timeout); parseServerResponse(r);});
+    serverRequest(status,{token:getCookie('token',team.teamtoken),teamid:window.location.pathname.substr(1),datetime:datetime,name:getCookie('name')},function (r){clearTimeout(timeout); parseServerResponse(r);});
   }
 }
 
@@ -154,15 +156,15 @@ function editTeam() {
       }
     }
   }
-  serverRequest('editTeam',{token:getCookie('token',true),teamid:document.getElementById('teamid')?document.getElementById('teamid').value:undefined,new_teamid:document.getElementById('new_teamid')?document.getElementById('new_teamid').value:undefined,name:document.getElementById('name')?document.getElementById('name').value:undefined,teamtoken:document.getElementById('teamtoken')?document.getElementById('teamtoken').value:undefined,admintoken:document.getElementById('admintoken')?document.getElementById('admintoken').value:undefined,recurrence:recurrences},function (r){parseServerResponse(r);});
+  serverRequest('editTeam',{token:getCookie('token'),teamid:document.getElementById('teamid')?document.getElementById('teamid').value:undefined,new_teamid:document.getElementById('new_teamid')?document.getElementById('new_teamid').value:undefined,name:document.getElementById('name')?document.getElementById('name').value:undefined,teamtoken:document.getElementById('teamtoken')?document.getElementById('teamtoken').value:undefined,admintoken:document.getElementById('admintoken')?document.getElementById('admintoken').value:undefined,recurrence:recurrences},function (r){parseServerResponse(r);});
 }
 
 function deleteTeam() {
-  serverRequest('deleteTeam',{token:getCookie('token',true),teamid:document.getElementById('teamid').value},function (r){parseServerResponse(r);showView('mobile_main');});
+  serverRequest('deleteTeam',{token:getCookie('token'),teamid:document.getElementById('teamid').value},function (r){parseServerResponse(r);showView('mobile_main');});
 }
 
 function addEvent() {
-  serverRequest('addEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:document.getElementById('datetime').value,comment:document.getElementById('comment').value},function (r){parseServerResponse(r);toggleView();});
+  serverRequest('addEvent',{token:getCookie('token'),teamid:window.location.pathname.substr(1),datetime:document.getElementById('datetime').value,comment:document.getElementById('comment').value},function (r){parseServerResponse(r);toggleView();});
 }
 
 function cancelORreviveEvent(datetime) {
@@ -170,41 +172,41 @@ function cancelORreviveEvent(datetime) {
 }
 
 function cancelEvent(datetime) {
-  serverRequest('cancelEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:datetime},function (r){parseServerResponse(r);});
+  serverRequest('cancelEvent',{token:getCookie('token'),teamid:window.location.pathname.substr(1),datetime:datetime},function (r){parseServerResponse(r);});
 }
 
 function reviveEvent(datetime) {
-  serverRequest('reviveEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:datetime},function (r){parseServerResponse(r);});
+  serverRequest('reviveEvent',{token:getCookie('token'),teamid:window.location.pathname.substr(1),datetime:datetime},function (r){parseServerResponse(r);});
 }
 
 function commentEvent(datetime) {
-  serverRequest('commentEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:datetime,comment:document.getElementById('comment'+datetime).value},function (r){parseServerResponse(r);});
+  serverRequest('commentEvent',{token:getCookie('token'),teamid:window.location.pathname.substr(1),datetime:datetime,comment:document.getElementById('comment'+datetime).value},function (r){parseServerResponse(r);});
 }
 
 function deleteEvent(datetime) {
-  serverRequest('deleteEvent',{token:getCookie('token',true),teamid:window.location.pathname.substr(1),datetime:datetime},function (r){parseServerResponse(r);});
+  serverRequest('deleteEvent',{token:getCookie('token'),teamid:window.location.pathname.substr(1),datetime:datetime},function (r){parseServerResponse(r);});
 }
 
 function load() {
   if (window.confirm("Warning!\nLoading data will overwrite current data!\nDo you really want to load data?")) {
-    serverRequest('load',{token:getCookie('token',true)},function (r){console.log(r)});
+    serverRequest('load',{token:getCookie('token')},function (r){console.log(r)});
   }
 }
 
 function save() {
-  serverRequest('save',{token:getCookie('token',true)},function (r){console.log(r)});
+  serverRequest('save',{token:getCookie('token')},function (r){console.log(r)});
 }
 
 function dump() {
-  serverRequest('dump',{token:getCookie('token',true)},function (r){showOnLeftSide(r)});
+  serverRequest('dump',{token:getCookie('token')},function (r){showOnLeftSide(r)});
 }
 
 function getLog() {
-  serverRequest('getLog',{token:getCookie('token',true)},function(r){showOnLeftSide(r)});
+  serverRequest('getLog',{token:getCookie('token')},function(r){showOnLeftSide(r)});
 }
 
 function get_admin_stats() {
-  serverRequest('getAllIDs',{"token":getCookie("token",true)},function (r){
+  serverRequest('getAllIDs',{"token":getCookie("token")},function (r){
     r=JSON.parse(r);
     if (r.hasOwnProperty('teams')||r.hasOwnProperty('groups')) {
       document.getElementById('teamlist').innerHTML='';
@@ -232,20 +234,20 @@ function get_admin_stats() {
 
 function display_header() {
   var e=document.getElementById('mobile_header');
+  var svg_menu='<svg xmlns="http://www.w3.org/2000/svg" id="svg_menu" fill="#555" width="24px" height="18px" viewBox="0 0 24 24"><path d="M24 6h-24v-4h24v4zm0 4h-24v4h24v-4zm0 8h-24v4h24v-4z"/></svg>';
   var title='<span style=cursor:pointer;font-weight:bold; onclick=getTeam()>wissenwerkommt</span>';
   var subtitle='Startseite';
-  var svg_menu='<svg xmlns="http://www.w3.org/2000/svg" id="svg_menu" fill="#555" width="24px" height="18px" viewBox="0 0 24 24"><path d="M24 6h-24v-4h24v4zm0 4h-24v4h24v-4zm0 8h-24v4h24v-4z"/></svg>';
   document.title=(!team)?'wissenwerkommt':(!!team.name?team.name:'Team '+team.teamid);
   if (window.location.pathname.substr(1)) {
     if (team) {
-      title='<span style=cursor:pointer;font-weight:bold'+((team.teams_weekday_time)&&(!team.teams_weekday_time.length)?';position:relative;top:10px':'')+' onclick=getTeam()>'+(!!team.name?team.name:'Team '+team.teamid)+'</span>';
+      title='<span style=cursor:pointer;font-weight:bold'+((team.teams_weekday_time)&&(!team.teams_weekday_time.length)?';position:relative;top:10px':'')+' onclick="getTeam();showView(\'mobile_main\')">'+(!!team.name?team.name:'Team '+team.teamid)+'</span>';
       subtitle=team.teams_weekday_time;
     } else {
       title='<a href=/ style=text-decoration:none;font-weight:bold>wissenwerkommt</a>';
       subtitle='<a href=/'+window.location.pathname.substr(1)+'>'+window.location.pathname.substr(1)+'</a>';
     }
   }
-  e.innerHTML="<div class='head_wrapper'><button aria-label='toggleView' class='option_button_head' onclick=toggleView();>"+svg_menu+"</button>"+title+"<br><div class='titlesub'>"+subtitle+"</div></div>";
+  e.innerHTML='<div class="head_wrapper"><button aria-label="toggleView" class="option_button_head" onclick=toggleView();>'+svg_menu+'</button>'+title+'<br><div class="titlesub">'+subtitle+'</div></div>';
 }
 
 function display_message(text,button_text,button_onclick) {
@@ -256,12 +258,12 @@ function display_message(text,button_text,button_onclick) {
 
 function display_footer(c) {
   var e=document.getElementById('mobile_footer');
-  e.innerHTML="<div id='footer_wrapper' class='footer_wrapper'><div class='titlesubcenter'>"+(c?c:'')+"</div></div>";
+  e.innerHTML="<div id='footer_wrapper' class='footer_wrapper'><div class='titlesubcenter'>"+(c?c:'Immer besser zu <a href=/>wissenwerkommt</a>.')+"</div></div>";
 }
 
 function display_socketTrafficIndicator(duration) {
   if (document.getElementById('stats')) {
-    document.getElementById('stats').innerHTML=((duration)?'.':'');
+    document.getElementById('stats').innerHTML=((duration)?'.':'&nbsp;');
   }
   if (duration) {setTimeout(()=>{display_socketTrafficIndicator()},duration)}
 }
@@ -289,7 +291,7 @@ function updateView() {
 
     //---------- EVENTS ----------//
     mobile_main.innerHTML='';
-    var name=getCookie('name',true);
+    var name=getCookie('name');
     var event_counter=0;
     team.events?team.events.forEach(function (e) {
       event_counter++;
@@ -358,7 +360,7 @@ function updateView() {
 
     }):false;
 
-    display_footer('Immer besser zu <a href=/>wissenwerkommt</a>.');
+    display_footer();
   
   } else {
 
@@ -375,13 +377,13 @@ function updateView() {
 
   // MENU:NAME
   text='Mit welchem Namen möchtest du dich anmelden?';
-  cookie=getCookie("name",true);
+  cookie=getCookie("name");
   if (cookie) {text='Hallo <b>'+cookie+'</b>.<br>Schön, dass du da bist.';}
   svg='';
-  menu+='<div class="options_option"><button aria-label="Name" class="option_button" onclick="show_cookie_prompt(\'name\',showView(\'mobile_main\'));">'+svg+'</button><div class="option_text">'+text+'</div></div>';
+  menu+='<div class="options_option"><button aria-label="Name" class="option_button" onclick="show_cookie_prompt(\'name\');">'+svg+'</button><div class="option_text">'+text+'</div></div>';
 
   // MENU:TOKEN
-  cookie=getCookie("token",true);
+  cookie=getCookie("token");
   //text='Hier kannst du einen Token-Code eingeben.';
   text='Zur Administration musst du einen Token angeben.';
   if (cookie) {text='Dein Token:<br><b>'+cookie+'</b>'}
@@ -632,7 +634,7 @@ function findEvent(team,datetime) {
 
 function toggleStatus(datetime) {
   var e=findEvent(team,datetime);
-  var name=getCookie('name',true);
+  var name=getCookie('name');
   if (e.attendees&&e.attendees.includes(name)) {changeStatus("refuse",datetime)}
   else if (e.refusals&&e.refusals.includes(name)) {changeStatus("undecided",datetime)}
   else {changeStatus("attend",datetime)}
@@ -695,7 +697,7 @@ function showQRcode(element,url,options) {
   element.style.display='inline';
 }
 
-function getCookie(cname,dontask) {
+function getCookie(cname,ask) {
   var name = cname + "=";
   var ca = document.cookie.split(';');
   for(var i = 0; i < ca.length; i++) {
@@ -708,11 +710,11 @@ function getCookie(cname,dontask) {
       return res;
     }
   }
-  if (dontask) {return} else {return askCookie(cname)}
+  if (ask) {return askCookie(cname)} else {return}
 }
 
 function askCookie(cname) {
-  var preval=getCookie(cname,true);
+  var preval=getCookie(cname);
   var val = prompt("Please enter "+cname, preval);
   return setCookie(cname, val, 365); //-1 = sessioncookie
   //show_cookie_prompt(cname);
@@ -720,7 +722,7 @@ function askCookie(cname) {
 function show_cookie_prompt(cname,str_functionToCall) {
   var text='???';
   var placeholder='';
-  var preval=(getCookie(cname,true)||'');
+  var preval=(getCookie(cname)||'');
   if (cname=='name') {text='Bitte gib deinen <b>Namen</b> ein:'; placeholder='';}
   else if (cname=='token') {text='Bitte gib deinen <b>Token</b> ein:'; placeholder='';}
   var e=document.getElementById('mobile_prompt');
@@ -742,7 +744,7 @@ function setCookie(cname, cvalue, exdays, dontgetteam) {
   }
   document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
   if (!dontgetteam) {getTeam()};
-  return getCookie(cname,true);
+  return getCookie(cname);
 }
 
 
@@ -754,8 +756,6 @@ function check_mobile()
   if ( ((width<=980) || (height<=600)) && (is_mobile!=-1) )//|| ((display_state(document.getElementById('mobile'))==='block')&&(is_mobile!=-1)) )
   {
     is_mobile=1;
-    //console.log('mobile YES');
-    //document.getElementById('under_mobile').style.display='none';
     document.getElementById('mobile').style.maxWidth='100vw';
     document.getElementById('mobile').style.height='100vh';
     document.getElementById('mobile').style.top=0;
@@ -765,24 +765,7 @@ function check_mobile()
   else
   {
     if (is_mobile>0) {is_mobile=0}
-    //console.log('mobile NO');
-    //document.getElementById('under_mobile').style.display='block';
     document.getElementById('under_mobile').style.backgroundImage='url(/images/phone.svg)';
-    /*
-    if (!document.getElementById("logoutIMG")) {
-      var img = document.createElement("IMG");
-      img.id='logoutIMG';
-      img.src='/images/logout.svg';
-      img.style.position='fixed';
-      img.style.bottom='40px';
-      img.style.right='20px';
-      img.style.width='60px';
-      img.addEventListener('click',function(e){window.open('/','_self').close();});
-      img.style.cursor='pointer';
-      document.getElementById('under_mobile').appendChild(img);
-      //<img src="/images/logout.svg" style="position:fixed;bottom:10px;right:10px;width:60px">
-    }
-    */
     if (!document.getElementById("qrcode2")) {
       var canvas = document.createElement("canvas");
       canvas.id='qrcode2';
@@ -818,6 +801,16 @@ function _ondblclick(dblclick) {
     dblclick();
   }
 }
+
+function Floodprotect(allowed,seconds) {
+  this.allowed=allowed||10;
+  this.seconds=seconds||10;
+  this.count=0;
+  this.interval=setInterval(()=>{this.count=0},this.seconds*1000);
+}
+Floodprotect.prototype.allows = function() {return (++this.count<=this.allowed)}
+Floodprotect.prototype.status = function() {return (((this.count<this.allowed)?'YES':'NO')+' '+this.count+'/'+this.allowed)}
+//var APIprotect=new Floodprotect(5,10);
 
 </script>
 <noscript>Your browser does not support JavaScript!</noscript>
