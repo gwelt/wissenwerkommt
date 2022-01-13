@@ -93,7 +93,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/EventEditRequest'
+              $ref: '#/components/schemas/EventAddRequest'
         required: true
       responses:
         201:
@@ -105,6 +105,8 @@ paths:
                 x-content-type: application/json
         401:
           description: unauthorized (401) - not sufficient rights to add event
+        409:
+          description: conflict (409) - team not found
   /api/attend:
     put:
       tags:
@@ -256,6 +258,8 @@ paths:
                 x-content-type: application/json
         401:
           description: unauthorized (401) - not sufficient rights to cancel event
+        409:
+          description: conflict (409) - team not found
   /api/reviveEvent:
     put:
       tags:
@@ -284,6 +288,8 @@ paths:
                 x-content-type: application/json
         401:
           description: unauthorized (401) - not sufficient rights to revive event
+        409:
+          description: conflict (409) - team not found
   /api/deleteEvent:
     delete:
       tags:
@@ -307,6 +313,8 @@ paths:
           description: returns list of remaining events
         401:
           description: unauthorized (401) - not sufficient rights to delete event
+        409:
+          description: conflict (409) - team not found
   /api/editTeam:
     put:
       tags:
@@ -554,7 +562,7 @@ components:
         refusals: ['Tom','Nick']
         cancelled: false
         comment: 'Wir treffen uns auf der Couch.'
-    EventEditRequest:
+    EventAddRequest:
       type: object
       properties:
         datetime:
@@ -579,4 +587,4 @@ components:
         token:
           type: string
           example: '321'
-          description: 'Token to authorize your add/edit. It has to be equal to the admintoken of the team - if the team has one.'
+          description: 'Token to authorize your add. It has to be equal to the admintoken of the team - if the team has one.'

@@ -158,7 +158,7 @@ WissenWerKommt.prototype.getStats = function(io) {
   eventCount=this.teams.reduce((a,t)=>a+=t.events?t.events.length:0,0);
   attendCount=this.teams.reduce((a,t)=>a+=t.events?t.events.reduce((b,u)=>b+=u.attendees?u.attendees.length:0,0):0,0);
   refusalCount=this.teams.reduce((a,t)=>a+=t.events?t.events.reduce((b,u)=>b+=u.refusals?u.refusals.length:0,0):0,0);
-  return {"teams":teamCount,"events":eventCount,"attendees":attendCount,"refusals":refusalCount,"md5":hash(JSON.stringify(this)),"kb":Math.round(JSON.stringify(this).length/1024),"users":io.engine.clientsCount+1};
+  return {"teams":teamCount,"events":eventCount,"attendees":attendCount,"refusals":refusalCount,"md5":hash(JSON.stringify(this)),"kb":Math.round(JSON.stringify(this).length/1024),"users":io.engine.clientsCount};
 }
 
 WissenWerKommt.prototype.getAllIDs = function() {
