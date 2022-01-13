@@ -14,7 +14,7 @@ describe ('OPEN REST-REQUESTS', function() {
         .post('/api/addTeam')
         .send({teamid:'teamG20',name:'Team G20',recurrence:[{weekday:"7",time:"12:15"}],admintoken:'321',teamtoken:'123'})
         .set('Accept', 'application/json')
-        .expect(200)
+        .expect(201)
         .end(function(err, res) {
           if (err) throw err;
           console.log(res.text);
@@ -163,7 +163,7 @@ describe ('TEAM-ADMIN REST-REQUESTS', function() {
         .post('/api/addEvent')
         .send({teamid:'teamG20',datetime:getDateString()+'T20:00',comment:'lets meet at 8PM',token:'4321'})
         .set('Accept', 'application/json')
-        .expect(200)
+        .expect(201)
         .end(function(err, res) {
           if (err) throw err;
           console.log(res.text);
