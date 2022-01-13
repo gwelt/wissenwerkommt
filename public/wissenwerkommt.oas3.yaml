@@ -1,7 +1,7 @@
 openapi: 3.0.1
 info:
   title: wissenwerkommt
-  version: 1.1
+  version: '1.1'
   description: Zusagen-/Absagen-Sammler für Termine
   contact:
     name: github repository
@@ -26,7 +26,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Team'
-                x-content-type: application/json
         401:
           description: unauthorized (401) - not sufficient rights to get team or team does not exist
     post:
@@ -37,12 +36,12 @@ paths:
       - name: teamid
         in: path
         description: ID of team
-        required: false
+        required: true
         schema:
           type: string
       requestBody:
         description: ID and token of team
-        required: true
+        required: false
         content:
           application/json:
             schema:
@@ -58,7 +57,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Team'
-                x-content-type: application/json
         401:
           description: unauthorized (401) - not sufficient rights to get team or team does not exist
   /api/addTeam:
@@ -80,7 +78,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Team'
-                x-content-type: application/json
         409:
           description: conflict - teamid invalid or existing
   /api/addEvent:
@@ -102,7 +99,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Event'
-                x-content-type: application/json
         401:
           description: unauthorized (401) - not sufficient rights to add event
         409:
@@ -132,7 +128,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Event'
-                x-content-type: application/json
         401:
           description: unauthorized (401) - not sufficient rights to attend
         403:
@@ -162,7 +157,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Event'
-                x-content-type: application/json
         401:
           description: unauthorized (401) - not sufficient rights to refuse
         403:
@@ -192,7 +186,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Event'
-                x-content-type: application/json
         401:
           description: unauthorized (401) - not sufficient rights to undecide
         403:
@@ -225,7 +218,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Event'
-                x-content-type: application/json
         401:
           description: unauthorized (401) - not sufficient rights to comment event
         403:
@@ -255,7 +247,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Event'
-                x-content-type: application/json
         401:
           description: unauthorized (401) - not sufficient rights to cancel event
         409:
@@ -285,13 +276,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Event'
-                x-content-type: application/json
         401:
           description: unauthorized (401) - not sufficient rights to revive event
         409:
           description: conflict (409) - team not found
   /api/deleteEvent:
-    delete:
+    post:
       tags:
         - Event
       summary: Delete an event.
@@ -326,7 +316,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/TeamEditRequest'
-              x-content-type: application/json
         required: true
       responses:
         200:
@@ -335,11 +324,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Team'
-                x-content-type: application/json
         401:
           description: unauthorized (401) - not sufficient rights to edit team
   /api/deleteTeam:
-    delete:
+    post:
       tags:
         - Team
       summary: Delete a team.
@@ -355,10 +343,6 @@ paths:
                   type: string
         required: true
       responses:
-        200:
-          description: returns if delete was successful
-          schema:
-            type: string
         401:
           description: unauthorized (401) - not sufficient rights to delete team
   /api/load:
